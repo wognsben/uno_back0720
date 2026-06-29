@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
-import Footer from "../imports/공통푸터/index";
-import Header from "../imports/공통헤더/index";
+import Footer from "./components/공통푸터/index";
+import Header from "./components/공통헤더/index";
 
 import Intro from "../imports/INTRO/INTRO";
 
@@ -9,6 +9,21 @@ import HeroComponent from "../imports/MAIN_1TH/index";
 import Section2Component from "../imports/MAIN_2TH/index";
 import Section3Component from "../imports/MAIN_3TH/index";
 import Section4Component from "../imports/MAIN_4TH/index";
+
+/*
+  ProductNavigation 연결
+
+  메인 Hero 안에 있던 상품군 Navigation을
+  공통 Sub Page Navigation으로 분리해서 사용한다.
+
+  사용 위치:
+  - Main Page: HeroComponent 내부 Navigation 유지 또는 추후 교체
+  - Product Sub Page: ProductHero 위에 항상 노출
+
+  주의:
+  실제 파일 위치에 맞춰 import 경로는 조정할 수 있다.
+*/
+import ProductNavigation from "./components/common_navi/ProductNavigation";
 
 /*
   ProductTemplate 연결
@@ -222,7 +237,23 @@ export default function App() {
     /product/daily/rome
     등의 URL 규칙에 맞춰 category / region / view 데이터를 추출하면 된다.
   */
-  const isProductPage = window.location.pathname.startsWith("/product/");
+  const [pathname, setPathname] = useState(window.location.pathname);
+
+useEffect(() => {
+  const handleRouteChange = () => {
+    setPathname(window.location.pathname);
+  };
+
+  window.addEventListener("popstate", handleRouteChange);
+  window.addEventListener("unotravel:navigate", handleRouteChange);
+
+  return () => {
+    window.removeEventListener("popstate", handleRouteChange);
+    window.removeEventListener("unotravel:navigate", handleRouteChange);
+  };
+}, []);
+
+const isProductPage = pathname.startsWith("/product/");
 
   const sectionShell = {
     position: "relative" as const,
@@ -273,8 +304,24 @@ export default function App() {
 
             메인 Hero에서 국가/상품 클릭 시 진입하는 Type A 상품 서브페이지.
             Header / Footer는 App.tsx에서 공통으로 유지한다.
+
+            ProductNavigation은 모든 상품 서브페이지의 Hero 위에 고정적으로 배치한다.
+            즉, ProductTemplate 내부 Hero보다 먼저 노출되는 공통 Sub Page Navigation이다.
           */
-          <ProductTemplate />
+          <>
+  {/* 
+    ProductNavigation Offset
+    ----------------------------------------------------------
+    Header가 상단 floating 구조이므로
+    상품 서브페이지 Navigation이 Header 뒤로 가려지지 않도록
+    Header 높이만큼 상단 여백을 확보한다.
+  */}
+  <div style={{ paddingTop: 132 }}>
+    <ProductNavigation />
+  </div>
+
+  <ProductTemplate />
+</>
         ) : (
           <>
             {/* Hero */}

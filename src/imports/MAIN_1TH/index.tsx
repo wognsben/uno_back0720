@@ -247,7 +247,9 @@ function Card11({ item }: { item: HeroItem }) {
         className="[word-break:keep-all] absolute inset-0 box-border flex flex-col items-center justify-center leading-[0] not-italic px-[24px] text-[#151515] text-center hero-title-block"
         style={{ fontVariationSettings: '"wght" 400' }}
       >
-        <p className="leading-[30px] text-[25px] mb-[14px] whitespace-pre-wrap">{item.title}</p>
+        <p className="leading-[30px] text-[25px] mb-[14px] whitespace-pre-wrap">
+  {item.country}
+</p>
         <p className="leading-[23px] text-[15px] tracking-[0.24px] whitespace-pre-wrap">{item.subtitle}</p>
       </div>
     </div>
@@ -375,7 +377,8 @@ export default function Frame() {
       실제 우노트래블 PHP 백엔드 연동 시
       아래 item.href 값만 기존 URL 규칙에 맞게 교체하면 된다.
     */
-    window.location.href = item.href;
+    window.history.pushState({}, "", item.href);
+window.dispatchEvent(new Event("unotravel:navigate"));
   };
 
   return (
