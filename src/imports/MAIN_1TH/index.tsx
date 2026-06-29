@@ -244,7 +244,7 @@ function Card11({ item }: { item: HeroItem }) {
   return (
     <div className="absolute z-20 bg-[rgba(255,255,255,0.9)] border-3 border-solid border-white h-[256px] left-[276px] overflow-visible rounded-[18px] top-0 w-[417px]" data-name="card 13">
       <div
-        className="[word-break:keep-all] absolute inset-0 box-border flex flex-col font-['Crimson_Text:Regular','Noto_Sans_KR:Regular',sans-serif] items-center justify-center leading-[0] not-italic px-[24px] text-[#151515] text-center hero-title-block"
+        className="[word-break:keep-all] absolute inset-0 box-border flex flex-col items-center justify-center leading-[0] not-italic px-[24px] text-[#151515] text-center hero-title-block"
         style={{ fontVariationSettings: '"wght" 400' }}
       >
         <p className="leading-[30px] text-[25px] mb-[14px] whitespace-pre-wrap">{item.title}</p>
@@ -262,7 +262,7 @@ function Frame2({ item }: { item: HeroItem }) {
   return (
     <div className="absolute h-[240px] left-0 top-[485px] w-[222px]">
       <Card3Y />
-      <div className="-translate-x-1/2 -translate-y-1/2 [word-break:break-word] absolute bg-clip-text bg-gradient-to-b flex flex-col font-['Crimson_Text:Regular',sans-serif] from-black h-[240px] justify-center leading-[0] left-[111px] not-italic text-[22px] text-[transparent] text-center to-[#666] top-[120px] tracking-[0.72px] w-[222px]">
+      <div className="-translate-x-1/2 -translate-y-1/2 [word-break:break-word] absolute bg-clip-text bg-gradient-to-b flex flex-col hero-meta-block from-black h-[240px] justify-center leading-[0] left-[111px] not-italic text-[22px] text-[transparent] text-center to-[#666] top-[120px] tracking-[0.72px] w-[222px]">
         <p className="leading-[30px] whitespace-pre-wrap">{item.meta.join("\n\n")}</p>
       </div>
     </div>
@@ -420,7 +420,7 @@ export default function Frame() {
         }
 
         .hero-nav-title {
-          font-family: 'Crimson_Text:Regular', sans-serif;
+          font-family: var(--font-en);
           font-size: 34px;
           line-height: 1;
           letter-spacing: 0.02em;
@@ -473,7 +473,7 @@ export default function Frame() {
         }
 
         .hero-nav-country-en {
-          font-family: 'Crimson_Text:Regular', sans-serif;
+          font-family: var(--font-en);
           font-size: 17px;
           line-height: 1;
           letter-spacing: 0.08em;
@@ -482,7 +482,7 @@ export default function Frame() {
 
         .hero-nav-country-ko {
           margin-top: 12px;
-          font-family: 'Noto_Sans_KR:Regular', sans-serif;
+          font-family: var(--font-ko);
           font-size: 13px;
           line-height: 1;
           letter-spacing: -0.02em;
@@ -538,8 +538,21 @@ export default function Frame() {
         }
 
         .hero-title-block {
+          font-family: var(--font-en);
           transition: opacity 0.24s ease;
           will-change: auto;
+        }
+
+        .hero-title-block p:first-child {
+          font-family: var(--font-en);
+        }
+
+        .hero-title-block p:last-child {
+          font-family: var(--font-ko);
+        }
+
+        .hero-meta-block {
+          font-family: var(--font-en);
         }
       `}</style>
 

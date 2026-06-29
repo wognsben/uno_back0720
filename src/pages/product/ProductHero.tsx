@@ -3,31 +3,8 @@
  * -----------
  * Hero / Gallery Area
  *
- * Props:
- *   - category    : 대분류 (예: "SEMI PACKAGE", "DAILY TOUR")
- *   - region      : 국가 또는 지역명 (예: "ITALY", "ROME")
- *   - title       : 상품 메인 타이틀
- *   - subtitle    : 서브 타이틀 / 한 줄 설명
- *   - images      : 갤러리 이미지 URL 배열
- *   - coverImage  : 대표 이미지 URL (단일)
- *
+ * (주석 유지)
  */
-
-/* ==========================================================
-   ProductHero
-
-   백엔드 연동
-
-   wr_subject
-      → 세미패키지
-
-   wr_region
-      → 이탈리아
-
-   wr_gallery[]
-      → Hero Gallery Images
-
-========================================================== */
 
 import type { ProductTemplateData, ProductViewMode } from "../ProductTemplate";
 
@@ -66,7 +43,7 @@ export default function ProductHero({
 
         .product-hero-title {
           margin: 0;
-          font-family: 'Crimson_Text:Bold', 'Crimson Text', serif;
+          font-family: var(--font-en);
           font-size: 108px;
           line-height: 0.82;
           letter-spacing: 0.035em;
@@ -79,7 +56,7 @@ export default function ProductHero({
           flex-direction: column;
           gap: 8px;
           padding-bottom: 4px;
-          font-family: 'Crimson_Text:Regular', 'Noto Sans KR', sans-serif;
+          font-family: var(--font-ko);
           font-size: 16px;
           line-height: 1;
           letter-spacing: 0.08em;
@@ -92,7 +69,7 @@ export default function ProductHero({
           align-items: center;
           gap: 32px;
           height: 48px;
-          font-family: 'Crimson_Text:Regular', serif;
+          font-family: var(--font-en);
           font-size: 20px;
           color: #151515;
         }
@@ -143,7 +120,6 @@ export default function ProductHero({
           transform: translateX(-50%) scaleX(1);
         }
       `}</style>
-
     </section>
   );
 }

@@ -8,10 +8,10 @@ const INSTAGRAM_URL = "#";
 function Group() {
   return (
     <div className="grid-cols-[max-content] grid-rows-[max-content] inline-grid leading-[0] place-items-start relative shrink-0">
-      <div className="[word-break:break-word] col-1 flex flex-col font-['Crimson_Text:Bold',sans-serif] h-[24px] justify-center ml-0 mt-0 not-italic relative row-1 text-[24px] text-black text-center w-[34px]">
+      <div className="[word-break:break-word] col-1 flex flex-col font-en-bold h-[24px] justify-center ml-0 mt-0 not-italic relative row-1 text-[24px] text-black text-center w-[34px]">
         <p className="leading-[0px]">04</p>
       </div>
-      <div className="[word-break:break-word] col-1 flex flex-col font-['Crimson_Text:Regular',sans-serif] h-[24px] justify-center ml-[117px] mt-[0.5px] not-italic relative row-1 text-[#151515] text-[24px] text-center w-[164px]">
+      <div className="[word-break:break-word] col-1 flex flex-col font-en h-[24px] justify-center ml-[117px] mt-[0.5px] not-italic relative row-1 text-[#151515] text-[24px] text-center w-[164px]">
         <p className="leading-[0px]">CONTACT</p>
       </div>
       <div className="col-1 h-0 ml-[66px] mt-[12px] relative row-1 w-[30px]">
@@ -36,7 +36,7 @@ function Component5() {
 function Group1() {
   return (
     <div className="grid-cols-[max-content] grid-rows-[max-content] inline-grid leading-[0] place-items-start relative shrink-0">
-      <div className="[word-break:break-word] col-1 flex flex-col font-['Crimson_Text:Regular',sans-serif] h-[40px] justify-center ml-0 mt-0 not-italic relative row-1 text-[#151515] text-[16px] text-center w-[164px]">
+      <div className="[word-break:break-word] col-1 flex flex-col font-en h-[40px] justify-center ml-0 mt-0 not-italic relative row-1 text-[#151515] text-[16px] text-center w-[164px]">
         <p className="leading-[26px] mb-0">Need help planning Italy?</p>
         <p className="leading-[26px]">We’re here for you</p>
       </div>
@@ -65,7 +65,7 @@ function Frame() {
   return (
     <div className="bg-white relative shrink-0">
       <div className="content-stretch flex flex-col gap-[40px] items-start justify-center overflow-clip relative rounded-[inherit] size-full">
-        <div className="[word-break:break-word] flex flex-col font-['Crimson_Text:Regular',sans-serif] h-[370px] justify-center leading-[0] not-italic relative shrink-0 text-[120px] text-black w-[550px]">
+        <div className="[word-break:break-word] flex flex-col font-en h-[370px] justify-center leading-[0] not-italic relative shrink-0 text-[120px] text-black w-[550px]">
           <p className="leading-[140px] mb-0">READY</p>
           <p className="leading-[140px] mb-0">FOR</p>
           <p className="leading-[140px]">TRAVEL?</p>
@@ -77,7 +77,7 @@ function Frame() {
             </svg>
           </div>
         </div>
-        <div className="[word-break:break-word] flex flex-col font-['Crimson_Text:Regular','Noto_Sans_KR:Regular',sans-serif] h-[120px] justify-center leading-[0] relative shrink-0 text-[20px] text-black w-[550px] whitespace-pre-wrap" style={{ fontVariationSettings: '"wght" 400' }}>
+        <div className="[word-break:break-word] flex flex-col font-ko h-[120px] justify-center leading-[0] relative shrink-0 text-[20px] text-black w-[550px] whitespace-pre-wrap" style={{ fontVariationSettings: '"wght" 400' }}>
           <p className="leading-[30px] mb-0">당신만의 여행을 시작하세요</p>
           <p className="leading-[30px] mb-0">​</p>
           <p className="leading-[30px] mb-0">우노트래블과 함께하는</p>
@@ -93,7 +93,7 @@ function Frame4() {
   return (
     <div className="bg-white h-[62px] relative shrink-0 w-[650px]">
       <div className="content-stretch flex items-center overflow-clip px-[10px] py-px relative rounded-[inherit] size-full">
-        <div className="[word-break:break-word] flex flex-col font-['Crimson_Text:Regular',sans-serif] h-[24px] justify-center leading-[0] not-italic relative shrink-0 text-[#151515] text-[20px] w-[128px]">
+        <div className="[word-break:break-word] flex flex-col font-en h-[24px] justify-center leading-[0] not-italic relative shrink-0 text-[#151515] text-[20px] w-[128px]">
           <p className="leading-[140px]">TALK TO UNO</p>
         </div>
       </div>
@@ -105,7 +105,7 @@ function Frame4() {
 function Frame6() {
   return (
     <div className="bg-white content-stretch flex flex-col gap-[10px] items-start overflow-clip p-[10px] relative shrink-0">
-      <div className="[word-break:break-word] flex flex-col font-['Crimson_Text:Regular',sans-serif] h-[24px] justify-center leading-[0] not-italic relative shrink-0 text-[#151515] text-[20px] w-[128px]">
+      <div className="[word-break:break-word] flex flex-col font-en h-[24px] justify-center leading-[0] not-italic relative shrink-0 text-[#151515] text-[20px] w-[128px]">
         <p className="leading-[20px]">KOREA</p>
       </div>
       <div className="h-0 relative shrink-0 w-[20px]">
@@ -115,7 +115,7 @@ function Frame6() {
           </svg>
         </div>
       </div>
-      <div className="[word-break:break-word] flex flex-col font-['Crimson_Text:Regular',sans-serif] h-[24px] justify-center leading-[0] not-italic relative shrink-0 text-[#151515] text-[20px] w-[128px]">
+      <div className="[word-break:break-word] flex flex-col font-en h-[24px] justify-center leading-[0] not-italic relative shrink-0 text-[#151515] text-[20px] w-[128px]">
         <p className="leading-[140px]">031-998-2136</p>
       </div>
     </div>
@@ -125,7 +125,7 @@ function Frame6() {
 function Frame7() {
   return (
     <div className="bg-white content-stretch flex flex-col gap-[10px] items-start overflow-clip p-[10px] relative shrink-0">
-      <div className="[word-break:break-word] flex flex-col font-['Crimson_Text:Regular',sans-serif] h-[24px] justify-center leading-[0] not-italic relative shrink-0 text-[#151515] text-[20px] w-[128px]">
+      <div className="[word-break:break-word] flex flex-col font-en h-[24px] justify-center leading-[0] not-italic relative shrink-0 text-[#151515] text-[20px] w-[128px]">
         <p className="leading-[20px]">KOREA</p>
       </div>
       <div className="h-0 relative shrink-0 w-[20px]">
@@ -135,7 +135,7 @@ function Frame7() {
           </svg>
         </div>
       </div>
-      <div className="[word-break:break-word] flex flex-col font-['Crimson_Text:Regular',sans-serif] h-[24px] justify-center leading-[0] not-italic relative shrink-0 text-[#151515] text-[20px] w-[128px]">
+      <div className="[word-break:break-word] flex flex-col font-en h-[24px] justify-center leading-[0] not-italic relative shrink-0 text-[#151515] text-[20px] w-[128px]">
         <p className="leading-[140px]">031-998-2136</p>
       </div>
     </div>
@@ -145,7 +145,7 @@ function Frame7() {
 function Frame8() {
   return (
     <div className="bg-white content-stretch flex flex-col gap-[10px] items-start overflow-clip p-[10px] relative shrink-0">
-      <div className="[word-break:break-word] flex flex-col font-['Crimson_Text:Regular',sans-serif] h-[24px] justify-center leading-[0] not-italic relative shrink-0 text-[#151515] text-[20px] w-[128px]">
+      <div className="[word-break:break-word] flex flex-col font-en h-[24px] justify-center leading-[0] not-italic relative shrink-0 text-[#151515] text-[20px] w-[128px]">
         <p className="leading-[20px]">FRANCE</p>
       </div>
       <div className="h-0 relative shrink-0 w-[20px]">
@@ -155,7 +155,7 @@ function Frame8() {
           </svg>
         </div>
       </div>
-      <div className="[word-break:break-word] flex flex-col font-['Crimson_Text:Regular',sans-serif] h-[24px] justify-center leading-[0] not-italic relative shrink-0 text-[#151515] text-[20px] w-[128px]">
+      <div className="[word-break:break-word] flex flex-col font-en h-[24px] justify-center leading-[0] not-italic relative shrink-0 text-[#151515] text-[20px] w-[128px]">
         <p className="leading-[140px]">031-998-2136</p>
       </div>
     </div>
@@ -189,7 +189,7 @@ function Frame5() {
 function Group5() {
   return (
     <div className="absolute contents left-[60px] top-[6px]">
-      <div className="-translate-y-1/2 [word-break:break-word] absolute flex flex-col font-['Crimson_Text:Regular','Noto_Sans_KR:Regular',sans-serif] h-[62px] justify-center leading-[0] left-[61px] text-[#151515] text-[16px] top-[38px] w-[425px]" style={{ fontVariationSettings: '"wght" 400' }}>
+      <div className="-translate-y-1/2 [word-break:break-word] absolute flex flex-col font-ko h-[62px] justify-center leading-[0] left-[61px] text-[#151515] text-[16px] top-[38px] w-[425px]" style={{ fontVariationSettings: '"wght" 400' }}>
         <p className="leading-[40px] mb-0">KAKAO TALK</p>
         <p className="leading-[40px]">상담 가능 시간: 평일 10:00 - 17:00(주말, 공휴일 휴무)</p>
       </div>
@@ -207,7 +207,7 @@ function Group5() {
 function Group7() {
   return (
     <div className="absolute contents left-[60px] top-[89px]">
-      <div className="-translate-y-1/2 [word-break:break-word] absolute flex flex-col font-['Crimson_Text:Regular','Noto_Sans_KR:Regular',sans-serif] h-[70px] justify-center leading-[0] left-[61px] text-[#151515] text-[64px] top-[125px] w-[412px]" style={{ fontVariationSettings: '"wght" 400' }}>
+      <div className="-translate-y-1/2 [word-break:break-word] absolute flex flex-col font-ko h-[70px] justify-center leading-[0] left-[61px] text-[#151515] text-[64px] top-[125px] w-[412px]" style={{ fontVariationSettings: '"wght" 400' }}>
         <p className="leading-[40px]">문의하기</p>
       </div>
       <div className="absolute h-0 left-[336px] top-[123.44px] transition-transform duration-300 ease-out group-hover:translate-x-[8px] w-[60px]">
@@ -231,7 +231,7 @@ function Group6() {
           </svg>
         </div>
       </div>
-      <div className="-translate-y-1/2 [word-break:break-word] absolute flex flex-col font-['Crimson_Text:Regular','Noto_Sans_KR:Regular',sans-serif] h-[18px] justify-center leading-[0] left-[409px] text-[#151515] text-[24px] top-[182.5px] w-[216px]" style={{ fontVariationSettings: '"wght" 400' }}>
+      <div className="-translate-y-1/2 [word-break:break-word] absolute flex flex-col font-ko h-[18px] justify-center leading-[0] left-[409px] text-[#151515] text-[24px] top-[182.5px] w-[216px]" style={{ fontVariationSettings: '"wght" 400' }}>
         <p className="leading-[40px]">우노트래블</p>
       </div>
     </div>
@@ -327,6 +327,27 @@ function Component2() {
       className="absolute bg-white h-[800px] left-0 overflow-visible top-0 w-screen"
       data-name="메인페이지-4번 섹션"
     >
+      <style>{`
+        /*
+          Section4 Font Rules
+
+          전역 폰트 규칙
+          ------------------------------------------
+          --font-en : 영문 UI / 숫자 / 메뉴 / 라벨
+          --font-ko : 한글 제목 / 본문 / 상품명
+
+          Figma Make가 생성한 font-['Crimson_Text...'] 계열은
+          직접 사용하지 않고 아래 공통 클래스로 연결한다.
+        */
+        .font-en,
+        .font-en-bold {
+          font-family: var(--font-en);
+        }
+
+        .font-ko {
+          font-family: var(--font-ko);
+        }
+      `}</style>
       <Component3 />
     </div>
   );

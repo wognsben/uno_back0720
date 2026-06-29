@@ -105,10 +105,10 @@ const CATEGORY_LABELS: Record<CategoryKey, { title: string; shortTitle: string; 
 function Group() {
   return (
     <div className="grid-cols-[max-content] grid-rows-[max-content] inline-grid leading-[0] place-items-start relative shrink-0">
-      <div className="[word-break:break-word] col-1 flex flex-col font-['Crimson_Text:Bold',sans-serif] h-[24px] justify-center ml-0 mt-0 not-italic relative row-1 text-[24px] text-black text-center w-[39.502px]">
+      <div className="[word-break:break-word] col-1 flex flex-col font-en-bold h-[24px] justify-center ml-0 mt-0 not-italic relative row-1 text-[24px] text-black text-center w-[39.502px]">
         <p className="leading-[0px]">02</p>
       </div>
-      <div className="[word-break:break-word] col-1 flex flex-col font-['Crimson_Text:Regular',sans-serif] h-[24px] justify-center ml-[135.93px] mt-0 not-italic relative row-1 text-[#151515] text-[24px] text-center w-[144.066px]">
+      <div className="[word-break:break-word] col-1 flex flex-col font-en h-[24px] justify-center ml-[135.93px] mt-0 not-italic relative row-1 text-[#151515] text-[24px] text-center w-[144.066px]">
         <p className="leading-[0px]">JOURNEYS</p>
       </div>
       <div className="col-1 h-0 ml-[76px] mt-[12px] relative row-1 w-[30px]">
@@ -169,7 +169,7 @@ function PackageRow({
         />
 
         <div
-          className="flex flex-col font-['Crimson_Text:Regular',sans-serif] h-[58px] justify-center not-italic relative shrink-0 text-black w-[42px]"
+          className="flex flex-col font-en h-[58px] justify-center not-italic relative shrink-0 text-black w-[42px]"
           style={{
             fontSize: isActive ? 36 : 28,
             opacity: isActive ? 1 : 0.38,
@@ -182,7 +182,7 @@ function PackageRow({
         </div>
 
         <div
-          className="flex flex-col font-['Crimson_Text:Regular','Noto_Sans_KR:Regular',sans-serif] h-[64px] justify-center relative shrink-0 text-[#151515] w-[372px]"
+          className="flex flex-col font-mixed h-[64px] justify-center relative shrink-0 text-[#151515] w-[372px]"
           style={{
             fontVariationSettings: '"wght" 400',
             fontSize: isActive ? 19 : 18,
@@ -392,7 +392,7 @@ function PreviewImage({
           />
 
           <div
-            className="absolute left-[34px] top-[17px] font-['Crimson_Text:Regular',sans-serif] text-[#151515] text-[13px] tracking-[1.4px]"
+            className="absolute left-[34px] top-[17px] font-en text-[#151515] text-[13px] tracking-[1.4px]"
             style={{
               opacity: 0.72,
             }}
@@ -436,7 +436,7 @@ function PreviewImage({
                 }}
               />
               <span
-                className="absolute left-[-30px] top-[1px] font-['Crimson_Text:Regular',sans-serif] text-[11px] text-[#151515]"
+                className="absolute left-[-30px] top-[1px] font-en text-[11px] text-[#151515]"
                 style={{
                   opacity: hasInteracted ? 0.9 : 0,
                   transition: "opacity 0.32s ease",
@@ -498,7 +498,7 @@ function Frame4({ item, category }: { item: PackageItem; category: CategoryKey }
         event.currentTarget.style.boxShadow = "none";
       }}
     >
-      <div className="[word-break:break-word] flex flex-col font-['Crimson_Text:Regular','Noto_Sans_KR:Regular',sans-serif] h-[50px] justify-center leading-[0] relative shrink-0 text-[#151515] text-[0px] text-center w-[160px]" style={{ fontVariationSettings: '"wght" 400' }}>
+      <div className="[word-break:break-word] flex flex-col font-mixed h-[50px] justify-center leading-[0] relative shrink-0 text-[#151515] text-[0px] text-center w-[160px]" style={{ fontVariationSettings: '"wght" 400' }}>
         <p>
           <span className="leading-[40px] text-[20px]">{`상세보기 `}</span>
           <span
@@ -521,7 +521,7 @@ function Frame5({ category, activeItem }: { category: CategoryKey; activeItem: P
 
   return (
     <div className="absolute content-stretch flex gap-[10px] items-center justify-center left-[970px] overflow-clip p-[10px] top-[718px]">
-      <div className="[word-break:break-word] flex flex-col font-['Crimson_Text:Regular','Noto_Sans_KR:Regular',sans-serif] h-[60px] justify-center leading-[0] relative shrink-0 text-[#151515] text-[18px] text-center w-[260px] whitespace-pre-wrap" style={{ fontVariationSettings: '"wght" 400' }}>
+      <div className="[word-break:break-word] flex flex-col font-mixed h-[60px] justify-center leading-[0] relative shrink-0 text-[#151515] text-[18px] text-center w-[260px] whitespace-pre-wrap" style={{ fontVariationSettings: '"wght" 400' }}>
         <p className="leading-[32px] mb-0">{label.description[0]}</p>
         <p className="leading-[32px]">{label.description[1]}</p>
       </div>
@@ -532,7 +532,7 @@ function Frame5({ category, activeItem }: { category: CategoryKey; activeItem: P
           </svg>
         </div>
       </div>
-      <div className="[word-break:break-word] flex flex-col font-['Crimson_Text:Regular',sans-serif] h-[60px] justify-center leading-[0] not-italic relative shrink-0 text-[18px] text-black text-center w-[160px]">
+      <div className="[word-break:break-word] flex flex-col font-en h-[60px] justify-center leading-[0] not-italic relative shrink-0 text-[18px] text-black text-center w-[160px]">
         <p className="leading-[0px]">{label.shortTitle}</p>
       </div>
       <Frame4 item={activeItem} category={category} />
@@ -553,7 +553,7 @@ function Group3({
   ];
 
   return (
-    <div className="[word-break:break-word] absolute contents font-['Crimson_Text:Regular',sans-serif] leading-[0] left-[1200px] not-italic text-[#151515] text-[20px] text-center top-[44px]">
+    <div className="[word-break:break-word] absolute contents font-en leading-[0] left-[1200px] not-italic text-[#151515] text-[20px] text-center top-[44px]">
       {tabs.map((tab) => {
         const isActive = category === tab.key;
 
@@ -583,7 +583,7 @@ function Group3({
           >
             <span className="leading-[1]">{tab.title}</span>
             <span
-              className="font-['Crimson_Text:Regular',sans-serif] leading-[1] text-[12px]"
+              className="font-en leading-[1] text-[12px]"
               style={{ opacity: isActive ? 0.72 : 0.5 }}
             >
               {tab.count}
@@ -612,6 +612,28 @@ function Frame() {
 
   return (
     <div className="absolute left-0 top-0 h-[1245px] w-screen overflow-hidden bg-white">
+      <style>{`
+        /*
+          Section2 Font Rules
+
+          전역 폰트 규칙
+          ------------------------------------------
+          --font-en : 영문 UI / 숫자 / 메뉴 / 라벨
+          --font-ko : 한글 제목 / 본문 / 상품명
+
+          Figma Make가 생성한 font-['Crimson_Text...'] 계열은
+          직접 사용하지 않고 아래 공통 클래스로 연결한다.
+        */
+        .font-en,
+        .font-en-bold {
+          font-family: var(--font-en);
+        }
+
+        .font-mixed {
+          font-family: var(--font-ko);
+        }
+      `}</style>
+
       <div className="relative mx-auto h-[1245px] w-[1700px] overflow-visible bg-white">
         <Frame1 />
         <PremiumSemiPackage

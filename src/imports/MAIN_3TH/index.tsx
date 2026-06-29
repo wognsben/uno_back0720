@@ -10,10 +10,10 @@ import imgImage30 from "./214fd7a095ebc0cb67d4f2373bbd229b6cc3cac6.png";
 function Group() {
   return (
     <div className="grid-cols-[max-content] grid-rows-[max-content] inline-grid leading-[0] place-items-start relative shrink-0">
-      <div className="[word-break:break-word] col-1 flex flex-col font-['Crimson_Text:Bold',sans-serif] h-[24px] justify-center ml-0 mt-0 not-italic relative row-1 text-[24px] text-black text-center w-[34px]">
+      <div className="[word-break:break-word] col-1 flex flex-col font-en-bold h-[24px] justify-center ml-0 mt-0 not-italic relative row-1 text-[24px] text-black text-center w-[34px]">
         <p className="leading-[0px]">03</p>
       </div>
-      <div className="[word-break:break-word] col-1 flex flex-col font-['Crimson_Text:Regular',sans-serif] h-[24px] justify-center ml-[117px] mt-0 not-italic relative row-1 text-[#151515] text-[24px] text-center w-[163px]">
+      <div className="[word-break:break-word] col-1 flex flex-col font-en h-[24px] justify-center ml-[117px] mt-0 not-italic relative row-1 text-[#151515] text-[24px] text-center w-[163px]">
         <p className="leading-[0px]">WHAT NEXT</p>
       </div>
       <div className="col-1 h-0 ml-[66px] mt-[12px] relative row-1 w-[30px]">
@@ -51,7 +51,7 @@ function ArrowIcon({ tone = "dark" }: { tone?: "dark" | "light" }) {
 function Group1() {
   return (
     <div className="absolute contents left-[24px] top-[49px]">
-      <div className="-translate-y-1/2 [word-break:break-word] absolute flex flex-col font-['Crimson_Text:SemiBold',sans-serif] h-[70px] justify-center leading-[0] left-[24px] not-italic text-[#151515] text-[48px] top-[84px] tracking-[-1.44px] w-[260px]">
+      <div className="-translate-y-1/2 [word-break:break-word] absolute flex flex-col font-en-bold h-[70px] justify-center leading-[0] left-[24px] not-italic text-[#151515] text-[48px] top-[84px] tracking-[-1.44px] w-[260px]">
         <p className="leading-[40px] mb-0">SEMI</p>
         <p className="leading-[40px]">PACKAGE</p>
       </div>
@@ -62,7 +62,7 @@ function Group1() {
           </svg>
         </div>
       </div>
-      <div className="-translate-y-1/2 [word-break:break-word] absolute flex flex-col font-['Crimson_Text:SemiBold','Noto_Sans_KR:Bold',sans-serif] h-[16px] justify-center leading-[0] left-[24px] text-[#151515] text-[16px] top-[204px] tracking-[-0.48px] w-[180px]" style={{ fontVariationSettings: '"wght" 700' }}>
+      <div className="-translate-y-1/2 [word-break:break-word] absolute flex flex-col font-ko-bold h-[16px] justify-center leading-[0] left-[24px] text-[#151515] text-[16px] top-[204px] tracking-[-0.48px] w-[180px]" style={{ fontVariationSettings: '"wght" 700' }}>
         <p className="leading-[40px]">프리미엄 세미패키지 여행</p>
       </div>
       <div className="where-arrow absolute h-0 left-[24px] top-[289px] w-[34px]">
@@ -81,49 +81,49 @@ function TextOnAPath() {
     <div className="absolute contents left-[198px] top-[237px]" data-name="Text on a Path">
       <div className="-translate-x-1/2 -translate-y-1/2 absolute flex h-[53.102px] items-center justify-center left-[219.23px] top-[288.74px] w-[42.464px]">
         <div className="flex-none rotate-[-54.51deg] scale-y-97 skew-x-[-15.14deg]">
-          <div className="[word-break:break-word] flex flex-col font-['Crimson_Text:SemiBold',sans-serif] h-[55.335px] justify-center leading-[0] not-italic relative text-[#151515] text-[16px] text-center tracking-[-0.48px] w-[12.681px]">
+          <div className="[word-break:break-word] flex flex-col font-en-bold h-[55.335px] justify-center leading-[0] not-italic relative text-[#151515] text-[16px] text-center tracking-[-0.48px] w-[12.681px]">
             <p className="leading-[40px]">P</p>
           </div>
         </div>
       </div>
       <div className="-translate-x-1/2 -translate-y-1/2 absolute flex h-[62.023px] items-center justify-center left-[228.42px] top-[278.72px] w-[37.183px]">
         <div className="flex-none rotate-[-40.29deg] scale-y-97 skew-x-[-13.91deg]">
-          <div className="[word-break:break-word] flex flex-col font-['Crimson_Text:SemiBold',sans-serif] h-[58.756px] justify-center leading-[0] not-italic relative text-[#151515] text-[16px] text-center tracking-[-0.48px] w-[14.516px]">
+          <div className="[word-break:break-word] flex flex-col font-en-bold h-[58.756px] justify-center leading-[0] not-italic relative text-[#151515] text-[16px] text-center tracking-[-0.48px] w-[14.516px]">
             <p className="leading-[40px]">R</p>
           </div>
         </div>
       </div>
       <div className="-translate-x-1/2 -translate-y-1/2 absolute flex h-[64.436px] items-center justify-center left-[238.64px] top-[272.22px] w-[26.876px]">
         <div className="flex-none rotate-[-24.08deg] scale-y-99 skew-x-[-9.43deg]">
-          <div className="[word-break:break-word] flex flex-col font-['Crimson_Text:SemiBold',sans-serif] h-[61.358px] justify-center leading-[0] not-italic relative text-[#151515] text-[16px] text-center tracking-[-0.48px] w-[12.434px]">
+          <div className="[word-break:break-word] flex flex-col font-en-bold h-[61.358px] justify-center leading-[0] not-italic relative text-[#151515] text-[16px] text-center tracking-[-0.48px] w-[12.434px]">
             <p className="leading-[40px]">E</p>
           </div>
         </div>
       </div>
       <div className="-translate-x-1/2 -translate-y-1/2 absolute flex h-[63.724px] items-center justify-center left-[252.15px] top-[268.86px] w-[20.122px]">
         <div className="flex-none rotate-[-3.35deg] skew-x-[-1.39deg]">
-          <div className="[word-break:break-word] flex flex-col font-['Crimson_Text:SemiBold',sans-serif] h-[62.709px] justify-center leading-[0] not-italic relative text-[#151515] text-[16px] text-center tracking-[-0.48px] w-[18.008px]">
+          <div className="[word-break:break-word] flex flex-col font-en-bold h-[62.709px] justify-center leading-[0] not-italic relative text-[#151515] text-[16px] text-center tracking-[-0.48px] w-[18.008px]">
             <p className="leading-[40px]">M</p>
           </div>
         </div>
       </div>
       <div className="-translate-x-1/2 -translate-y-1/2 absolute flex h-[63.389px] items-center justify-center left-[263.49px] top-[269.94px] w-[16.029px]">
         <div className="flex-none rotate-[13.95deg] skew-x-[5.68deg]">
-          <div className="[word-break:break-word] flex flex-col font-['Crimson_Text:SemiBold',sans-serif] h-[62.28px] justify-center leading-[0] not-italic relative text-[#151515] text-[16px] text-center tracking-[-0.48px] w-[7.286px]">
+          <div className="[word-break:break-word] flex flex-col font-en-bold h-[62.28px] justify-center leading-[0] not-italic relative text-[#151515] text-[16px] text-center tracking-[-0.48px] w-[7.286px]">
             <p className="leading-[40px]">I</p>
           </div>
         </div>
       </div>
       <div className="-translate-x-1/2 -translate-y-1/2 absolute flex h-[64.937px] items-center justify-center left-[273.77px] top-[274.16px] w-[32.802px]">
         <div className="flex-none rotate-[30.43deg] scale-y-98 skew-x-[11.46deg]">
-          <div className="[word-break:break-word] flex flex-col font-['Crimson_Text:SemiBold',sans-serif] h-[60.509px] justify-center leading-[0] not-italic relative text-[#151515] text-[16px] text-center tracking-[-0.48px] w-[15.23px]">
+          <div className="[word-break:break-word] flex flex-col font-en-bold h-[60.509px] justify-center leading-[0] not-italic relative text-[#151515] text-[16px] text-center tracking-[-0.48px] w-[15.23px]">
             <p className="leading-[40px]">U</p>
           </div>
         </div>
       </div>
       <div className="-translate-x-1/2 -translate-y-1/2 absolute flex h-[62.465px] items-center justify-center left-[286.31px] top-[284.77px] w-[45.384px]">
         <div className="flex-none rotate-[49.41deg] scale-y-97 skew-x-[15.08deg]">
-          <div className="[word-break:break-word] flex flex-col font-['Crimson_Text:SemiBold',sans-serif] h-[56.669px] justify-center leading-[0] not-italic relative text-[#151515] text-[16px] text-center tracking-[-0.48px] w-[20.632px]">
+          <div className="[word-break:break-word] flex flex-col font-en-bold h-[56.669px] justify-center leading-[0] not-italic relative text-[#151515] text-[16px] text-center tracking-[-0.48px] w-[20.632px]">
             <p className="leading-[40px]">M</p>
           </div>
         </div>
@@ -169,7 +169,7 @@ function Component() {
 function Group5() {
   return (
     <div className="absolute contents left-[72px] top-[82.5px]">
-      <div className="-translate-y-1/2 [word-break:break-word] absolute flex flex-col font-['Crimson_Text:SemiBold',sans-serif] h-[70px] justify-center leading-[0] left-[72px] not-italic text-[#151515] text-[48px] top-[117.5px] tracking-[-1.44px] w-[260px]">
+      <div className="-translate-y-1/2 [word-break:break-word] absolute flex flex-col font-en-bold h-[70px] justify-center leading-[0] left-[72px] not-italic text-[#151515] text-[48px] top-[117.5px] tracking-[-1.44px] w-[260px]">
         <p className="leading-[40px] mb-0">DAILY</p>
         <p className="leading-[40px]">TOUR</p>
       </div>
@@ -180,7 +180,7 @@ function Group5() {
           </svg>
         </div>
       </div>
-      <div className="-translate-y-1/2 [word-break:break-word] absolute flex flex-col font-['Crimson_Text:SemiBold','Noto_Sans_KR:Bold',sans-serif] h-[16px] justify-center leading-[0] left-[72px] text-[#151515] text-[16px] top-[237.5px] tracking-[-0.48px] w-[180px]" style={{ fontVariationSettings: '"wght" 700' }}>
+      <div className="-translate-y-1/2 [word-break:break-word] absolute flex flex-col font-ko-bold h-[16px] justify-center leading-[0] left-[72px] text-[#151515] text-[16px] top-[237.5px] tracking-[-0.48px] w-[180px]" style={{ fontVariationSettings: '"wght" 700' }}>
         <p className="leading-[40px]">일일 투어</p>
       </div>
       <div className="where-arrow absolute h-0 left-[72px] top-[322.5px] w-[34px]">
@@ -223,7 +223,7 @@ function Component1() {
 function Group7() {
   return (
     <div className="absolute contents left-[24px] top-[30.25px]">
-      <p className="[word-break:break-word] absolute font-['Crimson_Text:SemiBold',sans-serif] h-[100px] leading-[40px] left-[24px] not-italic text-[#151515] text-[48px] top-[30.25px] tracking-[-1.44px] w-[286px]">CURATED JOURNEYS</p>
+      <p className="[word-break:break-word] absolute font-en-bold h-[100px] leading-[40px] left-[24px] not-italic text-[#151515] text-[48px] top-[30.25px] tracking-[-1.44px] w-[286px]">CURATED JOURNEYS</p>
       <div className="absolute h-0 left-[24px] top-[147.75px] w-[82px]">
         <div className="absolute inset-[-0.5px_0]">
           <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 82 1">
@@ -231,7 +231,7 @@ function Group7() {
           </svg>
         </div>
       </div>
-      <div className="[word-break:break-word] absolute font-['Crimson_Text:SemiBold','Noto_Sans_KR:Bold',sans-serif] h-[150px] leading-[0] left-[24px] text-[#151515] text-[16px] top-[224.75px] tracking-[-0.48px] w-[286px]" style={{ fontVariationSettings: '"wght" 700' }}>
+      <div className="[word-break:break-word] absolute font-ko-bold h-[150px] leading-[0] left-[24px] text-[#151515] text-[16px] top-[224.75px] tracking-[-0.48px] w-[286px]" style={{ fontVariationSettings: '"wght" 700' }}>
         <p className="leading-[26px] mb-0">이탈리아 여행 가이드</p>
         <p className="leading-[26px]">{`& 스토리`}</p>
       </div>
@@ -266,7 +266,7 @@ function Component7() {
 function Group9() {
   return (
     <div className="absolute contents left-[24px] top-[30.25px]">
-      <div className="[word-break:break-word] absolute font-['Crimson_Text:SemiBold',sans-serif] h-[100px] leading-[0] left-[24px] not-italic text-[48px] text-white top-[30.25px] tracking-[-1.44px] w-[286px]">
+      <div className="[word-break:break-word] absolute font-en-bold h-[100px] leading-[0] left-[24px] not-italic text-[48px] text-white top-[30.25px] tracking-[-1.44px] w-[286px]">
         <p className="leading-[40px] mb-0">TALK</p>
         <p className="leading-[40px]">TO US</p>
       </div>
@@ -277,7 +277,7 @@ function Group9() {
           </svg>
         </div>
       </div>
-      <div className="[word-break:break-word] absolute font-['Crimson_Text:SemiBold','Noto_Sans_KR:Bold',sans-serif] h-[150px] leading-[0] left-[24px] text-[16px] text-white top-[224.75px] tracking-[-0.48px] w-[286px] whitespace-pre-wrap" style={{ fontVariationSettings: '"wght" 700' }}>
+      <div className="[word-break:break-word] absolute font-ko-bold h-[150px] leading-[0] left-[24px] text-[16px] text-white top-[224.75px] tracking-[-0.48px] w-[286px] whitespace-pre-wrap" style={{ fontVariationSettings: '"wght" 700' }}>
         <p className="leading-[26px] mb-0">{`카카오톡으로 `}</p>
         <p className="leading-[26px]">간편하게 문의하기</p>
       </div>
@@ -312,7 +312,7 @@ function Component6() {
 function Group11() {
   return (
     <div className="col-1 grid-cols-[max-content] grid-rows-[max-content] inline-grid ml-0 mt-0 place-items-start relative row-1">
-      <div className="[word-break:break-word] col-1 font-['Crimson_Text:Regular','Noto_Sans_KR:Regular',sans-serif] h-[100px] ml-0 mt-0 relative row-1 text-[48px] text-white tracking-[-1.44px] w-[286px]" style={{ fontVariationSettings: '"wght" 400' }}>
+      <div className="[word-break:break-word] col-1 font-ko h-[100px] ml-0 mt-0 relative row-1 text-[48px] text-white tracking-[-1.44px] w-[286px]" style={{ fontVariationSettings: '"wght" 400' }}>
         <p className="leading-[48px] mb-0">우노트래블</p>
         <p className="leading-[48px]">가이드 모집!</p>
       </div>
@@ -323,7 +323,7 @@ function Group11() {
           </svg>
         </div>
       </div>
-      <div className="[word-break:break-word] col-1 font-['Crimson_Text:SemiBold','Noto_Sans_KR:Bold',sans-serif] h-[150px] ml-0 mt-[194.5px] relative row-1 text-[16px] text-white tracking-[-0.48px] w-[286px] whitespace-pre-wrap" style={{ fontVariationSettings: '"wght" 700' }}>
+      <div className="[word-break:break-word] col-1 font-ko-bold h-[150px] ml-0 mt-[194.5px] relative row-1 text-[16px] text-white tracking-[-0.48px] w-[286px] whitespace-pre-wrap" style={{ fontVariationSettings: '"wght" 700' }}>
         <p className="leading-[26px] mb-0">{`우노트래블과 함께할 `}</p>
         <p className="leading-[26px] mb-0">로마현지 가이드를 모집합니다!</p>
         <p className="leading-[26px] mb-0">​</p>
@@ -362,7 +362,7 @@ function Component4() {
 function Group13() {
   return (
     <div className="col-1 grid-cols-[max-content] grid-rows-[max-content] inline-grid ml-0 mt-0 place-items-start relative row-1">
-      <div className="[word-break:break-word] col-1 font-['Crimson_Text:Regular','Noto_Sans_KR:Regular',sans-serif] h-[100px] ml-0 mt-0 relative row-1 text-[#151515] text-[48px] tracking-[-1.44px] w-[286px]" style={{ fontVariationSettings: '"wght" 400' }}>
+      <div className="[word-break:break-word] col-1 font-ko h-[100px] ml-0 mt-0 relative row-1 text-[#151515] text-[48px] tracking-[-1.44px] w-[286px]" style={{ fontVariationSettings: '"wght" 400' }}>
         <p className="leading-[48px] mb-0">페리투어:</p>
         <p className="leading-[48px]">투어소개</p>
       </div>
@@ -373,7 +373,7 @@ function Group13() {
           </svg>
         </div>
       </div>
-      <div className="[word-break:break-word] col-1 font-['Crimson_Text:SemiBold','Noto_Sans_KR:Bold',sans-serif] h-[150px] ml-0 mt-[193.75px] relative row-1 text-[#151515] text-[16px] text-center tracking-[-0.48px] w-[286px] whitespace-pre-wrap" style={{ fontVariationSettings: '"wght" 700' }}>
+      <div className="[word-break:break-word] col-1 font-ko-bold h-[150px] ml-0 mt-[193.75px] relative row-1 text-[#151515] text-[16px] text-center tracking-[-0.48px] w-[286px] whitespace-pre-wrap" style={{ fontVariationSettings: '"wght" 700' }}>
         <p className="leading-[26px] mb-0">{`[우노트래블X마이리얼트립] `}</p>
         <p className="leading-[26px] mb-0">​</p>
         <p className="leading-[26px] mb-0">{`반짝이는 지중해와 함께 원데이 바캉스! `}</p>
@@ -669,7 +669,7 @@ function Component3() {
           right: 18px;
           bottom: 16px;
           z-index: 20;
-          font-family: 'Crimson_Text:Regular', sans-serif;
+          font-family: var(--font-en);
           font-size: 13px;
           line-height: 1;
           letter-spacing: 1.2px;
@@ -721,7 +721,7 @@ function Component3() {
           right: 22px;
           bottom: 22px;
           z-index: 22;
-          font-family: 'Crimson_Text:Regular', sans-serif;
+          font-family: var(--font-en);
           font-size: 13px;
           line-height: 1;
           letter-spacing: 1.2px;
@@ -781,7 +781,7 @@ function Component3() {
 function Frame11() {
   return (
     <div className="absolute h-[100px] left-1/2 top-[688px] w-[1700px] -translate-x-1/2">
-      <div className="-translate-y-1/2 [word-break:break-word] absolute flex flex-col font-['Crimson_Text:Regular',sans-serif] h-[100px] justify-center leading-[0] left-0 not-italic text-[#151515] text-[140px] top-[50px] w-[866px]">
+      <div className="-translate-y-1/2 [word-break:break-word] absolute flex flex-col font-en h-[100px] justify-center leading-[0] left-0 not-italic text-[#151515] text-[140px] top-[50px] w-[866px]">
         <p className="leading-[40px]">WHAT NEXT?</p>
       </div>
     </div>
@@ -806,11 +806,11 @@ function Frame1() {
   return (
     <div role="button" tabIndex={0} onClick={() => {}} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") event.currentTarget.click(); }} aria-label="유럽 유심 보기" className="bottom-cta-card absolute bg-[#67ce4b] content-stretch flex flex-col gap-[14px] h-[406px] items-center left-[80px] overflow-clip px-[10px] py-[30px] top-[-1px] w-[390px]">
       <div className="bottom-open-label is-dark">OPEN ↗</div>
-      <div className="[word-break:break-word] flex flex-col font-['Crimson_Text:SemiBold','Noto_Sans_KR:Bold',sans-serif] h-[50px] justify-center leading-[0] relative shrink-0 text-[#151515] text-[28px] text-center tracking-[-0.84px] w-[300px]" style={{ fontVariationSettings: '"wght" 700' }}>
+      <div className="[word-break:break-word] flex flex-col font-ko-bold h-[50px] justify-center leading-[0] relative shrink-0 text-[#151515] text-[28px] text-center tracking-[-0.84px] w-[300px]" style={{ fontVariationSettings: '"wght" 700' }}>
         <p className="leading-[40px]">우노트래블 X 헤이트래블</p>
       </div>
-      <div className="[word-break:break-word] flex flex-col font-['Crimson_Text:Regular','Noto_Sans_KR:Bold',sans-serif] h-[69px] justify-center leading-[0] relative shrink-0 text-[#151515] text-[24px] text-center w-[300px]" style={{ fontVariationSettings: '"wght" 700' }}>
-        <p className="font-['Crimson_Text:SemiBold','Noto_Sans_KR:Bold',sans-serif] leading-[40px] mb-0" style={{ fontVariationSettings: '"wght" 700' }}>
+      <div className="[word-break:break-word] flex flex-col font-ko-bold h-[69px] justify-center leading-[0] relative shrink-0 text-[#151515] text-[24px] text-center w-[300px]" style={{ fontVariationSettings: '"wght" 700' }}>
+        <p className="font-ko-bold leading-[40px] mb-0" style={{ fontVariationSettings: '"wght" 700' }}>
           유럽 유심
         </p>
         <p className="leading-[40px] text-white">VODAFONE/THREE/02</p>
@@ -822,7 +822,7 @@ function Frame1() {
           </svg>
         </div>
       </div>
-      <div className="[word-break:break-word] flex flex-col font-['Crimson_Text:Regular','Noto_Sans_KR:Regular',sans-serif] h-[216px] justify-center leading-[0] relative shrink-0 text-[#151515] text-[24px] w-[300px] whitespace-pre-wrap" style={{ fontVariationSettings: '"wght" 400' }}>
+      <div className="[word-break:break-word] flex flex-col font-ko h-[216px] justify-center leading-[0] relative shrink-0 text-[#151515] text-[24px] w-[300px] whitespace-pre-wrap" style={{ fontVariationSettings: '"wght" 400' }}>
         <p className="mb-0">
           <span className="leading-[40px] text-white">ㆍ</span>
           <span className="leading-[40px]">{`이탈리아 로마  `}</span>
@@ -848,13 +848,13 @@ function Frame4() {
   return (
     <div role="button" tabIndex={0} onClick={() => {}} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") event.currentTarget.click(); }} aria-label="여행자 보험 보기" className="bottom-cta-card [word-break:break-word] absolute bg-[#d5edff] content-stretch flex flex-col gap-[14px] h-[285px] items-center leading-[0] left-[470px] overflow-clip p-[10px] text-[#151515] top-[121px] w-[390px]">
       <div className="bottom-open-label is-dark">OPEN ↗</div>
-      <div className="flex flex-col font-['Crimson_Text:SemiBold',sans-serif] h-[50px] justify-center not-italic relative shrink-0 text-[54px] text-center tracking-[-1.62px] w-[300px]">
+      <div className="flex flex-col font-en-bold h-[50px] justify-center not-italic relative shrink-0 text-[54px] text-center tracking-[-1.62px] w-[300px]">
         <p className="leading-[40px]">INSURANCE</p>
       </div>
-      <div className="flex flex-col font-['Crimson_Text:Regular','Noto_Sans_KR:Regular',sans-serif] h-[41px] justify-center relative shrink-0 text-[36px] w-[292px]" style={{ fontVariationSettings: '"wght" 400' }}>
+      <div className="flex flex-col font-ko h-[41px] justify-center relative shrink-0 text-[36px] w-[292px]" style={{ fontVariationSettings: '"wght" 400' }}>
         <p className="leading-[40px]">여행자 보험</p>
       </div>
-      <div className="flex flex-col font-['Crimson_Text:Regular',sans-serif] h-[136px] justify-center min-w-full not-italic relative shrink-0 text-[12px] tracking-[0.72px] w-[min-content] whitespace-pre-wrap">
+      <div className="flex flex-col font-en h-[136px] justify-center min-w-full not-italic relative shrink-0 text-[12px] tracking-[0.72px] w-[min-content] whitespace-pre-wrap">
         <p className="leading-[14px] mb-0">{`Travel with confidence, knowing you're protected every step of the way.  `}</p>
         <p className="leading-[14px]">From unexpected delays to medical emergencies abroad, comprehensive coverage ensures peace of mind throughout your journey.</p>
       </div>
@@ -866,7 +866,7 @@ function Frame2() {
   return (
     <div role="button" tabIndex={0} onClick={() => {}} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") event.currentTarget.click(); }} aria-label="출발 전 준비물 보기" className="bottom-cta-card absolute bg-[#fcc800] content-stretch flex flex-col gap-[9px] h-[405px] items-center justify-center left-[860px] overflow-clip p-[10px] top-[121px] w-[390px]">
       <div className="bottom-open-label is-dark">OPEN ↗</div>
-      <div className="[word-break:break-word] flex flex-col font-['Crimson_Text:SemiBold',sans-serif] h-[150px] justify-center leading-[0] not-italic relative shrink-0 text-[#151515] text-[54px] tracking-[-1.62px] w-[296px]">
+      <div className="[word-break:break-word] flex flex-col font-en-bold h-[150px] justify-center leading-[0] not-italic relative shrink-0 text-[#151515] text-[54px] tracking-[-1.62px] w-[296px]">
         <p className="leading-[54px] mb-0">REDAY</p>
         <p className="leading-[54px] mb-0">TO</p>
         <p className="leading-[54px]">GO</p>
@@ -874,7 +874,7 @@ function Frame2() {
       <div className="h-[137px] relative shrink-0 w-[150px]">
         <img alt="" className="absolute block inset-0 max-w-none size-full" height="137" src={imgEllipse12} width="150" />
       </div>
-      <div className="[word-break:break-word] flex flex-col font-['Crimson_Text:Regular','Noto_Sans_KR:Regular',sans-serif] h-[80px] justify-center leading-[0] relative shrink-0 text-[#151515] text-[0px] text-center w-[292px]" style={{ fontVariationSettings: '"wght" 400' }}>
+      <div className="[word-break:break-word] flex flex-col font-ko h-[80px] justify-center leading-[0] relative shrink-0 text-[#151515] text-[0px] text-center w-[292px]" style={{ fontVariationSettings: '"wght" 400' }}>
         <p className="leading-[30px] mb-0 text-[36px]">출발 전 준비물</p>
         <p className="leading-[30px] text-[16px]">BEFORE DEPARTURE</p>
       </div>
@@ -886,7 +886,7 @@ function Frame9() {
   return (
     <div role="button" tabIndex={0} onClick={() => {}} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") event.currentTarget.click(); }} aria-label="공지사항 보기" className="bottom-cta-card bg-[#dad5d5] content-stretch flex flex-col h-[122px] items-center justify-center overflow-clip py-[10px] relative rounded-br-[100px] shrink-0 w-full">
       <div className="bottom-open-label is-dark">OPEN ↗</div>
-      <div className="[word-break:break-word] flex flex-col font-['Crimson_Text:SemiBold','Noto_Sans_KR:Bold',sans-serif] h-[80px] justify-center leading-[0] relative shrink-0 text-[#151515] text-[0px] text-center tracking-[-1.62px] w-[296px]" style={{ fontVariationSettings: '"wght" 700' }}>
+      <div className="[word-break:break-word] flex flex-col font-ko-bold h-[80px] justify-center leading-[0] relative shrink-0 text-[#151515] text-[0px] text-center tracking-[-1.62px] w-[296px]" style={{ fontVariationSettings: '"wght" 700' }}>
         <p className="leading-[30px] mb-0 text-[54px]">NOTICE</p>
         <p className="leading-[30px] text-[20px]">공지사항</p>
       </div>
@@ -908,7 +908,7 @@ function Frame7() {
   return (
     <div role="button" tabIndex={0} onClick={() => {}} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") event.currentTarget.click(); }} aria-label="여행후기 보기" className="bottom-cta-card review-card bg-[#dad5d5] content-stretch flex flex-col h-[306px] items-center overflow-clip pb-[10px] pt-[20px] relative rounded-tr-[100px] shrink-0 w-full">
       <div className="review-story-label">LATEST STORY ↗</div>
-      <div className="[word-break:break-word] flex flex-col font-['Crimson_Text:SemiBold','Noto_Sans_KR:Bold',sans-serif] h-[80px] justify-center leading-[0] relative shrink-0 text-[#151515] text-[0px] text-center tracking-[-1.62px] w-[296px]" style={{ fontVariationSettings: '"wght" 700' }}>
+      <div className="[word-break:break-word] flex flex-col font-ko-bold h-[80px] justify-center leading-[0] relative shrink-0 text-[#151515] text-[0px] text-center tracking-[-1.62px] w-[296px]" style={{ fontVariationSettings: '"wght" 700' }}>
         <p className="leading-[30px] mb-0 text-[54px]">REVIEW</p>
         <p className="leading-[30px] text-[20px]">여행후기</p>
       </div>
@@ -944,6 +944,28 @@ function Frame3() {
 function Frame() {
   return (
     <div className="absolute bg-white h-[1421px] left-0 overflow-visible top-0 w-screen">
+      <style>{`
+        /*
+          Section3 Font Rules
+
+          전역 폰트 규칙
+          ------------------------------------------
+          --font-en : 영문 UI / 숫자 / 메뉴 / 라벨
+          --font-ko : 한글 제목 / 본문 / 상품명
+
+          Figma Make가 생성한 font-['Crimson_Text...'] 계열은
+          직접 사용하지 않고 아래 공통 클래스로 연결한다.
+        */
+        .font-en,
+        .font-en-bold {
+          font-family: var(--font-en);
+        }
+
+        .font-ko,
+        .font-ko-bold {
+          font-family: var(--font-ko);
+        }
+      `}</style>
       <Component8 />
       <Component3 />
       <Frame11 />

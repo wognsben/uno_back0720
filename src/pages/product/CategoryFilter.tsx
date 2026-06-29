@@ -58,7 +58,7 @@ export default function CategoryFilter({
         }
 
         .product-category-kicker {
-          font-family: 'Crimson_Text:Regular', serif;
+          font-family: var(--font-en);
           font-size: 18px;
           line-height: 1;
           letter-spacing: 0.12em;
@@ -80,7 +80,7 @@ export default function CategoryFilter({
           display: flex;
           align-items: center;
           gap: 8px;
-          font-family: 'Crimson_Text:Regular', 'Noto Sans KR', sans-serif;
+          font-family: var(--font-ko);
           font-size: 19px;
           line-height: 1;
           letter-spacing: -0.01em;
@@ -114,7 +114,7 @@ export default function CategoryFilter({
         .product-active-summary {
           justify-self: end;
           width: 320px;
-          font-family: 'Crimson_Text:Regular', 'Noto Sans KR', sans-serif;
+          font-family: var(--font-ko);
           color: #151515;
           text-align: right;
         }
@@ -152,7 +152,6 @@ export default function CategoryFilter({
 
         {activeProduct && (
           <div className="product-active-summary" aria-label="현재 선택된 상품">
-            <div className="product-active-summary-number">SELECTED / {activeProduct.number}</div>
             <div className="product-active-summary-title">{activeProduct.title}</div>
           </div>
         )}

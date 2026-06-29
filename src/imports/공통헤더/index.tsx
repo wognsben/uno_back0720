@@ -17,7 +17,7 @@ type LanternState = {
   visible: boolean;
 };
 
-const FONT_MONO = "'IBM Plex Mono', monospace";
+const FONT_MONO = "var(--font-en)";
 const BLACK = "#151515";
 const BORDER = "#E8E9E9";
 
@@ -300,7 +300,7 @@ function ShortMenuPanel({ isOpen, onClose, isScrolled }: { isOpen: boolean; onCl
               href={item.href}
               onClick={onClose}
               style={{
-                fontFamily: "'Crimson Text', serif",
+                fontFamily: "var(--font-en)",
                 fontSize: 54,
                 lineHeight: 0.92,
                 color: BLACK,
@@ -419,7 +419,7 @@ function ExpandedMenuCard({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
             href={item.href}
             onClick={onClose}
             style={{
-              fontFamily: "'Crimson Text', serif",
+              fontFamily: "var(--font-en)",
               fontSize: 76,
               lineHeight: 0.88,
               color: BLACK,

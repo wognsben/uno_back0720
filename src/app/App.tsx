@@ -104,7 +104,7 @@ function CircularText({ text, r = 38 }: { text: string; r?: number }) {
       </defs>
       <text
         style={{
-          fontFamily: "'Crimson Text', serif",
+          fontFamily: "var(--font-en)",
           fontWeight: 600,
           fontSize: 12,
           letterSpacing: "0.18em",
@@ -142,7 +142,9 @@ function ScrollCard({ card }: { card: (typeof scrollCards)[number] }) {
       {/* Title */}
       <span
         style={{
-          fontFamily: "'Crimson Text', serif",
+          fontFamily: /[ㄱ-ㅎㅏ-ㅣ가-힣]/.test(card.title)
+  ? "var(--font-ko)"
+  : "var(--font-en)",
           fontWeight: 600,
           fontSize: 48,
           lineHeight: "48px",
@@ -169,7 +171,9 @@ function ScrollCard({ card }: { card: (typeof scrollCards)[number] }) {
       {/* Sub text */}
       <span
         style={{
-          fontFamily: "'Crimson Text', serif",
+          fontFamily: /[ㄱ-ㅎㅏ-ㅣ가-힣]/.test(card.sub)
+  ? "var(--font-ko)"
+  : "var(--font-en)",
           fontWeight: 600,
           fontSize: 15,
           lineHeight: "24px",
