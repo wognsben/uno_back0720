@@ -168,6 +168,15 @@ function PackageRow({
           }}
         />
 
+        {/*
+          Product Number
+          ------------------------------------------
+          Hover 시 font-size가 36px로 커질 때
+          숫자 2자리(예: 01)가 세로로 줄바꿈되는 문제 방지.
+
+          기존 위치/간격/모션은 유지하고,
+          숫자 텍스트에만 줄바꿈 방지 속성을 적용한다.
+        */}
         <div
           className="flex flex-col font-en h-[58px] justify-center not-italic relative shrink-0 text-black w-[42px]"
           style={{
@@ -178,7 +187,16 @@ function PackageRow({
               "font-size 0.32s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.28s ease, transform 0.32s cubic-bezier(0.16, 1, 0.3, 1)",
           }}
         >
-          <p className="leading-[1]">{item.number}</p>
+          <p
+            className="leading-[1]"
+            style={{
+              whiteSpace: "nowrap",
+              wordBreak: "normal",
+              overflowWrap: "normal",
+            }}
+          >
+            {item.number}
+          </p>
         </div>
 
         <div

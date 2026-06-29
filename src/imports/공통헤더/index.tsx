@@ -4,6 +4,11 @@ import imgImage21 from "./82946044a68c061ee150f4ee5fd02f4ec778c1b7.png";
 /* ────────────────────────────────────────────
    공통 HEADER
    Premium Editorial Header
+
+   수정 메모
+   - 최상단 Header : 820px 카드형 중앙 배치
+   - 스크롤 Header : 100vw 전체 화면 폭
+   - 기존 디자인/구조 유지, Header 폭 기준만 수정
 ──────────────────────────────────────────── */
 
 type HeaderProps = {
@@ -112,8 +117,8 @@ function Logo() {
       href="/"
       aria-label="UNOTRAVEL home"
       style={{
-        width: 73,
-        height: 42,
+        width: 80,
+        height: 46,
         display: "flex",
         flexDirection: "column",
         alignItems: "flex-start",
@@ -174,9 +179,9 @@ function HeaderButton({
         height: 30,
         fontFamily: FONT_MONO,
         fontWeight: 700,
-        fontSize: 14,
+        fontSize: 16,
         letterSpacing: "0.03em",
-        lineHeight: 1,
+        lineHeight: 0,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -455,6 +460,12 @@ function ExpandedMenuCard({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
 export default function Header({ isLoggedIn = false, userName = "김민수" }: HeaderProps) {
   const navRef = useRef<HTMLElement | null>(null);
   const [isScrolled, setIsScrolled] = useState(false);
+
+  /* Header Width Motion
+     - 스크롤 감지는 즉시 처리
+     - Header 가로 확장은 짧은 지연 후 실행해서 갑작스럽게 펼쳐지는 느낌을 완화 */
+  const [isHeaderExpanded, setIsHeaderExpanded] = useState(false);
+
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const [lantern, setLantern] = useState<LanternState>({
@@ -477,6 +488,24 @@ export default function Header({ isLoggedIn = false, userName = "김민수" }: H
   }, []);
 
   useEffect(() => {
+    /* Header Width Motion
+       - 내려갈 때: top 이동 후 0.16초 뒤 가로 폭 확장
+       - 다시 최상단으로 갈 때: 바로 820px 카드로 복귀 */
+    if (!isScrolled) {
+      setIsHeaderExpanded(false);
+      return;
+    }
+
+    const expandTimer = window.setTimeout(() => {
+      setIsHeaderExpanded(true);
+    }, 160);
+
+    return () => {
+      window.clearTimeout(expandTimer);
+    };
+  }, [isScrolled]);
+
+  useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") setIsMenuOpen(false);
     };
@@ -490,7 +519,7 @@ export default function Header({ isLoggedIn = false, userName = "김민수" }: H
 
   const shortNavItems = isLoggedIn
     ? (["VIEWED", "INFO", "CONTACT"] as const)
-    : (["LOGIN", "INFO", "CONTACT", "VIEWED"] as const);
+    : (["VIEWED", "INFO", "CONTACT", "LOGIN"] as const);
 
   const expandedNavItems = isLoggedIn
     ? (["MY PAGE", "CONTACT", "INFO", "VIEWED"] as const)
@@ -538,12 +567,18 @@ export default function Header({ isLoggedIn = false, userName = "김민수" }: H
         top: isScrolled ? 0 : 20,
         left: 0,
         zIndex: 1000,
+
+        /* Header Root
+           - 최상단: 내부 Header 카드(820px)를 화면 중앙에 배치
+           - 스크롤: Header가 실제 viewport 전체 폭(100vw)을 사용 */
         width: "100vw",
-        minWidth: 1440,
+
         display: "flex",
         justifyContent: "center",
         pointerEvents: "none",
-        transition: "top 0.35s ease",
+        /* Header Position Motion
+           - 먼저 상단으로 이동한 뒤 width가 따라오도록 분리 */
+        transition: "top 0.35s cubic-bezier(0.22, 1, 0.36, 1)",
       }}
     >
       {isMenuOpen && (
@@ -566,17 +601,26 @@ export default function Header({ isLoggedIn = false, userName = "김민수" }: H
       <div
         style={{
           position: "relative",
-          width: "100%",
-          maxWidth: 1440,
+
+          /* Header Width Controller
+             - 최상단: 820px 고정 카드
+             - 스크롤: top 이동 후 0.16초 뒤 100vw로 부드럽게 확장 */
+          width: isHeaderExpanded ? "100vw" : 820,
+          maxWidth: isHeaderExpanded ? "100vw" : 820,
+
           margin: "0 auto",
           pointerEvents: "none",
+          transition: "width 0.72s cubic-bezier(0.22, 1, 0.36, 1), max-width 0.72s cubic-bezier(0.22, 1, 0.36, 1)",
         }}
       >
       <header
   style={{
+    /* Header Size
+       - 최상단: 820px x 90px
+       - 스크롤: 100vw x 110px */
     width: "100%",
-    maxWidth: 1440,
-    height: isScrolled ? 100 : 84,
+    maxWidth: "100%",
+    height: isScrolled ? 110 : 90,
 
     background: "#FFFFFF",
 
@@ -604,7 +648,7 @@ export default function Header({ isLoggedIn = false, userName = "김민수" }: H
     zIndex: 4,
 
     transition:
-      "height .42s ease,border .25s ease,border-radius .42s ease",
+      "height 0.48s cubic-bezier(0.22, 1, 0.36, 1), border .25s ease, border-radius .42s ease",
   }}
 >
         <Logo />
@@ -619,7 +663,7 @@ export default function Header({ isLoggedIn = false, userName = "김민수" }: H
             alignItems: isScrolled ? "flex-start" : "center",
             padding: 10,
             gap: isScrolled ? 10 : 20,
-            width: isScrolled ? 514 : 448,
+            width: isScrolled ? 484 : 448,
             height: isScrolled ? 50 : 70,
             background: "#FFFFFF",
             boxSizing: "border-box",

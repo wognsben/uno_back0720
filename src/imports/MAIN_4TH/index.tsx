@@ -5,6 +5,21 @@ import img1 from "./aa36fe66f91d4d474a7c3e64585689a25e85b055.png";
 const KAKAO_TALK_URL = "#";
 const INSTAGRAM_URL = "#";
 
+/* ==========================================================
+   Section4 Clip Fix
+
+   수정 내용
+   ------------------------------------------
+   - 오른쪽 상단 보조 문구가 잘리지 않도록 overflow-visible 적용
+   - 전화번호 영역의 line-height가 140px로 잡혀 잘리는 문제 수정
+   - 오른쪽 문의 카드가 부모 영역에서 잘리지 않도록 overflow-visible 적용
+
+   주의
+   ------------------------------------------
+   - 레이아웃 위치값(left/top/width/height)은 유지
+   - 기존 구조는 유지
+========================================================== */
+
 function Group() {
   return (
     <div className="grid-cols-[max-content] grid-rows-[max-content] inline-grid leading-[0] place-items-start relative shrink-0">
@@ -36,7 +51,7 @@ function Component5() {
 function Group1() {
   return (
     <div className="grid-cols-[max-content] grid-rows-[max-content] inline-grid leading-[0] place-items-start relative shrink-0">
-      <div className="[word-break:break-word] col-1 flex flex-col font-en h-[40px] justify-center ml-0 mt-0 not-italic relative row-1 text-[#151515] text-[16px] text-center w-[164px]">
+      <div className="[word-break:break-word] col-1 flex flex-col font-en h-[56px] justify-center ml-0 mt-0 not-italic relative row-1 text-[#151515] text-[16px] text-center w-[164px]">
         <p className="leading-[26px] mb-0">Need help planning Italy?</p>
         <p className="leading-[26px]">We’re here for you</p>
       </div>
@@ -44,9 +59,10 @@ function Group1() {
   );
 }
 
+/* 오른쪽 상단 보조 문구 잘림 방지 */
 function Component4() {
   return (
-    <div className="content-stretch flex items-center justify-end overflow-clip p-[10px] relative shrink-0 w-[300px]" data-name="섹션 4">
+    <div className="content-stretch flex items-center justify-end overflow-visible p-[10px] relative shrink-0 w-[300px]" data-name="섹션 4">
       <Group1 />
     </div>
   );
@@ -54,7 +70,7 @@ function Component4() {
 
 function Frame9() {
   return (
-    <div className="absolute bg-white content-stretch flex items-center justify-between left-[120px] overflow-clip top-[44px] w-[1460px]">
+    <div className="absolute bg-white content-stretch flex items-center justify-between left-[120px] overflow-visible top-[44px] w-[1460px]">
       <Component5 />
       <Component4 />
     </div>
@@ -92,9 +108,9 @@ function Frame() {
 function Frame4() {
   return (
     <div className="bg-white h-[62px] relative shrink-0 w-[650px]">
-      <div className="content-stretch flex items-center overflow-clip px-[10px] py-px relative rounded-[inherit] size-full">
+      <div className="content-stretch flex items-center overflow-visible px-[10px] py-px relative rounded-[inherit] size-full">
         <div className="[word-break:break-word] flex flex-col font-en h-[24px] justify-center leading-[0] not-italic relative shrink-0 text-[#151515] text-[20px] w-[128px]">
-          <p className="leading-[140px]">TALK TO UNO</p>
+          <p className="leading-[24px]">TALK TO UNO</p>
         </div>
       </div>
       <div aria-hidden className="absolute border-[rgba(21,21,21,0.6)] border-b border-solid inset-0 pointer-events-none" />
@@ -102,6 +118,7 @@ function Frame4() {
   );
 }
 
+/* 전화번호 텍스트 잘림 방지: 기존 leading-[140px] → leading-[24px] */
 function Frame6() {
   return (
     <div className="bg-white content-stretch flex flex-col gap-[10px] items-start overflow-clip p-[10px] relative shrink-0">
@@ -116,7 +133,7 @@ function Frame6() {
         </div>
       </div>
       <div className="[word-break:break-word] flex flex-col font-en h-[24px] justify-center leading-[0] not-italic relative shrink-0 text-[#151515] text-[20px] w-[128px]">
-        <p className="leading-[140px]">031-998-2136</p>
+        <p className="leading-[24px]">031-998-2136</p>
       </div>
     </div>
   );
@@ -136,7 +153,7 @@ function Frame7() {
         </div>
       </div>
       <div className="[word-break:break-word] flex flex-col font-en h-[24px] justify-center leading-[0] not-italic relative shrink-0 text-[#151515] text-[20px] w-[128px]">
-        <p className="leading-[140px]">031-998-2136</p>
+        <p className="leading-[24px]">031-998-2136</p>
       </div>
     </div>
   );
@@ -156,7 +173,7 @@ function Frame8() {
         </div>
       </div>
       <div className="[word-break:break-word] flex flex-col font-en h-[24px] justify-center leading-[0] not-italic relative shrink-0 text-[#151515] text-[20px] w-[128px]">
-        <p className="leading-[140px]">031-998-2136</p>
+        <p className="leading-[24px]">031-998-2136</p>
       </div>
     </div>
   );
@@ -164,7 +181,7 @@ function Frame8() {
 
 function Frame5() {
   return (
-    <div className="bg-white content-stretch flex h-[115px] items-center justify-between overflow-clip px-[10px] py-px relative shrink-0 w-[650px]">
+    <div className="bg-white content-stretch flex h-[115px] items-center justify-between overflow-visible px-[10px] py-px relative shrink-0 w-[650px]">
       <Frame6 />
       <div className="h-[86px] relative shrink-0 w-0">
         <div className="absolute inset-[0_-0.5px]">
@@ -285,9 +302,10 @@ function Component() {
   );
 }
 
+/* 오른쪽 문의 영역 부모 overflow 잘림 방지 */
 function Frame3() {
   return (
-    <div className="bg-white content-stretch flex flex-col h-[570px] items-center justify-between overflow-clip relative shrink-0">
+    <div className="bg-white content-stretch flex flex-col h-[570px] items-center justify-between overflow-visible relative shrink-0">
       <Frame4 />
       <Frame5 />
       <Component />
@@ -297,7 +315,7 @@ function Frame3() {
 
 function Frame2() {
   return (
-    <div className="bg-white content-stretch flex h-[570px] items-center justify-center overflow-clip relative shrink-0 w-[650px]">
+    <div className="bg-white content-stretch flex h-[570px] items-center justify-center overflow-visible relative shrink-0 w-[650px]">
       <Frame3 />
     </div>
   );
@@ -305,7 +323,7 @@ function Frame2() {
 
 function Frame1() {
   return (
-    <div className="absolute bg-white content-stretch flex gap-[80px] items-start justify-center left-[185px] overflow-clip top-[166px]">
+    <div className="absolute bg-white content-stretch flex gap-[80px] items-start justify-center left-[185px] overflow-visible top-[166px]">
       <Frame />
       <Frame2 />
     </div>
