@@ -887,124 +887,65 @@ function useInfoDocumentAnimation(scopeRef: React.RefObject<HTMLElement | null>)
 }
 
 
-const noticeItems = [
+const infoItems = [
   {
-    title: "미팅 시간과 장소 준수",
+    number: "01",
+    label: "NOTICE",
+    title: "예약 시 주의사항",
     body:
-      "단체 투어는 정해진 시간에 출발합니다. 지각 시 별도의 연락 없이 일정이 진행될 수 있으며, 중간 합류가 불가할 수 있습니다.",
+      "투어 참여 전 미팅, 일정 변경, 장비, 소지품 관련 주요 안내를 확인합니다.",
+    path: "/info/notice",
   },
   {
-    title: "현지 사정에 따른 일정 변경",
+    number: "02",
+    label: "REFUND",
+    title: "취소 및 환불규정",
     body:
-      "파업, 시위, 교통체증, 현장 통제, 천재지변 등 현지 상황에 따라 투어 동선과 일정 순서가 변경될 수 있습니다.",
+      "취소 시점별 환불 기준과 특별약관, 유의사항을 한 번에 확인합니다.",
+    path: "/info/refund",
   },
-  {
-    title: "개인 일정 차질",
-    body:
-      "항공, 열차, 개인 일정 변경 등 여행자 개인 사유로 투어 참여가 어려운 경우 우노트래블은 책임지지 않습니다.",
-  },
-  {
-    title: "추가 비용 변동",
-    body:
-      "입장료, 교통비, 현지 옵션 비용 등은 현지 정책과 물가 변동에 따라 사전 고지 없이 변경될 수 있습니다.",
-  },
-  {
-    title: "단체 일정 중 개별 이탈",
-    body:
-      "투어 중 개인적으로 팀을 이탈하여 발생하는 사고, 분실, 일정 차질에 대해서는 우노트래블과 가이드가 책임지지 않습니다.",
-  },
-  {
-    title: "가이드 안내 준수",
-    body:
-      "투어 중 가이드의 주의사항을 따르지 않아 발생한 사고나 불이익은 여행자 본인의 책임으로 처리됩니다.",
-  },
-  {
-    title: "유모차·휠체어 이용 제한",
-    body:
-      "일부 투어는 계단, 자갈길, 장시간 도보 이동이 포함되어 유모차 또는 휠체어 이용이 어려울 수 있습니다.",
-  },
-  {
-    title: "무선 수신기 관리",
-    body:
-      "투어 중 제공되는 무선 수신기 분실, 미반납, 파손 시 보상 비용이 청구될 수 있습니다.",
-  },
-  {
-    title: "바우처 지참",
-    body:
-      "투어 확정 후 발송되는 바우처는 투어 당일 출력본 또는 모바일 캡처본으로 지참해 주세요.",
-  },
-  {
-    title: "해설 녹음 제한",
-    body:
-      "가이드의 투어 해설은 지식재산권에 해당하므로 무단 녹음 및 배포가 불가합니다.",
-  },
-  {
-    title: "개인 소지품 보관",
-    body:
-      "개인 소지품 도난 또는 분실에 대해 우노트래블은 책임지지 않습니다. 이동 중 항상 직접 관리해 주세요.",
-  },
-];
+] as const;
 
-export default function NoticePage() {
+export default function InfoPage() {
   const scopeRef = useRef<HTMLElement | null>(null);
   useInfoDocumentAnimation(scopeRef);
 
   return (
-    <main ref={scopeRef} className="uno-info-document">
+    <main ref={scopeRef} className="uno-info-document uno-info-index-page">
       <style>{infoDocumentStyles}</style>
 
       <div className="uno-info-shell">
         <section className="uno-info-hero">
-          <p className="uno-info-kicker">UNOTRAVEL INFO</p>
-          <p className="uno-info-page-index">NOTICE / 01</p>
+          <p className="uno-info-kicker">UNOTRAVEL INFORMATION</p>
+          <p className="uno-info-page-index">INDEX / 00</p>
 
           <h1 className="uno-info-title uno-info-split">
-            예약 시
-            <br />
-            주의사항
+            INFO
           </h1>
 
           <p className="uno-info-lead uno-info-split">
-            예약 전 한 번에 확인할 수 있도록 주요 안내를 정리했습니다. 현지 진행 방식과 단체 투어 특성을 고려해 읽기 쉽게 구성했습니다.
+            예약 전 꼭 확인해야 하는 안내를 정리했습니다. 필요한 문서를 선택해 핵심 내용을 빠르게 확인해 주세요.
           </p>
         </section>
 
-        <InfoDocumentNav active="notice" />
-
-        <section className="uno-info-body">
-          <aside className="uno-info-aside">
-            <div className="uno-info-aside-inner">
-              <p className="uno-info-aside-label">READING GUIDE</p>
-              <h2 className="uno-info-split">투어 참여 전 핵심 안내</h2>
-              <p className="uno-info-split">
-                미팅, 일정 변경, 장비, 소지품 관련 내용을 한눈에 확인할 수 있습니다.
-              </p>
-            </div>
-          </aside>
-
-          <ol className="uno-info-list">
-            {noticeItems.map((item, index) => (
-              <li className="uno-info-row" key={item.title}>
-                <span className="uno-info-row-number">
-                  {String(index + 1).padStart(2, "0")}
-                </span>
-                <div className="uno-info-row-title">
-                  <h3 className="uno-info-split">{item.title}</h3>
-                </div>
-                <div className="uno-info-row-copy">
-                  <p className="uno-info-split">{item.body}</p>
-                </div>
-              </li>
-            ))}
-          </ol>
+        <section className="uno-info-index-list" aria-label="INFO 문서 목록">
+          {infoItems.map((item) => (
+            <button
+              key={item.path}
+              type="button"
+              className="uno-info-index-item"
+              onClick={() => navigateTo(item.path)}
+            >
+              <span className="uno-info-index-number">{item.number}</span>
+              <span className="uno-info-index-copy">
+                <p>{item.label}</p>
+                <h2 className="uno-info-split">{item.title}</h2>
+                <span className="uno-info-split">{item.body}</span>
+              </span>
+              <span className="uno-info-index-arrow" aria-hidden="true">→</span>
+            </button>
+          ))}
         </section>
-
-        <div className="uno-info-note">
-          <strong>NOTICE</strong>
-          <p className="uno-info-split">
-            상품별 세부 조건은 각 상품 상세페이지의 안내가 우선 적용될 수 있습니다. 예약 전 포함사항, 불포함사항, 준비물, 환불규정을 함께 확인해 주세요.
-          </p>
-        </div>
       </div>
     </main>
   );

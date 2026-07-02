@@ -70,6 +70,7 @@ import MyReservation from "../pages/mypage/MyReservation";
 import MyInquiry from "../pages/mypage/MyInquiry";
 import MyProfile from "../pages/mypage/MyProfile";
 import MyTour from "../pages/mypage/MyTour";
+import InfoPage from "../pages/info/Infopage";
 import NoticePage from "../pages/info/notice";
 import RefundPage from "../pages/info/refund";
 
@@ -450,9 +451,10 @@ export default function App() {
   const isMyProfilePage = pathname === "/mypage/profile";
   const isMyTourPage = pathname === "/mypage/tour";
   const isMyPageRoute = pathname.startsWith("/mypage");
+  const isInfoPage = pathname === "/info";
   const isNoticePage = pathname === "/info/notice";
   const isRefundPage = pathname === "/info/refund";
-  const isInfoPageRoute = pathname.startsWith("/info/");
+  const isInfoPageRoute = pathname === "/info" || pathname.startsWith("/info/");
 
   /*
   Product Detail Route
@@ -630,6 +632,8 @@ export default function App() {
           <MyProfile />
         ) : isMyTourPage ? (
           <MyTour />
+        ) : isInfoPage ? (
+          <InfoPage />
         ) : isNoticePage ? (
           <NoticePage />
         ) : isRefundPage ? (

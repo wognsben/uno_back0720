@@ -1484,9 +1484,7 @@ export default function Header({
     ? (["VIEWED", "INFO", "CONTACT"] as const)
     : (["VIEWED", "INFO", "CONTACT", "LOGIN"] as const);
 
-  const expandedNavItems = authState.isLoggedIn
-    ? (["CONTACT", "INFO", "VIEWED"] as const)
-    : (["VIEWED", "LOGIN", "MY PAGE", "CONTACT", "INFO"] as const);
+  const scrolledPrimaryNavItems = ["VIEWED", "INFO", "CONTACT"] as const;
 
   function moveLanternToButton(
     event: React.MouseEvent<HTMLButtonElement>,
@@ -1563,12 +1561,10 @@ export default function Header({
                 }
               : isInfoButton
                 ? () => {
-                    if (isInfoOpen) {
-                      setIsInfoOpen(false);
-                      return;
-                    }
-
-                    openInfoPanel(infoButtonRef.current);
+                    setIsMenuOpen(false);
+                    setIsViewedOpen(false);
+                    setIsInfoOpen(false);
+                    navigateTo("/info");
                   }
                 : isMyPageButton
                   ? () => {
@@ -1737,7 +1733,9 @@ export default function Header({
               padding: 10,
               gap: isScrolled ? 10 : 20,
               width: isScrolled
-                ? expandedNavItems.length * 100 + 84 + (authState.isLoggedIn ? 106 : 0)
+                ? scrolledPrimaryNavItems.length * 100 +
+                  84 +
+                  (authState.isLoggedIn ? 106 : 100)
                 : authState.isLoggedIn
                   ? 464
                   : 448,
@@ -1772,16 +1770,21 @@ export default function Header({
 
             {isScrolled ? (
               <>
-                {authState.isLoggedIn && (
+                {scrolledPrimaryNavItems.map((item) =>
+                  renderNavButton(item, 100),
+                )}
+
+                {authState.isLoggedIn ? (
                   <UserBlock
                     userName={authState.userName}
                     userEmail={authState.userEmail}
                     onNavigate={navigateTo}
                     onLogout={handleLogout}
                   />
+                ) : (
+                  renderNavButton("LOGIN", 100)
                 )}
 
-                {expandedNavItems.map((item) => renderNavButton(item, 100))}
                 <DotGrid
                   isOpen={isMenuOpen}
                   onClick={() => {
