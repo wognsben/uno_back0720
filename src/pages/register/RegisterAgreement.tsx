@@ -548,86 +548,139 @@ export default function RegisterAgreement() {
       <style>{STYLE}</style>
 
       <section className="agreement-page-inner" aria-label="우노트래블 회원가입 약관 동의">
-        <div className="agreement-content">
-          <div className="agreement-kicker">REGISTER STEP 01</div>
+        <aside className="agreement-aside" aria-label="회원가입 현재 단계">
+          <button
+            type="button"
+            className="agreement-back-button"
+            aria-label="회원가입 시작 페이지로 이동"
+            onClick={() => navigateTo("/register")}
+          >
+            ←
+          </button>
 
-          <h1 className="agreement-title">AGREE</h1>
-          <span className="agreement-title-rule" aria-hidden="true" />
+          <div className="agreement-aside-center">
+            <div className="agreement-kicker">REGISTER STEP 01</div>
 
-          <p className="agreement-description">
-            회원가입을 위해 필수 약관을 확인해 주세요.
-            <br />
-            이용약관과 개인정보 수집 및 이용 내용을 확인한 뒤 동의해 주세요.
-          </p>
+            <h1 className="agreement-title">
+              필수 약관 동의
+            </h1>
 
-          <div className="agreement-list">
-            <section className="agreement-card">
-              <div className="agreement-card-head">
+            <p className="agreement-description">
+              회원가입 전 반드시 확인해야 하는 두 가지 문서입니다.
+              내용을 확인한 뒤 필수 항목에 동의해 주세요.
+            </p>
+
+            <div className="agreement-aside-consent">
+              <button
+                            type="button"
+                            className={`agreement-all-check ${canContinue ? "is-checked" : ""}`}
+                            aria-pressed={canContinue}
+                            onClick={() => handleAllAgree(!canContinue)}
+                          >
+                            <span aria-hidden="true" />
+                            전체 동의
+                          </button>
+            </div>
+          </div>
+
+          <div className="agreement-step-index" aria-hidden="true">
+            <span>01</span>
+            <strong>AGREEMENT</strong>
+          </div>
+        </aside>
+
+        <div className="agreement-document-area">
+          <div className="agreement-document-header">
+            <div>
+              <span>DOCUMENTS</span>
+              <strong>필수 약관 동의</strong>
+            </div>
+
+            
+          </div>
+
+          <div className="agreement-documents">
+            <section className="agreement-document">
+              <div className="agreement-document-meta">
                 <div>
+                  <span>01</span>
                   <strong>서비스 이용 약관</strong>
                   <p>우노트래블 서비스 이용을 위한 필수 약관입니다.</p>
                 </div>
-                <label className="agreement-check">
-                  <input
-                    type="checkbox"
-                    checked={agreeTerms}
-                    onChange={(event) => setAgreeTerms(event.target.checked)}
-                  />
+
+                <button
+                  type="button"
+                  className={`agreement-check ${agreeTerms ? "is-checked" : ""}`}
+                  aria-pressed={agreeTerms}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    setAgreeTerms((prev) => !prev);
+                    if (notice) setNotice("");
+                  }}
+                >
                   <span aria-hidden="true" />
-                  필수 동의
-                </label>
+                  동의
+                </button>
               </div>
+
               <div
-                className="agreement-preview"
+                className="agreement-preview agreement-preview-terms"
+                tabIndex={0}
                 dangerouslySetInnerHTML={{ __html: TERMS_HTML }}
               />
             </section>
 
-            <section className="agreement-card">
-              <div className="agreement-card-head">
+            <section className="agreement-document">
+              <div className="agreement-document-meta">
                 <div>
+                  <span>02</span>
                   <strong>개인정보 수집 및 이용 동의</strong>
                   <p>회원 식별과 예약 관리를 위한 필수 항목입니다.</p>
                 </div>
-                <label className="agreement-check">
-                  <input
-                    type="checkbox"
-                    checked={agreePrivacy}
-                    onChange={(event) => setAgreePrivacy(event.target.checked)}
-                  />
+
+                <button
+                  type="button"
+                  className={`agreement-check ${agreePrivacy ? "is-checked" : ""}`}
+                  aria-pressed={agreePrivacy}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    setAgreePrivacy((prev) => !prev);
+                    if (notice) setNotice("");
+                  }}
+                >
                   <span aria-hidden="true" />
-                  필수 동의
-                </label>
+                  동의
+                </button>
               </div>
+
               <div
-                className="agreement-preview"
+                className="agreement-preview agreement-preview-privacy"
+                tabIndex={0}
                 dangerouslySetInnerHTML={{ __html: PRIVACY_HTML }}
               />
             </section>
-
-            <label className="agreement-all-check">
-              <input
-                type="checkbox"
-                checked={canContinue}
-                onChange={(event) => handleAllAgree(event.target.checked)}
-              />
-              <span aria-hidden="true" />
-              전체 동의
-            </label>
           </div>
 
           {notice && (
             <p className="agreement-notice" role="status" aria-live="polite">
+              <span aria-hidden="true" />
               {notice}
             </p>
           )}
 
           <div className="agreement-actions">
-            <button type="button" className="agreement-back" onClick={() => navigateTo("/register")}>
+            <button type="button" className="agreement-prev" onClick={() => navigateTo("/register")}>
               이전
             </button>
-            <button type="button" className="agreement-submit" onClick={handleContinue}>
-              <span>다음</span>
+
+            <button
+              type="button"
+              className={`agreement-submit ${canContinue ? "is-ready" : ""}`}
+              onClick={handleContinue}
+            >
+              <span>다음 단계</span>
               <span aria-hidden="true">→</span>
             </button>
           </div>
@@ -641,117 +694,281 @@ const STYLE = `
   .agreement-page-shell {
     width: 100%;
     min-width: 1024px;
-    min-height: calc(100vh - 110px);
+    min-height: 100vh;
     background: #ffffff;
-    color: #151515;
+    color: #111111;
     overflow-x: hidden;
+    overflow-y: auto;
   }
 
   .agreement-page-inner {
     width: 100%;
-    min-height: 820px;
-    padding: 138px 50px 56px;
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: minmax(360px, 34vw) minmax(620px, 1fr);
+    gap: 0;
+    padding: 14px;
     box-sizing: border-box;
-    display: flex;
-    justify-content: center;
+    background: #ffffff;
+    align-items: start;
   }
 
-  .agreement-content {
-    width: min(100%, 980px);
+  .agreement-aside {
+    position: sticky;
+    top: 14px;
+    min-height: calc(100vh - 28px);
+    padding: 34px 44px 40px;
+    box-sizing: border-box;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    border-right: 1px solid rgba(17, 17, 17, 0.12);
+    background: #ffffff;
+  }
+
+  .agreement-back-button {
+    width: 34px;
+    height: 34px;
+    border: 0;
+    background: transparent;
+    color: rgba(17, 17, 17, 0.48);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-start;
+    font-family: var(--font-en);
+    font-size: 26px;
+    line-height: 1;
+    transition: color 0.2s ease, transform 0.2s ease;
+  }
+
+  .agreement-back-button:hover {
+    color: #111111;
+    transform: translateX(-2px);
+  }
+
+  .agreement-aside-center {
+    width: min(360px, 100%);
+    align-self: center;
   }
 
   .agreement-kicker {
-    margin-bottom: 18px;
+    margin: 0 0 34px;
     font-family: var(--font-en);
-    font-size: 13px;
-    font-weight: 700;
+    font-size: 10px;
     line-height: 1;
-    letter-spacing: 0.22em;
-    color: #f5b800;
+    letter-spacing: 0.31em;
+    font-weight: 760;
+    color: rgba(17, 17, 17, 0.36);
   }
 
   .agreement-title {
     margin: 0;
-    font-family: "Times New Roman", var(--font-en);
-    font-size: 104px;
-    font-weight: 400;
-    line-height: 0.84;
-    letter-spacing: -0.06em;
-    color: #151515;
-  }
-
-  .agreement-title-rule {
-    display: block;
-    width: 34px;
-    height: 2px;
-    margin: 38px 0 28px;
-    background: rgba(21, 21, 21, 0.72);
+    font-family: var(--font-ko);
+    font-size: clamp(36px, 3.6vw, 54px);
+    line-height: 1.1;
+    letter-spacing: -0.075em;
+    font-weight: 620;
+    color: #111111;
+    word-break: keep-all;
   }
 
   .agreement-description {
-    margin: 0 0 42px;
+    max-width: 330px;
+    margin: 36px 0 0;
     font-family: var(--font-ko);
-    font-size: 18px;
-    font-weight: 600;
-    line-height: 1.62;
-    letter-spacing: -0.045em;
-    color: rgba(21, 21, 21, 0.78);
+    font-size: 13px;
+    line-height: 1.86;
+    letter-spacing: -0.04em;
+    font-weight: 500;
+    color: rgba(17, 17, 17, 0.56);
     word-break: keep-all;
   }
 
-  .agreement-list {
-    display: grid;
-    gap: 12px;
+
+  .agreement-aside-consent {
+    margin-top: 34px;
+    padding-top: 24px;
+    border-top: 1px solid rgba(17, 17, 17, 0.16);
   }
 
-  .agreement-card {
-    border: 1px solid rgba(21, 21, 21, 0.13);
+  .agreement-aside-consent .agreement-all-check {
+    height: 46px;
+    padding: 0 16px;
+    border: 1px solid rgba(17, 17, 17, 0.14);
+    background: transparent;
+  }
+
+  .agreement-aside-consent .agreement-all-check:hover {
+    border-color: rgba(17, 17, 17, 0.32);
+  }
+
+  .agreement-step-index {
+    display: grid;
+    gap: 8px;
+    font-family: var(--font-en);
+    line-height: 1;
+  }
+
+  .agreement-step-index span {
+    font-size: 10px;
+    letter-spacing: 0.22em;
+    font-weight: 760;
+    color: #111111;
+  }
+
+  .agreement-step-index span::after {
+    content: "";
+    display: block;
+    width: 22px;
+    height: 2px;
+    margin-top: 16px;
+    background: #fcc800;
+  }
+
+  .agreement-step-index strong {
+    margin-top: 10px;
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    font-weight: 760;
+    color: rgba(17, 17, 17, 0.38);
+  }
+
+  .agreement-document-area {
+    min-height: calc(100vh - 28px);
+    padding: 42px 54px 40px;
+    box-sizing: border-box;
+    display: grid;
+    grid-template-rows: auto auto auto auto;
     background: #ffffff;
-    padding: 24px;
+    min-width: 0;
+  }
+
+  .agreement-document-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 40px;
+    padding-bottom: 28px;
+    border-bottom: 1px solid rgba(17, 17, 17, 0.22);
+  }
+
+  .agreement-document-header div {
+    display: grid;
+    gap: 9px;
+  }
+
+  .agreement-document-header span {
+    font-family: var(--font-en);
+    font-size: 10px;
+    line-height: 1;
+    letter-spacing: 0.26em;
+    font-weight: 760;
+    color: rgba(17, 17, 17, 0.36);
+  }
+
+  .agreement-document-header strong {
+    font-family: var(--font-ko);
+    font-size: 20px;
+    line-height: 1.2;
+    letter-spacing: -0.055em;
+    font-weight: 640;
+    color: #111111;
+  }
+
+  .agreement-documents {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 18px;
+    align-self: start;
+    padding: 24px 0 0;
+    min-height: 0;
+  }
+
+  .agreement-document {
+    min-height: 0;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    border-top: 1px solid rgba(17, 17, 17, 0.12);
+  }
+
+  .agreement-document-meta {
+    min-height: 122px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 22px;
+    align-items: start;
+    padding: 20px 0 22px;
     box-sizing: border-box;
   }
 
-  .agreement-card-head {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    gap: 24px;
-    align-items: start;
+  .agreement-document-meta div > span {
+    display: block;
+    margin-bottom: 18px;
+    font-family: var(--font-en);
+    font-size: 10px;
+    line-height: 1;
+    letter-spacing: 0.22em;
+    font-weight: 760;
+    color: rgba(17, 17, 17, 0.34);
   }
 
-  .agreement-card strong {
+  .agreement-document-meta strong {
     display: block;
     font-family: var(--font-ko);
-    font-size: 16px;
-    font-weight: 800;
+    font-size: 15px;
+    line-height: 1.2;
+    font-weight: 650;
     letter-spacing: -0.045em;
-    color: #151515;
+    color: #111111;
   }
 
-  .agreement-card p {
-    margin: 7px 0 0;
+  .agreement-document-meta p {
+    max-width: 320px;
+    margin: 10px 0 0;
     font-family: var(--font-ko);
-    font-size: 13px;
-    font-weight: 600;
-    line-height: 1.45;
+    font-size: 12px;
+    line-height: 1.58;
+    font-weight: 500;
     letter-spacing: -0.04em;
-    color: rgba(21, 21, 21, 0.56);
+    color: rgba(17, 17, 17, 0.52);
+    word-break: keep-all;
   }
 
   .agreement-preview {
-    margin-top: 18px;
-    height: 220px;
-    padding: 18px;
+    display: block;
+    height: 58vh;
+    min-height: 460px;
+    max-height: 680px;
+    padding: 26px 26px 30px;
     box-sizing: border-box;
-    background: rgba(21, 21, 21, 0.025);
-    border: 1px solid rgba(21, 21, 21, 0.08);
-    overflow-y: auto;
+    background: rgba(17, 17, 17, 0.025);
+    border: 1px solid rgba(17, 17, 17, 0.08);
+    overflow-y: scroll;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
     font-family: var(--font-ko);
     font-size: 12px;
-    font-weight: 600;
-    line-height: 1.74;
+    font-weight: 500;
+    line-height: 1.78;
     letter-spacing: -0.04em;
-    color: rgba(21, 21, 21, 0.64);
+    color: rgba(17, 17, 17, 0.62);
     word-break: keep-all;
+    scrollbar-width: thin;
+  }
+
+  .agreement-preview-terms,
+  .agreement-preview-privacy {
+    overflow-y: scroll;
+  }
+
+  .agreement-preview::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .agreement-preview::-webkit-scrollbar-thumb {
+    background: rgba(17, 17, 17, 0.18);
   }
 
   .agreement-preview .agree dl,
@@ -763,20 +980,20 @@ const STYLE = `
   }
 
   .agreement-preview .agree dt {
-    margin: 16px 0 6px;
-    font-weight: 800;
-    color: rgba(21, 21, 21, 0.86);
+    margin: 18px 0 7px;
+    font-weight: 700;
+    color: rgba(17, 17, 17, 0.86);
   }
 
   .agreement-preview .agree dd {
-    margin-bottom: 12px;
+    margin-bottom: 14px;
   }
 
   .agreement-preview .agree strong {
     display: inline-block;
     margin: 14px 0 6px;
     font-size: 13px;
-    color: #151515;
+    color: #111111;
   }
 
   .agreement-preview table {
@@ -789,168 +1006,215 @@ const STYLE = `
 
   .agreement-preview th,
   .agreement-preview td {
-    border: 1px solid rgba(21, 21, 21, 0.14);
+    border: 1px solid rgba(17, 17, 17, 0.14);
     padding: 8px;
     vertical-align: top;
   }
 
   .agreement-preview th {
-    background: rgba(21, 21, 21, 0.04);
-    color: #151515;
+    background: rgba(17, 17, 17, 0.04);
+    color: #111111;
   }
 
-  .agreement-check {
+  .agreement-check,
+  .agreement-all-check {
+    border: 0;
+    background: transparent;
+    padding: 0;
     display: inline-flex;
     align-items: center;
     gap: 10px;
     cursor: pointer;
     font-family: var(--font-ko);
-    font-size: 13px;
-    font-weight: 800;
+    font-size: 12px;
+    line-height: 1;
+    font-weight: 620;
     letter-spacing: -0.035em;
-    color: #151515;
+    color: rgba(17, 17, 17, 0.66);
     white-space: nowrap;
+    transition: color 0.2s ease;
   }
 
-  .agreement-check input {
-    position: absolute;
-    opacity: 0;
-    pointer-events: none;
+  .agreement-check:hover,
+  .agreement-all-check:hover {
+    color: #111111;
   }
 
-  .agreement-check span {
+  .agreement-check span,
+  .agreement-all-check span {
     width: 18px;
     height: 18px;
-    border: 1px solid rgba(21, 21, 21, 0.22);
+    border: 1px solid rgba(17, 17, 17, 0.24);
     background: #ffffff;
     box-sizing: border-box;
     position: relative;
+    transition: background 0.18s ease, border-color 0.18s ease;
   }
 
-  .agreement-check input:checked + span {
-    background: #151515;
-    border-color: #151515;
+  .agreement-check.is-checked span,
+  .agreement-all-check.is-checked span {
+    background: #fcc800;
+    border-color: #fcc800;
   }
 
-  .agreement-check input:checked + span::after {
+  .agreement-check.is-checked span::after,
+  .agreement-all-check.is-checked span::after {
     content: "";
     position: absolute;
     left: 5px;
     top: 2px;
     width: 5px;
     height: 9px;
-    border: solid #ffffff;
+    border: solid #111111;
     border-width: 0 2px 2px 0;
     transform: rotate(45deg);
   }
 
+  .agreement-check.is-checked,
+  .agreement-all-check.is-checked {
+    color: #111111;
+  }
+
   .agreement-notice {
-    margin: 16px 0 0;
+    position: relative;
+    margin: 18px 0 0;
+    min-height: 42px;
+    border: 1px solid rgba(17, 17, 17, 0.13);
+    background: rgba(17, 17, 17, 0.032);
+    padding: 13px 14px 13px 42px;
+    box-sizing: border-box;
     font-family: var(--font-ko);
-    font-size: 13px;
-    font-weight: 700;
+    font-size: 12px;
+    line-height: 1.45;
+    font-weight: 560;
     letter-spacing: -0.035em;
-    color: #b88400;
+    color: rgba(17, 17, 17, 0.72);
+    animation: agreementNoticeIn 0.24s ease both;
+  }
+
+  .agreement-notice span {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    width: 16px;
+    height: 16px;
+    transform: translateY(-50%);
+    border-radius: 999px;
+    background: #111111;
+  }
+
+  .agreement-notice span::before,
+  .agreement-notice span::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    background: #ffffff;
+    transform: translateX(-50%);
+  }
+
+  .agreement-notice span::before {
+    top: 3px;
+    width: 1px;
+    height: 6px;
+  }
+
+  .agreement-notice span::after {
+    bottom: 3px;
+    width: 2px;
+    height: 2px;
+    border-radius: 999px;
   }
 
   .agreement-actions {
     display: grid;
     grid-template-columns: 160px 1fr;
-    gap: 10px;
-    margin-top: 28px;
+    gap: 12px;
+    margin-top: 22px;
   }
 
-  .agreement-back,
+  .agreement-prev,
   .agreement-submit {
-    height: 58px;
+    height: 56px;
     cursor: pointer;
     box-sizing: border-box;
     font-family: var(--font-ko);
     font-size: 14px;
-    font-weight: 700;
-    letter-spacing: 0.04em;
-    transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+    font-weight: 650;
+    letter-spacing: -0.025em;
+    transition:
+      transform 0.22s ease,
+      background 0.22s ease,
+      color 0.22s ease,
+      border-color 0.22s ease;
   }
 
-  .agreement-back {
-    border: 1px solid rgba(21, 21, 21, 0.16);
+  .agreement-prev {
+    border: 1px solid rgba(17, 17, 17, 0.16);
     background: #ffffff;
-    color: #151515;
+    color: rgba(17, 17, 17, 0.68);
   }
 
-  .agreement-submit {
-    border: none;
-    background: #fcc800;
-    color: #151515;
-    display: grid;
-    grid-template-columns: 1fr auto;
-    align-items: center;
-    padding: 0 28px;
-  }
-
-  .agreement-back:hover,
-  .agreement-submit:hover {
+  .agreement-prev:hover {
+    border-color: rgba(17, 17, 17, 0.38);
+    color: #111111;
     transform: translateY(-1px);
   }
 
-  .agreement-submit:hover {
-    box-shadow: 0 18px 42px rgba(252, 200, 0, 0.2);
+  .agreement-submit {
+    border: 0;
+    border-radius: 2px;
+    background: #111111;
+    color: #ffffff;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    padding: 0 22px;
   }
 
-  @media (max-width: 1180px) {
-    .agreement-title {
-      font-size: 86px;
+  .agreement-submit:hover {
+    background: #fcc800;
+    color: #111111;
+    transform: translateY(-1px);
+  }
+
+  .agreement-submit:not(.is-ready) {
+    background: rgba(17, 17, 17, 0.18);
+    color: rgba(255, 255, 255, 0.82);
+  }
+
+  .agreement-submit:not(.is-ready):hover {
+    background: #111111;
+    color: #ffffff;
+  }
+
+  @keyframes agreementNoticeIn {
+    from {
+      opacity: 0;
+      transform: translateY(-4px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
     }
   }
 
+  @media (max-width: 1180px) {
+    .agreement-page-inner {
+      grid-template-columns: minmax(330px, 34vw) minmax(620px, 1fr);
+    }
 
-  .agreement-all-check {
-    min-height: 58px;
-    margin-top: 4px;
-    border: 1px solid rgba(21, 21, 21, 0.13);
-    background: linear-gradient(90deg, rgba(252, 200, 0, 0.11), rgba(255, 255, 255, 1));
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    padding: 0 22px;
-    box-sizing: border-box;
-    cursor: pointer;
-    font-family: var(--font-ko);
-    font-size: 14px;
-    font-weight: 800;
-    letter-spacing: -0.04em;
-    color: #151515;
-  }
+    .agreement-aside {
+      padding-left: 34px;
+      padding-right: 34px;
+    }
 
-  .agreement-all-check input {
-    position: absolute;
-    opacity: 0;
-    pointer-events: none;
-  }
+    .agreement-document-area {
+      padding-left: 38px;
+      padding-right: 38px;
+    }
 
-  .agreement-all-check span {
-    width: 18px;
-    height: 18px;
-    border: 1px solid rgba(21, 21, 21, 0.22);
-    background: #ffffff;
-    box-sizing: border-box;
-    position: relative;
-  }
-
-  .agreement-all-check input:checked + span {
-    background: #151515;
-    border-color: #151515;
-  }
-
-  .agreement-all-check input:checked + span::after {
-    content: "";
-    position: absolute;
-    left: 5px;
-    top: 2px;
-    width: 5px;
-    height: 9px;
-    border: solid #ffffff;
-    border-width: 0 2px 2px 0;
-    transform: rotate(45deg);
+    .agreement-documents {
+      gap: 14px;
+    }
   }
 `;

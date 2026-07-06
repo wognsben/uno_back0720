@@ -565,20 +565,22 @@ export default function App() {
         }}
       >
         {/* Header */}
-        <div
-          style={{
-            /* Desktop Responsive
-               - Header wrapper도 100vw 대신 부모 기준 100% 사용 */
-            width: "100%",
-            boxSizing: "border-box",
-            padding: "51px 55px 0",
-            display: "flex",
-            justifyContent: "center",
-            overflow: "hidden",
-          }}
-        >
-          <Header />
-        </div>
+        {!isLoginPage && (
+          <div
+            style={{
+              /* Desktop Responsive
+                 - Header wrapper도 100vw 대신 부모 기준 100% 사용 */
+              width: "100%",
+              boxSizing: "border-box",
+              padding: "51px 55px 0",
+              display: "flex",
+              justifyContent: "center",
+              overflow: "hidden",
+            }}
+          >
+            <Header />
+          </div>
+        )}
 
         {isProductPage ? (
           /*
@@ -621,7 +623,7 @@ export default function App() {
             Login Page
 
             /login 경로에서 로그인 페이지를 렌더링한다.
-            Header / Footer는 App.tsx 공통 컴포넌트를 유지하고,
+            로그인 화면은 인증 전용 화면이므로 Header / Footer를 노출하지 않는다.
             ProductNavigation은 상품 페이지 전용이므로 노출하지 않는다.
           */
           <LoginPage />
@@ -741,18 +743,20 @@ export default function App() {
         )}
 
         {/* Footer */}
-        <div
-          style={{
-            /* Desktop Responsive
-               - Footer wrapper도 100vw 대신 부모 기준 100% 사용 */
-            width: "100%",
-            minWidth: 1024,
-            flexShrink: 0,
-            overflow: "hidden",
-          }}
-        >
-          <Footer />
-        </div>
+        {!isLoginPage && (
+          <div
+            style={{
+              /* Desktop Responsive
+                 - Footer wrapper도 100vw 대신 부모 기준 100% 사용 */
+              width: "100%",
+              minWidth: 1024,
+              flexShrink: 0,
+              overflow: "hidden",
+            }}
+          >
+            <Footer />
+          </div>
+        )}
       </div>
     </>
   );
