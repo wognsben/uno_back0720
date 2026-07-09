@@ -68,7 +68,7 @@ type HeroItem = {
     region / product title 데이터를 DB 값으로 교체하면 된다.
   */
   regions: string[];
-  products: string[];
+  products: { title: string; href: string }[];
 
   /*
     ProductTemplate route
@@ -103,11 +103,11 @@ const HERO_ITEMS: HeroItem[] = [
     meta: ["EST.2011", "ITALY", "SEMI PACKAGE", "MEDITERRANEAN"],
     regions: ["남부", "북부", "시칠리아", "돌로미티"],
     products: [
-      "이탈리아 일주 9박 11일",
-      "이탈리아 일주 7박 9일",
-      "이탈리아일주 + 돌로미티 11일",
-      "지중해의 황금빛 시칠리아 일주 9일",
-      "이탈리아 아트투어 일주 9박 11일",
+      { title: "이탈리아 일주 9박 11일", href: "/product/detail/italy-11" },
+      { title: "이탈리아 일주 7박 9일", href: "/product/detail/italy-9" },
+      { title: "이탈리아일주 + 돌로미티 11일", href: "/product/detail/dolomiti-11" },
+      { title: "지중해의 황금빛 시칠리아 일주 9일", href: "/product/detail/sicilia-9" },
+      { title: "이탈리아 아트투어 일주 9박 11일", href: "/product/detail/art-tour-11" },
     ],
     href: "/product/semi/italy?view=gallery",
   },
@@ -120,7 +120,10 @@ const HERO_ITEMS: HeroItem[] = [
     subtitle: "바르셀로나 · 안달루시아",
     meta: ["EST.2011", "SPAIN", "SEMI PACKAGE", "CURATED ROUTE"],
     regions: ["바르셀로나", "안달루시아"],
-    products: ["스페인 세미패키지", "바르셀로나 · 안달루시아 루트"],
+    products: [
+      { title: "스페인 세미패키지", href: "/product/semi/spain?view=gallery" },
+      { title: "바르셀로나 · 안달루시아 루트", href: "/product/semi/spain?view=gallery" },
+    ],
     href: "/product/semi/spain?view=gallery",
   },
   {
@@ -132,7 +135,10 @@ const HERO_ITEMS: HeroItem[] = [
     subtitle: "리스본 · 포르투",
     meta: ["EST.2011", "PORTUGAL", "SEMI PACKAGE", "ATLANTIC ROUTE"],
     regions: ["리스본", "포르투"],
-    products: ["포르투갈 세미패키지", "리스본 · 포르투 루트"],
+    products: [
+      { title: "포르투갈 세미패키지", href: "/product/semi/portugal?view=gallery" },
+      { title: "리스본 · 포르투 루트", href: "/product/semi/portugal?view=gallery" },
+    ],
     href: "/product/semi/portugal?view=gallery",
   },
   {
@@ -144,7 +150,10 @@ const HERO_ITEMS: HeroItem[] = [
     subtitle: "산토리니 · 이스탄불",
     meta: ["EST.2011", "GREECE", "TURKEY", "SEMI PACKAGE"],
     regions: ["산토리니", "아테네", "이스탄불"],
-    products: ["그리스 · 터키 세미패키지", "산토리니 · 이스탄불 루트"],
+    products: [
+      { title: "그리스 · 터키 세미패키지", href: "/product/semi/greece-turkey?view=gallery" },
+      { title: "산토리니 · 이스탄불 루트", href: "/product/semi/greece-turkey?view=gallery" },
+    ],
     href: "/product/semi/greece-turkey?view=gallery",
   },
   {
@@ -156,7 +165,10 @@ const HERO_ITEMS: HeroItem[] = [
     subtitle: "카이로 · 룩소르",
     meta: ["EST.2011", "EGYPT", "SEMI PACKAGE", "ANCIENT ROUTE"],
     regions: ["카이로", "룩소르"],
-    products: ["이집트 세미패키지", "카이로 · 룩소르 루트"],
+    products: [
+      { title: "이집트 세미패키지", href: "/product/semi/egypt?view=gallery" },
+      { title: "카이로 · 룩소르 루트", href: "/product/semi/egypt?view=gallery" },
+    ],
     href: "/product/semi/egypt?view=gallery",
   },
   {
@@ -169,11 +181,11 @@ const HERO_ITEMS: HeroItem[] = [
     meta: ["EST.2011", "ITALY", "DAILY TOUR", "LOCAL SCENE"],
     regions: ["로마", "피렌체", "나폴리", "베네치아"],
     products: [
-      "로마 시내 투어",
-      "바티칸 투어",
-      "남부 아말피 코스트 투어",
-      "피렌체 투어",
-      "베네치아 투어",
+      { title: "로마 시내 투어", href: "/product/detail/daily/rome-city-walk" },
+      { title: "바티칸 투어", href: "/product/detail/daily/rome-vatican-daily" },
+      { title: "남부 아말피 코스트 투어", href: "/product/detail/daily/napoli-pompei-daily" },
+      { title: "피렌체 투어", href: "/product/detail/daily/firenze-uffizi-daily" },
+      { title: "베네치아 투어", href: "/product/detail/daily/venezia-walk-daily" },
     ],
     href: "/product/daily/italy?view=gallery",
   },
@@ -186,7 +198,10 @@ const HERO_ITEMS: HeroItem[] = [
     subtitle: "파리 · 몽생미셸",
     meta: ["EST.2011", "FRANCE", "DAILY TOUR", "FRENCH ROUTE"],
     regions: ["파리", "몽생미셸"],
-    products: ["파리 데일리 투어", "몽생미셸 투어"],
+    products: [
+      { title: "파리 데일리 투어", href: "/product/daily/france?view=gallery" },
+      { title: "몽생미셸 투어", href: "/product/daily/france?view=gallery" },
+    ],
     href: "/product/daily/france?view=gallery",
   },
 ];
@@ -263,6 +278,7 @@ function ProductMegaPanel({
   expandedItemId,
   onExpandedItemChange,
   onNavigate,
+  onClose,
 }: {
   category: HeroCategory | null;
   items: HeroItem[];
@@ -270,6 +286,7 @@ function ProductMegaPanel({
   expandedItemId: string | null;
   onExpandedItemChange: (itemId: string | null) => void;
   onNavigate: (item: HeroItem) => void;
+  onClose: () => void;
 }) {
   const isOpen = Boolean(category);
   const title = category === "semi" ? "SEMI PACKAGE" : "DAILY TOUR";
@@ -340,9 +357,19 @@ function ProductMegaPanel({
 
                 <span className="product-mega-product-list">
                   {item.products.map((product) => (
-                    <span key={product} className="product-mega-product">
-                      {product}
-                    </span>
+                    <button
+                      key={product.href + product.title}
+                      type="button"
+                      className="product-mega-product"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onClose();
+                        window.history.pushState({}, "", product.href);
+                        window.dispatchEvent(new Event("unotravel:navigate"));
+                      }}
+                    >
+                      {product.title}
+                    </button>
                   ))}
                 </span>
               </button>
@@ -1135,25 +1162,37 @@ export default function ProductNavigation() {
         }
 
         .product-mega-product {
+          appearance: none;
+          border: 0;
+          background: transparent;
+          padding: 0;
+          text-align: left;
+          cursor: pointer;
           font-family: var(--font-ko);
-
-          /*
-            Product Name One Line
-            ----------------------------------------------------------
-            상품명이 길어도 2줄로 떨어지지 않도록 한 줄 노출을 기본값으로 둔다.
-            텍스트 크기는 기존보다 소폭 낮춰 제품명 가독성과 한 줄 유지 가능성을 높인다.
-          */
           font-size: 12px;
           line-height: 1.32;
           letter-spacing: -0.035em;
           color: rgba(21, 21, 21, 0.62);
           white-space: nowrap;
           word-break: keep-all;
+          transition:
+            color 0.18s ease,
+            transform 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        .product-mega-product:hover {
+          color: #151515;
+          transform: translateX(4px);
         }
 
         .product-mega-product::before {
           content: "·";
           margin-right: 6px;
+          color: #fcc800;
+          transition: color 0.18s ease;
+        }
+
+        .product-mega-product:hover::before {
           color: #fcc800;
         }
 
@@ -1293,6 +1332,11 @@ export default function ProductNavigation() {
           expandedItemId={activeMegaItemId}
           onExpandedItemChange={setActiveMegaItemId}
           onNavigate={handleNavigate}
+          onClose={() => {
+            setActiveMegaCategory(null);
+            setActiveMegaItemId(null);
+            setIsHandleExpanded(false);
+          }}
         />
       </div>
     </>

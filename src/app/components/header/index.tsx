@@ -1673,14 +1673,15 @@ export default function Header({
       setRecentlyViewedProducts(nextProducts);
 
       if (previousCount === 0 && nextProducts.length > 0) {
-        const alreadyOpened = window.sessionStorage.getItem(
-          RECENTLY_VIEWED_FIRST_OPEN_KEY,
-        );
+  const alreadyOpened = window.sessionStorage.getItem(
+    RECENTLY_VIEWED_FIRST_OPEN_KEY,
+  );
 
-        if (!alreadyOpened) {
-          window.sessionStorage.setItem(RECENTLY_VIEWED_FIRST_OPEN_KEY, "true");
-          setIsMenuOpen(false);
-          setIsViewedOpen(true);
+  if (!alreadyOpened) {
+    window.sessionStorage.setItem(RECENTLY_VIEWED_FIRST_OPEN_KEY, "true");
+    setIsMenuOpen(false);
+    setIsInfoOpen(false);
+    setIsViewedOpen(true);
 
           if (viewedAutoCloseTimerRef.current) {
             window.clearTimeout(viewedAutoCloseTimerRef.current);
@@ -1752,24 +1753,45 @@ export default function Header({
 
 
   useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setIsMenuOpen(false);
-        setIsViewedOpen(false);
-        setIsInfoOpen(false);
-      }
-    };
+  const closeHeaderPanels = () => {
+    setIsMenuOpen(false);
+    setIsViewedOpen(false);
+    setIsInfoOpen(false);
+    setHoveredItem(null);
+    setLantern((prev) => ({
+      ...prev,
+      visible: false,
+    }));
 
-    window.addEventListener("keydown", handleKeyDown);
+    if (infoCloseTimerRef.current) {
+      window.clearTimeout(infoCloseTimerRef.current);
+      infoCloseTimerRef.current = null;
+    }
 
-    return () => {
-      if (infoCloseTimerRef.current) {
-        window.clearTimeout(infoCloseTimerRef.current);
-      }
+    if (viewedAutoCloseTimerRef.current) {
+      window.clearTimeout(viewedAutoCloseTimerRef.current);
+      viewedAutoCloseTimerRef.current = null;
+    }
+  };
 
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, []);
+  const handleKeyDown = (event: KeyboardEvent) => {
+    if (event.key === "Escape") {
+      closeHeaderPanels();
+    }
+  };
+
+  window.addEventListener("keydown", handleKeyDown);
+  window.addEventListener("unotravel:navigate", closeHeaderPanels);
+  window.addEventListener("popstate", closeHeaderPanels);
+
+  return () => {
+    closeHeaderPanels();
+
+    window.removeEventListener("keydown", handleKeyDown);
+    window.removeEventListener("unotravel:navigate", closeHeaderPanels);
+    window.removeEventListener("popstate", closeHeaderPanels);
+  };
+}, []);
 
   const shortNavItems = authState.isLoggedIn
     ? (["VIEWED", "INFO", "CONTACT"] as const)
@@ -1840,11 +1862,12 @@ export default function Header({
         }
         onClick={
           isViewedButton
-            ? () => {
-                updateViewedPanelAnchorFromElement(viewedButtonRef.current);
-                setIsMenuOpen(false);
-                setIsViewedOpen((prev) => !prev);
-              }
+  ? () => {
+      updateViewedPanelAnchorFromElement(viewedButtonRef.current);
+      setIsMenuOpen(false);
+      setIsInfoOpen(false);
+      setIsViewedOpen((prev) => !prev);
+    }
             : isLoginButton
               ? () => {
                   setIsMenuOpen(false);
@@ -1937,28 +1960,27 @@ export default function Header({
         transition: "top 0.35s cubic-bezier(0.22, 1, 0.36, 1)",
       }}
     >
-      {(isMenuOpen || isViewedOpen) && (
-        <button
-          aria-label={
-            isMenuOpen ? "Close menu overlay" : "Close recently viewed panel"
-          }
-          onClick={() => {
-            setIsMenuOpen(false);
-            setIsViewedOpen(false);
-          }}
-          style={{
-            position: "fixed",
-            inset: 0,
-            border: "none",
-            background:
-              isMenuOpen && isScrolled ? "rgba(0, 0, 0, 0.14)" : "transparent",
-            padding: 0,
-            pointerEvents: "auto",
-            cursor: "default",
-            zIndex: 1,
-          }}
-        />
-      )}
+      {isMenuOpen && (
+  <button
+    aria-label="Close menu overlay"
+    onClick={() => {
+      setIsMenuOpen(false);
+      setIsViewedOpen(false);
+      setIsInfoOpen(false);
+    }}
+    style={{
+      position: "fixed",
+      inset: 0,
+      border: "none",
+      background:
+        isMenuOpen && isScrolled ? "rgba(0, 0, 0, 0.14)" : "transparent",
+      padding: 0,
+      pointerEvents: "auto",
+      cursor: "default",
+      zIndex: 1,
+    }}
+  />
+)}
 
       <div
         style={{

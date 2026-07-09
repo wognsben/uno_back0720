@@ -49,6 +49,21 @@
   backface-visibility: hidden;
   will-change: transform;
   transition: transform 0.82s cubic-bezier(0.16, 1, 0.3, 1);
+
+  /*
+    Click Shield Fix
+    ------------------------------------------
+    전환 레이어는 시각 전환 전용이다.
+    fixed layer가 화면 전체를 덮는 동안 내부의 이전 페이지 링크/버튼이
+    보이지 않는 상태로 클릭을 가로채지 않도록 모든 pointer event를 차단한다.
+  */
+  pointer-events: none;
+}
+
+.unotravel-transition-layer-current,
+.unotravel-transition-layer-next,
+.unotravel-transition-layer-inner {
+  pointer-events: none;
 }
 
 .unotravel-transition-layer-inner {

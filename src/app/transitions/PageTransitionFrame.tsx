@@ -138,7 +138,7 @@ export default function PageTransitionFrame({
       */
       window.scrollTo({ top: 0, left: 0, behavior: "auto" });
     }, TRANSITION_DURATION);
-  }, [children, displayChildren, pathname]);
+  }, [pathname]);
 
   useEffect(() => {
     return () => {
@@ -199,7 +199,7 @@ export default function PageTransitionFrame({
         </div>
       </div>
 
-      <div className={nextLayerClass}>
+      <div className={nextLayerClass} aria-hidden="true">
         <div className="unotravel-transition-layer-inner">{displayChildren}</div>
       </div>
     </div>

@@ -588,25 +588,6 @@ export default function App() {
             즉, ProductTemplate 내부 Hero보다 먼저 노출되는 공통 Sub Page Navigation이다.
           */
           <>
-            {/* 
-    ProductNavigation Offset
-    ----------------------------------------------------------
-    Header가 상단 floating 구조이므로
-    상품 서브페이지 Navigation이 Header 뒤로 가려지지 않도록
-    Header 높이만큼 상단 여백을 확보한다.
-  */}
-            <div style={{ paddingTop: 132 }}>
-              <ProductNavigation />
-            </div>
-
-            {/*
-    Product Route Split
-    ----------------------------------------------------------
-    /product/semi/... 또는 /product/daily/... 는 상품 목록(ProductTemplate)
-    /product/detail/... 는 상품 상세(ProductDetail)로 분리한다.
-
-    ProductNavigation은 목록/상세 공통으로 유지한다.
-  */}
             {isProductDetail ? (
               <ProductDetail />
             ) : (
@@ -809,6 +790,19 @@ export default function App() {
             }}
           >
             <Header />
+          </div>
+        )}
+
+        {/*
+          ProductNavigation — 공통 글로벌 네비게이션
+          ------------------------------------------
+          모든 페이지에서 Header 바로 아래 노출.
+          PageTransitionFrame 바깥에 배치해야 position:fixed가 정상 작동한다.
+          (PageTransitionFrame이 전환 중 transform을 사용하면 fixed 기준이 viewport가 아닌 부모로 바뀜)
+        */}
+        {!isLoginPage && !isRegisterRoute && !isContactPage && (
+          <div style={{ paddingTop: 132, width: "100%", minWidth: 1024 }}>
+            <ProductNavigation />
           </div>
         )}
 
