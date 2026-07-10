@@ -39,6 +39,7 @@ import type {
   InfiniteOtherSourceProduct,
 } from "./Infiniteother";
 import ProductDocument from "./product_com/product_document";
+import { getLegacyProductId } from "./productLegacyIds";
 import type {
   DetailNotice,
   DetailScheduleDay,
@@ -75,6 +76,7 @@ type ProductDetailProps = {
 
 const SEMI_DETAIL_DATA = {
   id: "italy-11",
+  legacyProductId: getLegacyProductId("italy-11"),
   href: "/product/detail/italy-11",
 
   /*
@@ -479,6 +481,7 @@ const SEMI_DETAIL_DATA = {
 const DAILY_DETAIL_DATA = {
   ...SEMI_DETAIL_DATA,
   id: "rome-vatican-daily",
+  legacyProductId: getLegacyProductId("rome-vatican-daily"),
   href: "/product/detail/daily/rome-vatican-daily",
   productType: "daily" as ProductKind,
   eyebrow: "DAILY TOUR · ROME",
@@ -2054,6 +2057,8 @@ export default function ProductDetail({
       return {
         ...baseDetailData,
         id: productId || baseDetailData.id,
+        legacyProductId:
+          getLegacyProductId(productId) ?? baseDetailData.legacyProductId,
         href: pathname || baseDetailData.href,
       };
     }
@@ -2068,6 +2073,10 @@ export default function ProductDetail({
     return {
       ...baseDetailData,
       id: sourceProduct.id,
+      legacyProductId:
+        sourceProduct.legacyProductId ??
+        getLegacyProductId(sourceProduct.id) ??
+        baseDetailData.legacyProductId,
       href: sourceProduct.href ?? pathname ?? baseDetailData.href,
       productType: productListType ?? baseDetailData.productType,
       eyebrow: sourceProduct.eyebrow ?? sourceRegion ?? baseDetailData.eyebrow,
@@ -2229,6 +2238,7 @@ export default function ProductDetail({
         <ReservationModule
           product={{
             id: DETAIL_DATA.id,
+            legacyProductId: DETAIL_DATA.legacyProductId,
             productType: DETAIL_DATA.productType,
             title: DETAIL_DATA.title,
             href: DETAIL_DATA.href,
@@ -2285,6 +2295,7 @@ export default function ProductDetail({
                 <BookingSide
                   product={{
                     id: DETAIL_DATA.id,
+                    legacyProductId: DETAIL_DATA.legacyProductId,
                     productType: DETAIL_DATA.productType,
                     title: DETAIL_DATA.title,
                     currency: DETAIL_DATA.currency,

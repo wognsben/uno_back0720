@@ -19,6 +19,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import CategoryFilter from "./CategoryFilter";
 import ProductList from "./ProductList";
+import { PRODUCT_LEGACY_ID_CANDIDATES } from "./productLegacyIds";
 
 export type ProductViewMode = "gallery" | "list";
 export type ProductKind = "semi" | "daily";
@@ -31,6 +32,7 @@ export type ProductCategory = {
 
 export type ProductItem = {
   id: string;
+  legacyProductId?: number | string;
   number: string;
   title: string;
   region?: string;
@@ -98,6 +100,7 @@ export const SEMI_PACKAGE_DATA: ProductTemplateData = {
   products: [
     {
       id: "italy-11",
+      legacyProductId: PRODUCT_LEGACY_ID_CANDIDATES["italy-11"],
       number: "01",
       title: "이탈리아 일주 9박 11일",
       region: "ITALY",
@@ -190,6 +193,7 @@ export const DAILY_TOUR_DATA: ProductTemplateData = {
   products: [
     {
       id: "rome-vatican-daily",
+      legacyProductId: PRODUCT_LEGACY_ID_CANDIDATES["rome-vatican-daily"],
       number: "01",
       title: "로마 바티칸 집중 투어",
       region: "ROME",
@@ -229,6 +233,7 @@ export const DAILY_TOUR_DATA: ProductTemplateData = {
     },
     {
       id: "venezia-walk-daily",
+      legacyProductId: PRODUCT_LEGACY_ID_CANDIDATES["venezia-walk-daily"],
       number: "04",
       title: "베네치아 수상 도시 산책",
       region: "VENEZIA",
@@ -242,6 +247,7 @@ export const DAILY_TOUR_DATA: ProductTemplateData = {
     },
     {
       id: "napoli-pompei-daily",
+      legacyProductId: PRODUCT_LEGACY_ID_CANDIDATES["napoli-pompei-daily"],
       number: "05",
       title: "나폴리 · 폼페이 데일리 투어",
       region: "NAPOLI",

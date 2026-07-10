@@ -28,6 +28,7 @@ type ProductKind = "semi" | "daily";
 
 type BookingSideProduct = {
   id: string;
+  legacyProductId?: number | string;
   title: string;
   productType: ProductKind;
   basePrice: number;
@@ -1251,6 +1252,7 @@ export default function BookingSide({
     createReservationPayload({
       product: {
         id: product.id,
+        legacyProductId: product.legacyProductId,
         productType: product.productType,
         title: product.title,
         href:

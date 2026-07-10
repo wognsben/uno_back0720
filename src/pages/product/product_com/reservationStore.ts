@@ -17,6 +17,7 @@ export type ReservationProductKind = "semi" | "daily";
 
 export type ReservationProductContext = {
   id: string;
+  legacyProductId?: number | string;
   productType: ReservationProductKind;
   title: string;
   href: string;
@@ -26,6 +27,7 @@ export type ReservationProductContext = {
 
 export type ReservationStoragePayload = {
   productId: string;
+  legacyProductId?: number | string;
   productType: ReservationProductKind;
   title: string;
   href: string;
@@ -84,6 +86,7 @@ export const createReservationPayload = ({
 
   return {
     productId: product.id,
+    legacyProductId: product.legacyProductId,
     productType: product.productType,
     title: product.title,
     href: product.href,
