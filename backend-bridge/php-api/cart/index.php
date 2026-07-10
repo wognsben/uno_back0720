@@ -8,9 +8,17 @@
 
 require_once dirname(__DIR__) . '/_bootstrap.php';
 require_once dirname(__DIR__) . '/_product_map.php';
+require_once dirname(__DIR__) . '/_reservation_helpers.php';
 
-uno_api_require_method('POST');
 uno_api_require_login();
+
+$unoApiCartMethod = isset($_SERVER['REQUEST_METHOD'])
+    ? strtoupper($_SERVER['REQUEST_METHOD'])
+    : 'GET';
+
+if (!in_array($unoApiCartMethod, array('GET', 'POST'), true)) {
+    uno_api_error('VALIDATION_ERROR', '허용되지 않은 요청 방식입니다.', 405);
+}
 
 function uno_api_cart_read_json()
 {
@@ -258,8 +266,82 @@ function uno_api_cart_insert_row($payload, $mapping, $productType, $lines)
     return uno_api_cart_insert_id();
 }
 
+function uno_api_cart_fetch_rows($memberId)
+{
+    $memberId = uno_api_reservation_escape($memberId);
+    $productTable = uno_api_reservation_table_product();
+    $result = sql_query(
+        "select r.*,
+                p.wr_subject,
+                p.ca_name,
+                p.wr_reg_result,
+                p.is_passport,
+                p.is_delivery,
+                p.is_roominfo
+           from tour_reg r
+           left join {$productTable} p on p.wr_id = r.pid
+          where r.mb_id = '{$memberId}'
+            and r.status = 'cart'
+            and (r.del_time = 0 or r.del_time is null or r.del_time < 111)
+          order by r.id desc"
+    );
+
+    $rows = array();
+    while ($row = sql_fetch_array($result)) {
+        $rows[] = $row;
+    }
+
+    return $rows;
+}
+
+function uno_api_cart_response_item($row)
+{
+    $detail = uno_api_reservation_response_from_row($row);
+    $options = array();
+
+    foreach ($detail['options'] as $option) {
+        $options[] = array(
+            'feeId' => isset($option['feeId']) ? $option['feeId'] : '',
+            'personCount' => isset($option['personCount']) ? (int) $option['personCount'] : 0,
+            'label' => isset($option['label']) ? $option['label'] : '',
+            'deposit' => isset($option['deposit']) ? (int) $option['deposit'] : 0,
+            'localPayment' => isset($option['localPayment']) ? (int) $option['localPayment'] : 0,
+        );
+    }
+
+    return array(
+        'rid' => $detail['rid'],
+        'productId' => $detail['product']['id'],
+        'legacyProductId' => $detail['product']['legacyProductId'],
+        'title' => $detail['product']['title'],
+        'tourDate' => $detail['tourDate'],
+        'options' => $options,
+        'totalDeposit' => $detail['totalDeposit'],
+        'totalLocalPayment' => $detail['totalLocalPayment'],
+    );
+}
+
+function uno_api_cart_list_response()
+{
+    $rows = uno_api_cart_fetch_rows(uno_api_current_member_id());
+    $items = array();
+
+    foreach ($rows as $row) {
+        $items[] = uno_api_cart_response_item($row);
+    }
+
+    uno_api_success(array(
+        'items' => $items,
+        'count' => count($items),
+    ));
+}
+
 if (!function_exists('sql_fetch') || !function_exists('sql_query')) {
     uno_api_error('SERVER_ERROR', 'Gnuboard DB 함수를 찾을 수 없습니다.', 500);
+}
+
+if ($unoApiCartMethod === 'GET') {
+    uno_api_cart_list_response();
 }
 
 $payload = uno_api_cart_read_json();

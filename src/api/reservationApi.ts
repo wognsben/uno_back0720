@@ -194,6 +194,39 @@ export type ReservationStatusCode =
   | "9"
   | "91";
 
+export type ReservationDetailResponse = {
+  rid: number | string;
+  reservationNo: string;
+  status: ReservationStatusCode;
+  statusLabel: string;
+  createdAt?: string;
+  product: ProductSummary & {
+    requiresPassport?: boolean;
+    requiresRoomInfo?: boolean;
+    requiresDelivery?: boolean;
+  };
+  tourDate: string;
+  tourTime?: string;
+  options: Array<{
+    feeId: number | string;
+    label: string;
+    personCount: number;
+    deposit?: number;
+    localPayment?: number;
+    extraPayment?: number;
+    packageTotal?: number;
+    airfare?: number;
+  }>;
+  totalDeposit: number;
+  totalLocalPayment?: number;
+  totalExtraPayment?: number;
+  totalPackagePrice?: number;
+  totalAirfare?: number;
+  applicantDefaults: ReservationApplicant;
+  memo?: string;
+  roomInfo?: string;
+};
+
 export type ReservationConfirmResponse = {
   rid: number | string;
   status: ReservationStatusCode;
@@ -241,20 +274,21 @@ export const createReservationDraftRequest = (
 });
 
 export const getAuthSession = () =>
-  unoApiData<AuthSessionResponse>("/auth/session");
+  unoApiData<AuthSessionResponse>("/auth/session.php");
 
 export const getProducts = (query?: {
   type?: ProductKind;
   category?: string;
   legacyCategory?: string;
-}) => unoApiData<ProductListResponse>("/products", { query });
+}) => unoApiData<ProductListResponse>("/products/index.php", { query });
 
 export const getProductDetail = (
   productId: string,
   query: { mode?: ProductDetailMode } = {},
 ) =>
-  unoApiData<ProductDetailResponse>(`/products/${encodeURIComponent(productId)}`, {
+  unoApiData<ProductDetailResponse>("/products/detail.php", {
     query: {
+      id: productId,
       mode: query.mode ?? DEFAULT_PRODUCT_DETAIL_MODE,
     },
   });
@@ -263,52 +297,58 @@ export const getProductAvailability = (
   productId: string,
   query: { from: string; to: string },
 ) =>
-  unoApiData<ProductAvailabilityResponse>(
-    `/products/${encodeURIComponent(productId)}/availability`,
-    { query: clampAvailabilityQuery(query) },
-  );
+  unoApiData<ProductAvailabilityResponse>("/products/availability.php", {
+    query: {
+      id: productId,
+      ...clampAvailabilityQuery(query),
+    },
+  });
 
-export const getCart = () => unoApiData<CartResponse>("/cart");
+export const getCart = () => unoApiData<CartResponse>("/cart/index.php");
 
 export const createCartReservation = (payload: ReservationStoragePayload) =>
-  unoApiData<ReservationDraftResponse>("/cart", {
+  unoApiData<ReservationDraftResponse>("/cart/index.php", {
     method: "POST",
     body: createReservationDraftRequest(payload),
   });
 
 export const deleteCartReservation = (rid: number | string) =>
   unoApiData<{ rid: number | string; deleted: boolean }>(
-    `/cart/${encodeURIComponent(String(rid))}`,
-    { method: "DELETE" },
+    "/cart/delete.php",
+    {
+      method: "POST",
+      body: { rid },
+    },
   );
 
 export const createReservationDraft = (payload: ReservationStoragePayload) =>
-  unoApiData<ReservationDraftResponse>("/reservations/draft", {
+  unoApiData<ReservationDraftResponse>("/reservations/draft.php", {
     method: "POST",
     body: createReservationDraftRequest(payload),
   });
 
 export const getReservationDraft = (rid: number | string) =>
-  unoApiData<ReservationConfirmResponse>(
-    `/reservations/${encodeURIComponent(String(rid))}`,
-  );
+  unoApiData<ReservationDetailResponse>("/reservations/detail.php", {
+    query: { rid },
+  });
 
 export const confirmReservation = (
   rid: number | string,
   body: ReservationConfirmRequest,
 ) =>
   unoApiData<ReservationConfirmResponse>(
-    `/reservations/${encodeURIComponent(String(rid))}/confirm`,
+    "/reservations/confirm.php",
     {
       method: "POST",
+      query: { rid },
       body,
     },
   );
 
 export const getReservationComplete = (rid: number | string) =>
-  unoApiData<ReservationConfirmResponse>(
-    `/reservations/${encodeURIComponent(String(rid))}/complete`,
-  );
+  unoApiData<ReservationDetailResponse>("/reservations/detail.php", {
+    query: { rid },
+  });
 
 export const getMyReservations = () =>
-  unoApiData<MyReservationsResponse>("/my/reservations");
+  unoApiData<MyReservationsResponse>("/my/reservations.php");
