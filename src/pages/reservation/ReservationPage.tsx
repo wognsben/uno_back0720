@@ -510,6 +510,9 @@ const STYLE = `
 
   .reservation-button {
     appearance: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     width: 100%;
     min-height: 58px;
     border: 1px solid ${BLACK};
@@ -521,6 +524,8 @@ const STYLE = `
     line-height: 1;
     letter-spacing: -0.035em;
     font-weight: 820;
+    text-decoration: none;
+    box-sizing: border-box;
   }
 
   .reservation-button.is-inline {
@@ -810,20 +815,26 @@ function ReservationComplete({
         <div>
           <ReservationSummary reservation={reservation} />
           <div className="reservation-actions">
-            <button
-              type="button"
+            <a
+              href="/mypage/reservations"
               className="reservation-button is-yellow"
-              onClick={() => navigateInternal("/mypage/reservations")}
+              onClick={(event) => {
+                event.preventDefault();
+                navigateInternal("/mypage/reservations");
+              }}
             >
               마이페이지
-            </button>
-            <button
-              type="button"
+            </a>
+            <a
+              href={reservation.href}
               className="reservation-button is-subtle"
-              onClick={() => navigateInternal(reservation.href)}
+              onClick={(event) => {
+                event.preventDefault();
+                navigateInternal(reservation.href);
+              }}
             >
               상품 다시 보기
-            </button>
+            </a>
           </div>
         </div>
       </div>

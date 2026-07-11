@@ -6,6 +6,7 @@
 // 예약 모듈은 항상 열린 상태로 노출한다.
 
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import BookingBoardingPass from "./BoardingPass";
 import DailyTourCalendar from "./DailyTourCalendar";
 import {
@@ -339,6 +340,7 @@ function ReservationModule({
 }: ReservationModuleProps) {
   const [people, setPeople] = useState(initialPeople);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
 
 const [dailySelectedDateId, setDailySelectedDateId] = useState(() =>
   selectedDateId || getInitialDailyDateId(dates),
@@ -378,6 +380,11 @@ const canIncrease = safePeople < safeMaxPeople;
     setPeople((value) => Math.max(minPeople, Math.min(value, safeMaxPeople)));
   }, [minPeople, safeMaxPeople]);
 
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    setPortalTarget(document.body);
+  }, []);
+
   const getReservationPayload = () =>
     createReservationPayload({
       product,
@@ -407,38 +414,44 @@ const canIncrease = safePeople < safeMaxPeople;
   };
 
   const handleLoginMove = () => {
-    savePendingReservation(getReservationPayload());
-    navigateToLoginForReservation(DEFAULT_RESERVATION_PAGE_URL);
+    try {
+      savePendingReservation(getReservationPayload());
+    } finally {
+      navigateToLoginForReservation(DEFAULT_RESERVATION_PAGE_URL);
+    }
   };
 
   return (
     <>
       <ReservationModuleStyles />
-      {isLoginModalOpen ? (
-        <div
-          className="pd-reservation-login-backdrop"
-          role="dialog"
-          aria-modal="true"
-          aria-label="로그인 안내"
-        >
-          <div className="pd-reservation-login-modal">
-            <span>LOGIN REQUIRED</span>
-            <h2>예약을 위해 로그인이 필요합니다</h2>
-            <p>
-              예약 정보 저장과 마이페이지 확인을 위해 로그인 후 예약을 진행해
-              주세요.
-            </p>
-            <div className="pd-reservation-login-actions">
-              <button type="button" onClick={() => setIsLoginModalOpen(false)}>
-                계속 보기
-              </button>
-              <button type="button" className="is-primary" onClick={handleLoginMove}>
-                로그인 화면으로 이동
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
+      {portalTarget && isLoginModalOpen
+        ? createPortal(
+            <div
+              className="pd-reservation-login-backdrop"
+              role="dialog"
+              aria-modal="true"
+              aria-label="로그인 안내"
+            >
+              <div className="pd-reservation-login-modal">
+                <span>LOGIN REQUIRED</span>
+                <h2>예약을 위해 로그인이 필요합니다</h2>
+                <p>
+                  예약 정보 저장과 마이페이지 확인을 위해 로그인 후 예약을 진행해
+                  주세요.
+                </p>
+                <div className="pd-reservation-login-actions">
+                  <button type="button" onClick={() => setIsLoginModalOpen(false)}>
+                    계속 보기
+                  </button>
+                  <button type="button" className="is-primary" onClick={handleLoginMove}>
+                    로그인 화면으로 이동
+                  </button>
+                </div>
+              </div>
+            </div>,
+            portalTarget,
+          )
+        : null}
       <section className="pd-book-drawer" aria-label="세미패키지 예약 모듈">
   <div className="pd-book-surface">
 

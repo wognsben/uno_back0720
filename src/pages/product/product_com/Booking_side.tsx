@@ -1301,8 +1301,11 @@ export default function BookingSide({
   };
 
   const handleLoginMove = () => {
-    savePendingReservation(getReservationPayload());
-    navigateToLoginForReservation(reservationHref);
+    try {
+      savePendingReservation(getReservationPayload());
+    } finally {
+      navigateToLoginForReservation(reservationHref);
+    }
   };
 
   /* 툴바 요약 표시용 날짜 레이블 */
