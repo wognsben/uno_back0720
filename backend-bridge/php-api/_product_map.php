@@ -11,7 +11,9 @@ if (!defined('UNO_API_BOOTSTRAPPED')) {
     exit;
 }
 
-function uno_api_product_map()
+require_once __DIR__ . '/_product_mapping_store.php';
+
+function uno_api_product_default_map()
 {
     return array(
         'italy-11' => array(
@@ -69,6 +71,17 @@ function uno_api_product_map()
             'confidence' => 'confirmed',
         ),
     );
+}
+
+function uno_api_product_map()
+{
+    $storedMap = uno_api_product_mapping_fetch_map();
+
+    if (is_array($storedMap) && count($storedMap) > 0) {
+        return $storedMap;
+    }
+
+    return uno_api_product_default_map();
 }
 
 function uno_api_product_mapping($productId)

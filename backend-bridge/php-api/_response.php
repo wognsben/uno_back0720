@@ -13,6 +13,10 @@ if (!defined('UNO_API_BOOTSTRAPPED')) {
 
 function uno_api_send_json($payload, $statusCode = 200)
 {
+    while (ob_get_level() > 0) {
+        ob_end_clean();
+    }
+
     http_response_code($statusCode);
     header('Content-Type: application/json; charset=utf-8');
     header('X-Content-Type-Options: nosniff');

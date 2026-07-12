@@ -1,17 +1,13 @@
 /**
  * Community Types
  * ------------------------------------------------------------
- * Review / Notice / Event / FAQ 공통 타입 정의
+ * 커뮤니티 화면에서 사용하는 게시글, FAQ, 네비게이션 공통 타입입니다.
  *
- * Backend Mapping 예정
- * - Gnuboard board
- * - Review board
- * - Notice board
- * - Event board
- * - FAQ master / faq_list
+ * 기존 Gnuboard 연동 시 review / notice / event / qna / faq 계열 데이터를
+ * 같은 프런트 구조로 변환하기 위한 경계 역할을 합니다.
  */
 
-export type CommunityType = "review" | "notice" | "event" | "faq";
+export type CommunityType = "review" | "notice" | "event" | "faq" | "inquiry";
 
 export type CommunityStatus = "active" | "closed" | "scheduled" | "default";
 
@@ -24,133 +20,31 @@ export type CommunityNavItem = {
 };
 
 export type CommunityPost = {
-    /**
-     * Backend Mapping
-     * - wr_id
-     * - bo_table + wr_id 조합 가능
-     */
     id: string;
-
-    /**
-     * Backend Mapping
-     * - board type
-     * - review / notice / event
-     */
-    type: Exclude<CommunityType, "faq">;
-
-    /**
-     * Backend Mapping
-     * - wr_subject
-     */
+    type: Exclude<CommunityType, "faq" | "inquiry">;
     title: string;
-
-    /**
-     * Backend Mapping
-     * - wr_content 요약
-     */
     excerpt?: string;
-
-    /**
-     * Backend Mapping
-     * - wr_name
-     */
     author?: string;
-
-    /**
-     * Backend Mapping
-     * - wr_datetime
-     */
     date: string;
-
-    /**
-     * Backend Mapping
-     * - wr_hit
-     */
     views?: number;
-
-    /**
-     * Backend Mapping
-     * - 첨부 이미지
-     * - cheditor 이미지
-     * - 이벤트 썸네일
-     */
     thumbnail?: string;
-
-    /**
-     * Backend Mapping
-     * - 상세 페이지 링크
-     * - SPA 전환용 href
-     */
     href: string;
-
-    /**
-     * Backend Mapping
-     * - 이벤트 진행 상태
-     */
     status?: CommunityStatus;
-
-    /**
-     * Backend Mapping
-     * - 이벤트 시작일
-     */
     startDate?: string;
-
-    /**
-     * Backend Mapping
-     * - 이벤트 종료일
-     */
     endDate?: string;
-
-    /**
-     * Backend Mapping
-     * - 공지사항 상단 고정 여부
-     */
     isPinned?: boolean;
-
-    /**
-     * Backend Mapping
-     * - 새 글 여부
-     */
     isNew?: boolean;
 };
 
 export type CommunityFaqCategory = {
-    /**
-     * Backend Mapping
-     * - g5_faq_master.fm_id
-     */
     id: string;
-
-    /**
-     * Backend Mapping
-     * - g5_faq_master.fm_subject
-     */
     label: string;
 };
 
 export type CommunityFaqItem = {
-    /**
-     * Backend Mapping
-     * - faq id
-     */
     id: string;
-
-    /**
-     * Backend Mapping
-     * - fm_id
-     */
     categoryId: string;
-
-    /**
-     * Backend Mapping
-     * - question subject
-     */
     question: string;
-
-    /**
-     * Backend Mapping
-     * - answer content
-     */
     answer: string;
 };
 
@@ -159,7 +53,7 @@ export type CommunityLayoutProps = {
 };
 
 export type CommunityListProps = {
-    type: Exclude<CommunityType, "faq">;
+    type: Exclude<CommunityType, "faq" | "inquiry">;
     items: CommunityPost[];
 };
 

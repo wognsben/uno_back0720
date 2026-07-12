@@ -14,6 +14,7 @@ export type UnoApiErrorCode =
   | "SOLD_OUT"
   | "DUPLICATE_RESERVATION"
   | "INVALID_RESERVATION"
+  | "SPAM_BLOCKED"
   | "PERMISSION_DENIED"
   | "VALIDATION_ERROR"
   | "SERVER_ERROR";
@@ -86,6 +87,27 @@ const createServerErrorResponse = (message: string): UnoApiFailure => ({
   },
 });
 
+const parseApiResponseText = <T>(text: string): UnoApiResponse<T> | null => {
+  const trimmedText = text.trim();
+
+  if (!trimmedText) return null;
+
+  try {
+    return JSON.parse(trimmedText) as UnoApiResponse<T>;
+  } catch {
+    const jsonStart = trimmedText.indexOf("{");
+    const jsonEnd = trimmedText.lastIndexOf("}");
+
+    if (jsonStart < 0 || jsonEnd <= jsonStart) return null;
+
+    try {
+      return JSON.parse(trimmedText.slice(jsonStart, jsonEnd + 1)) as UnoApiResponse<T>;
+    } catch {
+      return null;
+    }
+  }
+};
+
 export async function unoApiRequest<T>(
   path: string,
   options: UnoApiRequestOptions = {},
@@ -107,12 +129,15 @@ export async function unoApiRequest<T>(
       body: hasBody ? JSON.stringify(body) : undefined,
     });
 
-    const payload = (await response.json().catch(() => null)) as
-      | UnoApiResponse<T>
-      | null;
+    const responseText = await response.text();
+    const payload = parseApiResponseText<T>(responseText);
 
     if (!payload || typeof payload !== "object" || !("ok" in payload)) {
-      return createServerErrorResponse("API 응답 형식이 올바르지 않습니다.");
+      return createServerErrorResponse(
+        response.status >= 500
+          ? "서버에서 문의 저장 중 오류가 발생했습니다."
+          : "API 응답 형식이 올바르지 않습니다.",
+      );
     }
 
     return payload;

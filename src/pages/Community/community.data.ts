@@ -1,13 +1,14 @@
+// community.data.ts
+// 커뮤니티 화면의 임시 네비게이션, 게시글, FAQ 데이터를 모아두는 파일입니다.
+// 실제 Gnuboard 연동 전까지 화면 구성과 이동 목적지를 안정적으로 유지합니다.
+// 문의하기는 공개 문의 화면이며, 마이페이지 1:1 문의와 역할이 겹치지 않도록 분리합니다.
+
 import type {
     CommunityFaqCategory,
     CommunityFaqItem,
     CommunityNavItem,
     CommunityPost,
 } from "./community.types";
-
-/* ==========================================================
-   Community Navigation
-========================================================== */
 
 export const COMMUNITY_NAV_ITEMS: CommunityNavItem[] = [
     {
@@ -38,17 +39,14 @@ export const COMMUNITY_NAV_ITEMS: CommunityNavItem[] = [
         href: "/community/faq",
         description: "자주 묻는 질문",
     },
+    {
+        id: "inquiry",
+        label: "문의하기",
+        labelEn: "Inquiry",
+        href: "/community/inquiry",
+        description: "공개 문의 작성",
+    },
 ];
-
-/* ==========================================================
-   Temporary Board Data
-
-   Backend Mapping 예정
-
-   review
-   notice
-   event
-========================================================== */
 
 export const COMMUNITY_POSTS: CommunityPost[] = [
     {
@@ -88,10 +86,6 @@ export const COMMUNITY_POSTS: CommunityPost[] = [
     },
 ];
 
-/* ==========================================================
-   FAQ Category
-========================================================== */
-
 export const FAQ_CATEGORIES: CommunityFaqCategory[] = [
     {
         id: "all",
@@ -111,21 +105,17 @@ export const FAQ_CATEGORIES: CommunityFaqCategory[] = [
     },
 ];
 
-/* ==========================================================
-   FAQ Data
-========================================================== */
-
 export const FAQ_ITEMS: CommunityFaqItem[] = [
     {
         id: "1",
         categoryId: "reservation",
         question: "예약은 언제까지 가능한가요?",
-        answer: "상품마다 예약 가능 기간이 다르며 상세페이지를 참고해주세요.",
+        answer: "상품마다 예약 가능 기간이 다르며 상세페이지의 날짜 선택 영역을 참고해 주세요.",
     },
     {
         id: "2",
         categoryId: "payment",
         question: "결제는 어떻게 진행되나요?",
-        answer: "카드 및 계좌이체를 지원합니다.",
+        answer: "예약금 결제와 잔금 안내는 예약 확정 단계에서 상품별 기준에 맞춰 안내됩니다.",
     },
 ];

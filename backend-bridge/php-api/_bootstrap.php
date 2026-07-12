@@ -8,6 +8,10 @@
 
 define('UNO_API_BOOTSTRAPPED', true);
 
+if (ob_get_level() === 0) {
+    ob_start();
+}
+
 $unoApiRoot = dirname(__DIR__);
 $unoCommonPath = $unoApiRoot . '/bbs/common.php';
 
@@ -33,6 +37,35 @@ function uno_api_current_member_id()
 {
     $member = uno_api_member();
     return isset($member['mb_id']) ? (string) $member['mb_id'] : '';
+}
+
+function uno_api_is_admin()
+{
+    global $is_admin;
+
+    $member = uno_api_member();
+    $memberId = isset($member['mb_id']) ? (string) $member['mb_id'] : '';
+
+    if ($memberId === '') {
+        return false;
+    }
+
+    if (isset($is_admin) && $is_admin) {
+        return true;
+    }
+
+    if (function_exists('is_admin') && is_admin($memberId)) {
+        return true;
+    }
+
+    return isset($member['mb_level']) && (int) $member['mb_level'] >= 10;
+}
+
+function uno_api_require_admin()
+{
+    if (!uno_api_is_admin()) {
+        uno_api_error('PERMISSION_DENIED', '관리자 권한이 필요합니다.', 403);
+    }
 }
 
 function uno_api_require_login()

@@ -49,13 +49,13 @@ function uno_api_availability_label($status)
     return json_decode('"\uc608\uc57d \uac00\ub2a5"');
 }
 
-function uno_api_availability_status_from_remaining($remainingSeats)
+function uno_api_availability_status_from_remaining($remainingSeats, $maxCount = 0)
 {
     if ($remainingSeats !== null && $remainingSeats < 1) {
         return 'soldout';
     }
 
-    if ($remainingSeats !== null && $remainingSeats <= 5) {
+    if ($remainingSeats !== null && $maxCount > 0 && $remainingSeats <= ceil($maxCount / 3)) {
         return 'soon';
     }
 
@@ -162,7 +162,8 @@ function uno_api_daily_availability($legacyProductId, $from, $to)
     for ($time = uno_api_date_ts($from); $time <= uno_api_date_ts($to); $time += 86400) {
         $date = date('Y-m-d', $time);
         $remainingSeats = isset($counts[$date]) ? $counts[$date]['remainingSeats'] : null;
-        $status = uno_api_availability_status_from_remaining($remainingSeats);
+        $maxCount = isset($counts[$date]) ? (int) $counts[$date]['maxCount'] : 0;
+        $status = uno_api_availability_status_from_remaining($remainingSeats, $maxCount);
 
         if (isset($closedDates[$date]) && uno_api_is_closed_status($closedDates[$date])) {
             $status = 'soldout';
@@ -203,7 +204,7 @@ function uno_api_package_availability($legacyProductId, $from, $to)
         $remainingSeats = isset($row['seat']) ? max(0, (int) $row['seat']) : null;
         $status = uno_api_is_closed_status(isset($row['status']) ? $row['status'] : '')
             ? 'soldout'
-            : uno_api_availability_status_from_remaining($remainingSeats);
+            : uno_api_availability_status_from_remaining($remainingSeats, isset($row['seat']) ? (int) $row['seat'] : 0);
 
         $items[] = uno_api_create_availability_item($date, $status, $remainingSeats, array(
             'legacyPackageScheduleId' => isset($row['id']) ? (int) $row['id'] : null,

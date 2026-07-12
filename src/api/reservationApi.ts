@@ -27,6 +27,11 @@ export type AuthSessionResponse = {
   member: AuthSessionMember | null;
 };
 
+export type LoginCredentials = {
+  mb_id: string;
+  mb_password: string;
+};
+
 export type ProductPrice = {
   deposit: number;
   localPayment?: number;
@@ -88,6 +93,37 @@ export type ProductDetailResponse = ProductSummary & {
 
 export type ProductListResponse = {
   items: ProductSummary[];
+};
+
+export type ProductNavigationProduct = {
+  title: string;
+  href: string;
+  productId?: string;
+  legacyProductId?: number | string;
+};
+
+export type ProductNavigationItem = {
+  id: string;
+  category: ProductKind;
+  country: string;
+  countryKo: string;
+  title: string;
+  subtitle: string;
+  meta: string[];
+  regions: string[];
+  products: ProductNavigationProduct[];
+  href: string;
+};
+
+export type ProductNavigationGroup = {
+  id: ProductKind;
+  title: string;
+  eyebrow: string;
+  items: ProductNavigationItem[];
+};
+
+export type ProductNavigationResponse = {
+  groups: ProductNavigationGroup[];
 };
 
 export type AvailabilityDateResponse = {
@@ -258,6 +294,50 @@ export type MyReservationsResponse = {
   items: MyReservationItem[];
 };
 
+export type InquiryCreateRequest = {
+  subject?: string;
+  content: string;
+};
+
+export type InquiryCreateResponse = {
+  board: "cusTour";
+  threadId: number | string;
+  messageId: number | string;
+  isNewThread: boolean;
+  subject: string;
+  createdAt: string;
+  nextUrl?: string;
+};
+
+export type CommunityInquiryCreateResponse = {
+  board: "qna";
+  postId: number | string;
+  subject: string;
+  createdAt: string;
+  nextUrl?: string;
+};
+
+export type InquiryMessage = {
+  id: number | string;
+  role: "user" | "admin";
+  author?: string;
+  content: string;
+  createdAt: string;
+};
+
+export type InquiryThread = {
+  id: number | string;
+  subject: string;
+  createdAt: string;
+  updatedAt?: string;
+  commentCount: number;
+};
+
+export type InquiryThreadResponse = {
+  thread: InquiryThread | null;
+  messages: InquiryMessage[];
+};
+
 export const createReservationDraftRequest = (
   payload: ReservationStoragePayload,
 ): ReservationDraftRequest => ({
@@ -276,11 +356,23 @@ export const createReservationDraftRequest = (
 export const getAuthSession = () =>
   unoApiData<AuthSessionResponse>("/auth/session.php");
 
+export const loginWithCredentials = async (credentials: LoginCredentials) => {
+  await getAuthSession().catch(() => null);
+
+  return unoApiData<AuthSessionResponse>("/auth/login.php", {
+    method: "POST",
+    body: credentials,
+  });
+};
+
 export const getProducts = (query?: {
   type?: ProductKind;
   category?: string;
   legacyCategory?: string;
 }) => unoApiData<ProductListResponse>("/products/index.php", { query });
+
+export const getProductNavigation = () =>
+  unoApiData<ProductNavigationResponse>("/products/navigation.php");
 
 export const getProductDetail = (
   productId: string,
@@ -352,3 +444,18 @@ export const getReservationComplete = (rid: number | string) =>
 
 export const getMyReservations = () =>
   unoApiData<MyReservationsResponse>("/my/reservations.php");
+
+export const createInquiry = (body: InquiryCreateRequest) =>
+  unoApiData<InquiryCreateResponse>("/inquiries/create.php", {
+    method: "POST",
+    body,
+  });
+
+export const getMyInquiryThread = () =>
+  unoApiData<InquiryThreadResponse>("/inquiries/index.php");
+
+export const createCommunityInquiry = (body: InquiryCreateRequest) =>
+  unoApiData<CommunityInquiryCreateResponse>("/community/inquiries/create.php", {
+    method: "POST",
+    body,
+  });

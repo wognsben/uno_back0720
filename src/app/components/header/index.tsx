@@ -191,6 +191,7 @@ const COMMUNITY_MENU_ITEMS: readonly DotMenuItem[] = [
   { label: "공지사항", labelEn: "NOTICE", href: "/community/notice", variant: "link" },
   { label: "이벤트", labelEn: "EVENT", href: "/community/event", variant: "link" },
   { label: "FAQ", labelEn: "FAQ", href: "/community/faq", variant: "link" },
+  { label: "문의하기", labelEn: "INQUIRY", href: "/community/inquiry", variant: "link" },
 ] as const;
 
 const BRAND_MENU_ITEMS: readonly DotMenuItem[] = [

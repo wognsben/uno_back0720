@@ -198,6 +198,41 @@ const STYLE = `
   }
 
   /* ── Gallery layout ── */
+  .pl-empty-products {
+    width: 1700px;
+    min-height: 520px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-top: 1px solid rgba(21, 21, 21, 0.1);
+    background: #ffffff;
+    box-sizing: border-box;
+  }
+
+  .pl-empty-products-inner {
+    display: grid;
+    gap: 12px;
+    text-align: center;
+  }
+
+  .pl-empty-products-title {
+    font-family: var(--font-ko);
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: -0.04em;
+    color: #151515;
+  }
+
+  .pl-empty-products-caption {
+    font-family: var(--font-ko);
+    font-size: 15px;
+    font-weight: 400;
+    line-height: 1.6;
+    letter-spacing: -0.035em;
+    color: rgba(21, 21, 21, 0.55);
+  }
+
   .pl-gallery-body {
     display: flex;
     align-items: flex-start;
@@ -1221,7 +1256,16 @@ export default function ProductList({
         </div>
 
         {/* ── BODY ── */}
-        {viewMode === "gallery" ? (
+        {items.length <= 0 ? (
+          <div className="pl-empty-products" role="status">
+            <div className="pl-empty-products-inner">
+              <strong className="pl-empty-products-title">상품 준비중</strong>
+              <span className="pl-empty-products-caption">
+                해당 지역의 상품은 곧 업데이트됩니다.
+              </span>
+            </div>
+          </div>
+        ) : viewMode === "gallery" ? (
           <GalleryView items={items} categories={categories} />
         ) : (
           <ListView items={items} categories={categories} />

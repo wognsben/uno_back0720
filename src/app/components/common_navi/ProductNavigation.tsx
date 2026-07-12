@@ -3,7 +3,8 @@
   메인 히어로와 상품 페이지 상단의 SEMI/DAILY 펼침형 탭, 스크롤 후 헤더에 붙는 축약 탭, hover mega panel 상태를 관리한다.
   Header의 글로벌 메뉴나 상품 상세 본문 예약 UI와 겹치지 않도록 상품 카테고리 이동과 상품 링크 확장만 담당한다.
 */
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { getProductNavigation } from "../../../api/reservationApi";
 
 /* ==========================================================
    ProductNavigation
@@ -211,8 +212,11 @@ const HERO_ITEMS: HeroItem[] = [
   },
 ];
 
-const SEMI_ITEMS = HERO_ITEMS.filter((item) => item.category === "semi");
-const DAILY_ITEMS = HERO_ITEMS.filter((item) => item.category === "daily");
+const getSemiItems = (items: HeroItem[]) =>
+  items.filter((item) => item.category === "semi");
+
+const getDailyItems = (items: HeroItem[]) =>
+  items.filter((item) => item.category === "daily");
 
 /* ==========================================================
    Active Route Helper
@@ -231,19 +235,19 @@ const DAILY_ITEMS = HERO_ITEMS.filter((item) => item.category === "daily");
 
 ========================================================== */
 
-function getActiveItemId() {
+function getActiveItemId(items: HeroItem[]) {
   if (typeof window === "undefined") {
-    return HERO_ITEMS[0]?.id;
+    return items[0]?.id;
   }
 
   const pathname = window.location.pathname;
 
-  const matchedItem = HERO_ITEMS.find((item) => {
+  const matchedItem = items.find((item) => {
     const targetPath = item.href.split("?")[0];
     return pathname.startsWith(targetPath);
   });
 
-  return matchedItem?.id || HERO_ITEMS[0]?.id;
+  return matchedItem?.id || items[0]?.id;
 }
 
 /* ==========================================================
@@ -361,21 +365,27 @@ function ProductMegaPanel({
                 </span>
 
                 <span className="product-mega-product-list">
-                  {item.products.map((product) => (
-                    <button
-                      key={product.href + product.title}
-                      type="button"
-                      className="product-mega-product"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onClose();
-                        window.history.pushState({}, "", product.href);
-                        window.dispatchEvent(new Event("unotravel:navigate"));
-                      }}
-                    >
-                      {product.title}
-                    </button>
-                  ))}
+                  {item.products.length > 0 ? (
+                    item.products.map((product) => (
+                      <button
+                        key={product.href + product.title}
+                        type="button"
+                        className="product-mega-product"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onClose();
+                          window.history.pushState({}, "", product.href);
+                          window.dispatchEvent(new Event("unotravel:navigate"));
+                        }}
+                      >
+                        {product.title}
+                      </button>
+                    ))
+                  ) : (
+                    <span className="product-mega-product product-mega-product--empty">
+                      상품 준비중
+                    </span>
+                  )}
                 </span>
               </button>
             );
@@ -395,9 +405,36 @@ export default function ProductNavigation({
   showFloatingAfterScroll?: boolean;
   disableScrollHandle?: boolean;
 }) {
-  const activeItemId = getActiveItemId();
+  const [navigationItems, setNavigationItems] = useState<HeroItem[]>(HERO_ITEMS);
+  const semiItems = useMemo(() => getSemiItems(navigationItems), [navigationItems]);
+  const dailyItems = useMemo(() => getDailyItems(navigationItems), [navigationItems]);
+  const activeItemId = getActiveItemId(navigationItems);
   const navShellRef = useRef<HTMLDivElement | null>(null);
   const megaCloseTimerRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    getProductNavigation()
+      .then((response) => {
+        if (!isMounted) return;
+
+        const mergedItems = response.groups.flatMap((group) => group.items);
+        if (mergedItems.length > 0) {
+          setNavigationItems(mergedItems);
+        }
+      })
+      .catch(() => {
+        /*
+          Product navigation must never disappear if the bridge API is not
+          uploaded yet. The static fallback keeps the current visual behavior.
+        */
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   /*
     Product Navigation Handle
@@ -1226,6 +1263,16 @@ export default function ProductNavigation({
           transform: translateX(4px);
         }
 
+        .product-mega-product--empty {
+          cursor: default;
+          color: rgba(21, 21, 21, 0.4);
+        }
+
+        .product-mega-product--empty:hover {
+          color: rgba(21, 21, 21, 0.4);
+          transform: none;
+        }
+
         .product-mega-product::before {
           content: "·";
           margin-right: 6px;
@@ -1336,7 +1383,7 @@ export default function ProductNavigation({
           >
             <div className="hero-nav-title">SEMI PACKAGE</div>
             <div className="hero-country-list hero-country-list--semi">
-              {SEMI_ITEMS.map(renderCountry)}
+              {semiItems.map(renderCountry)}
             </div>
           </div>
 
@@ -1361,14 +1408,14 @@ export default function ProductNavigation({
           >
             <div className="hero-nav-title">DAILY TOUR</div>
             <div className="hero-country-list hero-country-list--daily">
-              {DAILY_ITEMS.map(renderCountry)}
+              {dailyItems.map(renderCountry)}
             </div>
           </div>
         </div>
 
         <ProductMegaPanel
           category={activeMegaCategory}
-          items={activeMegaCategory === "daily" ? DAILY_ITEMS : SEMI_ITEMS}
+          items={activeMegaCategory === "daily" ? dailyItems : semiItems}
           activeItemId={activeItemId}
           expandedItemId={activeMegaItemId}
           onExpandedItemChange={setActiveMegaItemId}

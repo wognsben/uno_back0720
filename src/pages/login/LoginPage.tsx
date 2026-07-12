@@ -9,6 +9,7 @@ import kakaoLogo from "./snsloginlogo.tsx/kakao_logo.png";
 import naverLogo from "./snsloginlogo.tsx/naver_login.png";
 import unoYellowLogo from "./snsloginlogo.tsx/노랑 로고.png";
 import loginVideo from "./snsloginlogo.tsx/login_video.mp4";
+import { loginWithCredentials } from "../../api/reservationApi";
 
 /* ==========================================================
    LoginPage.tsx
@@ -61,6 +62,7 @@ export default function LoginPage() {
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [socialNotice, setSocialNotice] = useState("");
   const [formError, setFormError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   function handleSocialLogin(provider: SocialProvider) {
     /*
@@ -78,48 +80,65 @@ export default function LoginPage() {
     setSocialNotice(`${SOCIAL_PROVIDER_LABEL[provider]} 로그인은 현재 준비 중입니다.`);
   }
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (!email.includes("@")) {
-      setFormError("이메일 주소에 @를 포함해 주세요.");
+    const normalizedLoginId = email.trim();
+    const normalizedPassword = password.trim();
+
+    if (!normalizedLoginId) {
+      setFormError("아이디 또는 이메일을 입력해 주세요.");
       return;
     }
 
-    if (!password.trim()) {
+    if (!normalizedPassword) {
       setFormError("비밀번호를 입력해 주세요.");
       return;
     }
 
     setFormError("");
+    setIsSubmitting(true);
 
-    /*
-      Email Login Backend Hook
-      ------------------------------------------
-      실제 백엔드 연동 시 이 위치에서 로그인 API를 호출한다.
-      현재는 UI/동선 확인용 placeholder다.
-    */
-    /*
-      Temporary Front Auth
-      ------------------------------------------
-      실제 세션 로그인 연동 전까지 프론트 동선 확인용으로만 사용한다.
-      localStorage가 아닌 sessionStorage를 사용해 브라우저 세션 종료 시 초기화된다.
-    */
-    if (typeof window !== "undefined") {
-      window.sessionStorage.setItem("unotravel:auth", "true");
-      window.dispatchEvent(new Event("unotravel:auth-change"));
+    try {
+      const session = await loginWithCredentials({
+        mb_id: normalizedLoginId,
+        mb_password: normalizedPassword,
+      });
+
+      if (typeof window !== "undefined") {
+        window.sessionStorage.setItem("unotravel:auth", "true");
+
+        if (session.member?.name) {
+          window.sessionStorage.setItem("unotravel:user-name", session.member.name);
+        }
+
+        if (session.member?.email) {
+          window.sessionStorage.setItem("unotravel:user-email", session.member.email);
+          window.sessionStorage.setItem("unotravel:email", session.member.email);
+        }
+
+        window.dispatchEvent(new Event("unotravel:auth-change"));
+      }
+
+      const redirectAfterLogin =
+        typeof window !== "undefined"
+          ? window.sessionStorage.getItem("unotravel:redirect-after-login")
+          : null;
+
+      if (typeof window !== "undefined" && redirectAfterLogin) {
+        window.sessionStorage.removeItem("unotravel:redirect-after-login");
+      }
+
+      navigateTo(redirectAfterLogin || "/");
+    } catch (error) {
+      setFormError(
+        error instanceof Error
+          ? error.message
+          : "로그인 중 문제가 발생했습니다. 다시 시도해 주세요.",
+      );
+    } finally {
+      setIsSubmitting(false);
     }
-
-    const redirectAfterLogin =
-      typeof window !== "undefined"
-        ? window.sessionStorage.getItem("unotravel:redirect-after-login")
-        : null;
-
-    if (typeof window !== "undefined" && redirectAfterLogin) {
-      window.sessionStorage.removeItem("unotravel:redirect-after-login");
-    }
-
-    navigateTo(redirectAfterLogin || "/");
   }
 
   return (
@@ -150,12 +169,12 @@ export default function LoginPage() {
 
             <form className="login-form" onSubmit={handleSubmit} noValidate>
               <label className="login-field">
-                <span>이메일 주소</span>
+                <span>아이디 또는 이메일</span>
                 <input
-                  type="email"
+                  type="text"
                   value={email}
-                  placeholder="이메일 주소를 입력하세요"
-                  autoComplete="email"
+                  placeholder="아이디 또는 이메일을 입력하세요"
+                  autoComplete="username"
                   onChange={(event) => {
                     setEmail(event.target.value);
                     if (formError) setFormError("");
@@ -187,8 +206,8 @@ export default function LoginPage() {
                 </div>
               </label>
 
-              <button type="submit" className="login-submit">
-                <span>로그인</span>
+              <button type="submit" className="login-submit" disabled={isSubmitting}>
+                <span>{isSubmitting ? "로그인 중" : "로그인"}</span>
                 <span aria-hidden="true">→</span>
               </button>
             </form>

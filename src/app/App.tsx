@@ -89,6 +89,7 @@ import CommunityPage from "../pages/Community/CommunityPage";
 import ReviewPage from "../pages/Community/review/ReviewPage";
 import NoticeBoardPage from "../pages/Community/notice/NoticePage";
 import EventPage from "../pages/Community/event/EventPage";
+import CommunityInquiryPage from "../pages/Community/inquiry/CommunityInquiryPage";
 import FaqPage from "../pages/Community/faq/FaqPage";
 import "../pages/Community/community.css";
 
@@ -603,6 +604,7 @@ export default function App() {
   const isCommunityNoticePage = pathname === "/community/notice";
   const isCommunityEventPage = pathname === "/community/event";
   const isCommunityFaqPage = pathname === "/community/faq";
+  const isCommunityInquiryPage = pathname === "/community/inquiry";
   const isCommunityRoute =
     pathname === "/community" || pathname.startsWith("/community/");
 
@@ -627,6 +629,13 @@ export default function App() {
   const productTemplateData = isDailyProductPage
     ? DAILY_TOUR_DATA
     : SEMI_PACKAGE_DATA;
+  const productPathParts = pathname.split("/").filter(Boolean);
+  const productRouteRegionId =
+    productPathParts[0] === "product" &&
+    (productPathParts[1] === "semi" || productPathParts[1] === "daily") &&
+    productPathParts[2]
+      ? productPathParts[2]
+      : undefined;
   const shouldShowGlobalProductNavigation =
     !isLoginPage &&
     !isRegisterRoute &&
@@ -672,7 +681,10 @@ export default function App() {
             {isProductDetail ? (
               <ProductDetail />
             ) : (
-              <ProductTemplate pageData={productTemplateData} />
+              <ProductTemplate
+                pageData={productTemplateData}
+                routeRegionId={productRouteRegionId}
+              />
             )}
           </>
         ) : isLoginPage ? (
@@ -753,6 +765,8 @@ export default function App() {
           <NoticeBoardPage />
         ) : isCommunityEventPage ? (
           <EventPage />
+        ) : isCommunityInquiryPage ? (
+          <CommunityInquiryPage />
         ) : isCommunityFaqPage ? (
           <FaqPage />
         ) : (

@@ -462,6 +462,52 @@
     color: #111111;
 }
 
+.community-faq-main {
+    min-width: 0;
+}
+
+.community-faq-toolbar {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 24px;
+    padding-bottom: 24px;
+}
+
+.community-faq-toolbar span,
+.community-login-modal span {
+    display: block;
+    color: rgba(17, 17, 17, 0.46);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+}
+
+.community-faq-toolbar p {
+    margin: 8px 0 0;
+    color: rgba(17, 17, 17, 0.62);
+    font-size: 15px;
+    line-height: 1.6;
+    word-break: keep-all;
+}
+
+.community-write-button {
+    min-width: 116px;
+    height: 46px;
+    border: 1px solid rgba(17, 17, 17, 0.16);
+    background: #111111;
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 180ms ease, transform 180ms ease;
+}
+
+.community-write-button:hover {
+    background: #2a2a2a;
+    transform: translateY(-1px);
+}
+
 .community-faq-list {
     border-top: 1px solid rgba(17, 17, 17, 0.16);
 }
@@ -503,6 +549,254 @@
     line-height: 1.8;
 }
 
+.community-login-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: rgba(0, 0, 0, 0.34);
+    backdrop-filter: blur(12px);
+}
+
+.community-login-modal {
+    width: min(440px, 100%);
+    border: 1px solid rgba(17, 17, 17, 0.14);
+    background: #ffffff;
+    padding: 34px;
+    color: #111111;
+    box-shadow: 0 28px 70px rgba(0, 0, 0, 0.18);
+}
+
+.community-login-modal h2 {
+    margin: 14px 0 12px;
+    font-size: 28px;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+}
+
+.community-login-modal p {
+    margin: 0;
+    color: rgba(17, 17, 17, 0.62);
+    font-size: 15px;
+    line-height: 1.7;
+    word-break: keep-all;
+}
+
+.community-login-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 26px;
+}
+
+.community-login-actions button {
+    min-height: 44px;
+    border: 1px solid rgba(17, 17, 17, 0.14);
+    background: #ffffff;
+    color: #111111;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.community-login-actions button:last-child {
+    border-color: #111111;
+    background: #111111;
+    color: #ffffff;
+}
+
+/* ==========================================================
+   Inquiry
+========================================================== */
+
+.community-inquiry {
+    display: grid;
+    gap: 42px;
+}
+
+.community-inquiry-intro {
+    width: min(760px, 100%);
+}
+
+.community-inquiry-intro span,
+.community-inquiry-card span {
+    display: block;
+    color: rgba(17, 17, 17, 0.46);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+}
+
+.community-inquiry-intro h2 {
+    margin: 14px 0 16px;
+    color: #111111;
+    font-size: clamp(36px, 5vw, 72px);
+    font-weight: 600;
+    line-height: 0.98;
+    letter-spacing: -0.045em;
+    word-break: keep-all;
+}
+
+.community-inquiry-intro p {
+    margin: 0;
+    color: rgba(17, 17, 17, 0.62);
+    font-size: 16px;
+    line-height: 1.8;
+    word-break: keep-all;
+}
+
+.community-inquiry-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+}
+
+.community-inquiry-card {
+    min-height: 286px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    border: 1px solid rgba(17, 17, 17, 0.12);
+    background: #ffffff;
+    padding: clamp(24px, 3vw, 38px);
+}
+
+.community-inquiry-form-card {
+    min-height: 520px;
+}
+
+.community-inquiry-card.is-private {
+    background: #111111;
+    color: #ffffff;
+}
+
+.community-inquiry-card h3 {
+    margin: 18px 0 14px;
+    color: inherit;
+    font-size: clamp(28px, 3.2vw, 46px);
+    font-weight: 600;
+    line-height: 1;
+    letter-spacing: -0.045em;
+}
+
+.community-inquiry-card p {
+    margin: 0;
+    color: rgba(17, 17, 17, 0.62);
+    font-size: 15px;
+    line-height: 1.75;
+    word-break: keep-all;
+}
+
+.community-inquiry-form {
+    width: 100%;
+    display: grid;
+    gap: 14px;
+    margin-top: 26px;
+}
+
+.community-inquiry-form label {
+    display: grid;
+    gap: 8px;
+}
+
+.community-inquiry-form label > span {
+    color: rgba(17, 17, 17, 0.52);
+    font-family: var(--font-ko);
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+}
+
+.community-inquiry-form input,
+.community-inquiry-form textarea {
+    width: 100%;
+    border: 1px solid rgba(17, 17, 17, 0.14);
+    border-radius: 0;
+    background: #ffffff;
+    color: #111111;
+    font-family: var(--font-ko);
+    font-size: 15px;
+    font-weight: 650;
+    line-height: 1.55;
+    letter-spacing: -0.025em;
+    box-sizing: border-box;
+    outline: none;
+}
+
+.community-inquiry-form input {
+    height: 48px;
+    padding: 0 14px;
+}
+
+.community-inquiry-form textarea {
+    min-height: 154px;
+    padding: 14px;
+    resize: vertical;
+}
+
+.community-inquiry-form input:focus,
+.community-inquiry-form textarea:focus {
+    border-color: #111111;
+}
+
+.community-inquiry-status {
+    margin: 2px 0 0;
+    border-left: 3px solid rgba(17, 17, 17, 0.24);
+    padding-left: 12px;
+    font-size: 13px;
+    font-weight: 750;
+    line-height: 1.55;
+}
+
+.community-inquiry-status.is-success {
+    border-left-color: #008f68;
+    color: #008f68;
+}
+
+.community-inquiry-status.is-error {
+    border-left-color: #c4392d;
+    color: #c4392d;
+}
+
+.community-inquiry-card.is-private span,
+.community-inquiry-card.is-private p {
+    color: rgba(255, 255, 255, 0.68);
+}
+
+.community-inquiry-card button {
+    min-width: 154px;
+    min-height: 48px;
+    border: 1px solid #111111;
+    background: #111111;
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: transform 180ms ease, background 180ms ease;
+}
+
+.community-inquiry-card > button {
+    margin-top: auto;
+}
+
+.community-inquiry-card.is-private button {
+    border-color: #ffffff;
+    background: #ffffff;
+    color: #111111;
+}
+
+.community-inquiry-card button:hover {
+    transform: translateY(-1px);
+    background: #2a2a2a;
+}
+
+.community-inquiry-card.is-private button:hover {
+    background: #f1f1f1;
+}
+
 /* ==========================================================
    Responsive
 ========================================================== */
@@ -512,7 +806,8 @@
     .community-card--review .community-card-link,
     .community-card--event a,
     .community-card--event .community-card-link,
-    .community-faq {
+    .community-faq,
+    .community-inquiry-grid {
         grid-template-columns: 1fr;
     }
 
@@ -527,6 +822,20 @@
     }
 
     .community-search-button {
+        width: 100%;
+    }
+
+    .community-faq-toolbar,
+    .community-login-actions {
+        grid-template-columns: 1fr;
+    }
+
+    .community-faq-toolbar {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .community-write-button {
         width: 100%;
     }
 }

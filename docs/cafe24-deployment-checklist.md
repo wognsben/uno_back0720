@@ -81,7 +81,13 @@ www/
 ```txt
 http://wognsben19997.mycafe24.com/api/health.php
 http://wognsben19997.mycafe24.com/api/auth/session.php
+POST http://wognsben19997.mycafe24.com/api/auth/login.php
+http://wognsben19997.mycafe24.com/api/admin/product-navigation.php
+http://wognsben19997.mycafe24.com/api/admin/product-navigation-seed.php?confirm=1
+http://wognsben19997.mycafe24.com/api/admin/products.php
+http://wognsben19997.mycafe24.com/admin/renewal/product-navigation.php
 http://wognsben19997.mycafe24.com/api/products/index.php
+http://wognsben19997.mycafe24.com/api/products/navigation.php
 http://wognsben19997.mycafe24.com/api/products/detail.php?id=napoli-pompei-daily&mode=reservation
 http://wognsben19997.mycafe24.com/api/products/availability.php?id=napoli-pompei-daily&from=2026-07-01&to=2026-08-31
 ```

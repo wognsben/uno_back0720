@@ -294,10 +294,44 @@ export const DAILY_TOUR_DATA: ProductTemplateData = {
 
 const DEFAULT_DATA: ProductTemplateData = SEMI_PACKAGE_DATA;
 
-export default function ProductTemplate({ pageData = DEFAULT_DATA }: { pageData?: ProductTemplateData }) {
+function matchesProductFilter(product: ProductItem, filterId: string) {
+  return product.categoryId === filterId || product.regionId === filterId;
+}
+
+function getInitialProductFilterId(pageData: ProductTemplateData, routeRegionId?: string) {
+  if (
+    routeRegionId &&
+    pageData.products.some((product) => matchesProductFilter(product, routeRegionId))
+  ) {
+    return routeRegionId;
+  }
+
+  return pageData.categories[0]?.id ?? "all";
+}
+
+function getFirstProductForFilter(pageData: ProductTemplateData, filterId: string) {
+  if (filterId === "all") {
+    return pageData.products[0];
+  }
+
+  return pageData.products.find((product) => matchesProductFilter(product, filterId));
+}
+
+export default function ProductTemplate({
+  pageData = DEFAULT_DATA,
+  routeRegionId,
+}: {
+  pageData?: ProductTemplateData;
+  routeRegionId?: string;
+}) {
   const [viewMode, setViewMode] = useState<ProductViewMode>("gallery");
-  const [activeCategory, setActiveCategory] = useState(pageData.categories[0]?.id ?? "all");
-  const [activeProductId, setActiveProductId] = useState(pageData.products[0]?.id ?? "");
+  const [activeCategory, setActiveCategory] = useState(() =>
+    getInitialProductFilterId(pageData, routeRegionId),
+  );
+  const [activeProductId, setActiveProductId] = useState(() => {
+    const initialFilterId = getInitialProductFilterId(pageData, routeRegionId);
+    return getFirstProductForFilter(pageData, initialFilterId)?.id ?? pageData.products[0]?.id ?? "";
+  });
 
   /*
     ProductTemplate Route Data Sync
@@ -306,9 +340,12 @@ export default function ProductTemplate({ pageData = DEFAULT_DATA }: { pageData?
     이전 목록의 activeCategory / activeProductId가 남지 않도록 초기화한다.
   */
   useEffect(() => {
-    setActiveCategory(pageData.categories[0]?.id ?? "all");
-    setActiveProductId(pageData.products[0]?.id ?? "");
-  }, [pageData]);
+    const nextFilterId = getInitialProductFilterId(pageData, routeRegionId);
+    setActiveCategory(nextFilterId);
+    setActiveProductId(
+      getFirstProductForFilter(pageData, nextFilterId)?.id ?? pageData.products[0]?.id ?? "",
+    );
+  }, [pageData, routeRegionId]);
 
   const activeProduct = useMemo(() => {
     return pageData.products.find((item) => item.id === activeProductId) ?? pageData.products[0];
@@ -326,7 +363,7 @@ export default function ProductTemplate({ pageData = DEFAULT_DATA }: { pageData?
       return pageData.products;
     }
 
-    return pageData.products.filter((product) => product.categoryId === activeCategory);
+    return pageData.products.filter((product) => matchesProductFilter(product, activeCategory));
   }, [activeCategory, pageData.products]);
 
   return (
@@ -379,7 +416,7 @@ export default function ProductTemplate({ pageData = DEFAULT_DATA }: { pageData?
             const firstMatchedProduct =
               categoryId === "all"
                 ? pageData.products[0]
-                : pageData.products.find((product) => product.categoryId === categoryId);
+                : pageData.products.find((product) => matchesProductFilter(product, categoryId));
 
             setActiveProductId(firstMatchedProduct?.id ?? pageData.products[0]?.id ?? "");
           }}
