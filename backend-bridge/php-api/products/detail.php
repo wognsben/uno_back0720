@@ -30,6 +30,12 @@ function uno_api_table_product()
     return isset($g5['write_prefix']) ? $g5['write_prefix'] . 'product' : 'g5_write_product';
 }
 
+function uno_api_table_board_file()
+{
+    global $g5;
+    return isset($g5['board_file_table']) ? $g5['board_file_table'] : 'g5_board_file';
+}
+
 function uno_api_bool_field($value)
 {
     $normalized = strtoupper(trim((string) $value));
@@ -48,6 +54,159 @@ function uno_api_href_for_product($productId, $productType)
     }
 
     return '/product/detail/' . rawurlencode($productId);
+}
+
+function uno_api_detail_mapping_fallback($productId)
+{
+    $productId = trim((string) $productId);
+
+    if (preg_match('/^(semi|daily)-([0-9]+)$/', $productId, $matches)) {
+        return array(
+            'legacyProductId' => (int) $matches[2],
+            'legacyCategory' => $matches[1],
+            'confidence' => 'legacy-product-id',
+        );
+    }
+
+    if (preg_match('/^[0-9]+$/', $productId)) {
+        return array(
+            'legacyProductId' => (int) $productId,
+            'legacyCategory' => 'daily',
+            'confidence' => 'legacy-product-id',
+        );
+    }
+
+    return null;
+}
+
+function uno_api_product_file_url($fileName)
+{
+    $fileName = trim((string) $fileName);
+
+    if ($fileName === '') {
+        return '';
+    }
+
+    return '/bbs/data/file/product/' . str_replace('%2F', '/', rawurlencode($fileName));
+}
+
+function uno_api_fetch_product_images($legacyProductId)
+{
+    if (!function_exists('sql_query') || !function_exists('sql_fetch_array')) {
+        return array();
+    }
+
+    $legacyProductId = (int) $legacyProductId;
+    $fileTable = uno_api_table_board_file();
+    $result = sql_query(
+        "select bf_no, bf_source, bf_file, bf_width, bf_height
+           from {$fileTable}
+          where bo_table = 'product'
+            and wr_id = '{$legacyProductId}'
+            and bf_file <> ''
+          order by bf_no asc"
+    );
+
+    $items = array();
+    while ($row = sql_fetch_array($result)) {
+        $url = uno_api_product_file_url(isset($row['bf_file']) ? $row['bf_file'] : '');
+        if ($url === '') {
+            continue;
+        }
+
+        $items[] = array(
+            'no' => isset($row['bf_no']) ? (int) $row['bf_no'] : 0,
+            'source' => isset($row['bf_source']) ? (string) $row['bf_source'] : '',
+            'url' => $url,
+            'width' => isset($row['bf_width']) ? (int) $row['bf_width'] : 0,
+            'height' => isset($row['bf_height']) ? (int) $row['bf_height'] : 0,
+        );
+    }
+
+    return $items;
+}
+
+function uno_api_fetch_board_images($boardTable, $legacyProductId)
+{
+    if (!function_exists('sql_query') || !function_exists('sql_fetch_array')) {
+        return array();
+    }
+
+    $boardTable = preg_replace('/[^a-zA-Z0-9_]/', '', (string) $boardTable);
+    if ($boardTable === '') {
+        return array();
+    }
+
+    $legacyProductId = (int) $legacyProductId;
+    $fileTable = uno_api_table_board_file();
+    $result = sql_query(
+        "select bf_no, bf_source, bf_file, bf_width, bf_height
+           from {$fileTable}
+          where bo_table = '{$boardTable}'
+            and wr_id = '{$legacyProductId}'
+            and bf_file <> ''
+          order by bf_no asc"
+    );
+
+    $items = array();
+    while ($row = sql_fetch_array($result)) {
+        $url = uno_api_product_file_url(isset($row['bf_file']) ? $row['bf_file'] : '');
+        if ($url === '') {
+            continue;
+        }
+
+        $items[] = array(
+            'no' => isset($row['bf_no']) ? (int) $row['bf_no'] : 0,
+            'source' => isset($row['bf_source']) ? (string) $row['bf_source'] : '',
+            'url' => str_replace('/product/', '/' . $boardTable . '/', $url),
+            'width' => isset($row['bf_width']) ? (int) $row['bf_width'] : 0,
+            'height' => isset($row['bf_height']) ? (int) $row['bf_height'] : 0,
+            'board' => $boardTable,
+        );
+    }
+
+    return $items;
+}
+
+function uno_api_fetch_product_options($legacyProductId)
+{
+    if (!function_exists('sql_fetch')) {
+        return array();
+    }
+
+    $legacyProductId = (int) $legacyProductId;
+    $row = sql_fetch(
+        "select meeting, meeting_time, tour_day, tour_time, tour_include, tour_notInclude,
+                tour_map, youtube, tour_before, tour_junbi, tour_can_rules
+           from v2_product_options
+          where pid = '{$legacyProductId}'
+          limit 1"
+    );
+
+    return array(
+        'meeting' => isset($row['meeting']) ? (string) $row['meeting'] : '',
+        'meetingTime' => isset($row['meeting_time']) ? (string) $row['meeting_time'] : '',
+        'tourDay' => isset($row['tour_day']) ? (string) $row['tour_day'] : '',
+        'tourTime' => isset($row['tour_time']) ? (string) $row['tour_time'] : '',
+        'includes' => isset($row['tour_include']) ? (string) $row['tour_include'] : '',
+        'excludes' => isset($row['tour_notInclude']) ? (string) $row['tour_notInclude'] : '',
+        'map' => isset($row['tour_map']) ? (string) $row['tour_map'] : '',
+        'youtube' => isset($row['youtube']) ? (string) $row['youtube'] : '',
+        'beforeNotice' => isset($row['tour_before']) ? (string) $row['tour_before'] : '',
+        'preparation' => isset($row['tour_junbi']) ? (string) $row['tour_junbi'] : '',
+        'cancelRules' => isset($row['tour_can_rules']) ? (string) $row['tour_can_rules'] : '',
+    );
+}
+
+function uno_api_image_by_no($images, $fileNo)
+{
+    foreach ($images as $image) {
+        if (isset($image['no']) && (int) $image['no'] === (int) $fileNo) {
+            return $image;
+        }
+    }
+
+    return null;
 }
 
 function uno_api_fetch_daily_fee_options($legacyProductId)
@@ -116,6 +275,63 @@ function uno_api_fetch_package_schedules($legacyProductId)
     return $items;
 }
 
+function uno_api_text_from_html($value)
+{
+    return trim(html_entity_decode(strip_tags((string) $value), ENT_QUOTES, 'UTF-8'));
+}
+
+function uno_api_fetch_product_faqs($legacyProductId)
+{
+    /*
+     * Product-detail bottom QNA/FAQ.
+     *
+     * This content belongs under the product detail body image.
+     * It is managed through the legacy FAQ/product FAQ tables, not through
+     * the public community Q&A board (`bo_table=qna`).
+     */
+    global $g5;
+
+    if (!function_exists('sql_query') || !function_exists('sql_fetch_array')) {
+        return array();
+    }
+
+    $faqTable = isset($g5['faq_table']) && $g5['faq_table'] !== ''
+        ? $g5['faq_table']
+        : 'g5_faq';
+    $faqMasterTable = isset($g5['faq_master_table']) && $g5['faq_master_table'] !== ''
+        ? $g5['faq_master_table']
+        : 'g5_faq_master';
+    $safePid = uno_api_sql_escape((string) (int) $legacyProductId);
+
+    $result = sql_query(
+        "select f.fa_id, f.fm_id, f.pid, f.fa_subject, f.fa_content, f.fa_order, m.fm_subject
+           from {$faqTable} f
+           left join {$faqMasterTable} m on m.fm_id = f.fm_id
+          where f.pid = ''
+             or f.pid is null
+             or find_in_set('{$safePid}', replace(f.pid, ' ', '')) > 0
+          order by f.fa_order asc, f.fa_id asc"
+    );
+
+    $items = array();
+    while ($row = sql_fetch_array($result)) {
+        $items[] = array(
+            'id' => isset($row['fa_id']) ? (int) $row['fa_id'] : 0,
+            'categoryId' => isset($row['fm_id']) ? (string) $row['fm_id'] : '',
+            'category' => isset($row['fm_subject']) ? uno_api_text_from_html($row['fm_subject']) : '',
+            'question' => isset($row['fa_subject']) ? uno_api_text_from_html($row['fa_subject']) : '',
+            'answerHtml' => isset($row['fa_content']) ? (string) $row['fa_content'] : '',
+            'answerText' => isset($row['fa_content']) ? uno_api_text_from_html($row['fa_content']) : '',
+            'order' => isset($row['fa_order']) ? (int) $row['fa_order'] : 0,
+            'legacyProductIds' => isset($row['pid']) && $row['pid'] !== ''
+                ? array_values(array_filter(array_map('trim', explode(',', (string) $row['pid']))))
+                : array(),
+        );
+    }
+
+    return $items;
+}
+
 $productId = isset($_GET['id']) ? trim((string) $_GET['id']) : '';
 $mode = isset($_GET['mode']) ? trim((string) $_GET['mode']) : 'reservation';
 
@@ -124,6 +340,9 @@ if ($productId === '') {
 }
 
 $mapping = uno_api_product_mapping($productId);
+if (!$mapping || empty($mapping['legacyProductId'])) {
+    $mapping = uno_api_detail_mapping_fallback($productId);
+}
 if (!$mapping || empty($mapping['legacyProductId'])) {
     uno_api_error('PRODUCT_NOT_MAPPED', '기존 DB와 연결되지 않은 상품입니다.', 404);
 }
@@ -167,6 +386,19 @@ if ($productType === 'semi') {
 }
 
 $defaultFee = count($feeOptions) > 0 ? $feeOptions[0] : null;
+$productImages = uno_api_fetch_product_images($legacyProductId);
+$thumbnailImage = uno_api_image_by_no($productImages, 0);
+$tourTopImages = uno_api_fetch_board_images('v2_tourTop', $legacyProductId);
+$tourCourseImages = uno_api_fetch_board_images('v2_course', $legacyProductId);
+$tourInfoImages = uno_api_fetch_board_images('v2_tourInfo', $legacyProductId);
+$tourAdImages = uno_api_fetch_board_images('v2_tourAd', $legacyProductId);
+$tourBannerImages = uno_api_fetch_board_images('v2_tour_bnr', $legacyProductId);
+$meetingImages = uno_api_fetch_board_images('v2_product_options', $legacyProductId);
+$tourOptions = uno_api_fetch_product_options($legacyProductId);
+$thumbnailUrl = $thumbnailImage && isset($thumbnailImage['url']) ? $thumbnailImage['url'] : '';
+$heroImageUrl = count($tourTopImages) > 0
+    ? $tourTopImages[0]['url']
+    : $thumbnailUrl;
 $response = array(
     'id' => $productId,
     'legacyProductId' => $legacyProductId,
@@ -176,6 +408,8 @@ $response = array(
     'category' => '',
     'legacyCategory' => isset($product['ca_name']) ? (string) $product['ca_name'] : '',
     'href' => uno_api_href_for_product($productId, $productType),
+    'thumbnailUrl' => $thumbnailUrl,
+    'heroImageUrl' => $heroImageUrl,
     'price' => $defaultFee ? array(
         'deposit' => $defaultFee['deposit'],
         'localPayment' => isset($defaultFee['localPayment']) ? $defaultFee['localPayment'] : 0,
@@ -200,7 +434,29 @@ if ($productType === 'semi') {
 }
 
 if ($mode === 'full') {
+    /*
+     * Detail body image flow:
+     * v2_course -> v2_tourAd -> v2_tour_bnr -> v2_tourInfo.
+     * PRODUCT DOCUMENT stays as a visible label/section marker only.
+     */
+    $bodyImages = array_merge($tourCourseImages, $tourAdImages, $tourBannerImages, $tourInfoImages);
     $response['detailHtml'] = isset($product['wr_content']) ? (string) $product['wr_content'] : '';
+    $response['images'] = $productImages;
+    $response['heroImages'] = array_slice($productImages, 0, 9);
+    $response['detailImages'] = $bodyImages;
+    $response['tourTopImages'] = $tourTopImages;
+    $response['tourCourseImages'] = $tourCourseImages;
+    $response['tourInfoImages'] = $tourInfoImages;
+    $response['tourAdImages'] = $tourAdImages;
+    $response['tourBannerImages'] = $tourBannerImages;
+    $response['meetingImages'] = $meetingImages;
+    $response['tourOptions'] = $tourOptions;
+    $response['bodyImages'] = $bodyImages;
+    $response['productDocumentImages'] = array(
+        'course' => $tourCourseImages,
+        'features' => array_merge($tourAdImages, $tourBannerImages),
+    );
+    $response['faqs'] = uno_api_fetch_product_faqs($legacyProductId);
 }
 
 uno_api_success($response);

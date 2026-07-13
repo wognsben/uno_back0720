@@ -11,13 +11,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { ProductCategory, ProductItem } from "./ProductTemplate";
 
-import imgA from "../../imports/세미패키지메인히어로그리드/3f5da2e34aadc41b88babc2cb3cf79d54480fb17.png";
-import imgB from "../../imports/세미패키지메인히어로그리드/4330107f5001d8438ca2a32856e91d36fc97e09f.png";
-import imgC from "../../imports/세미패키지메인히어로그리드/a1bb687947753b4c890d720a1b31402344e5c88d.png";
-import imgD from "../../imports/세미패키지메인히어로그리드/ca8b91484dd437b9300e61e1611bbff92bf1b412.png";
-import imgE from "../../imports/세미패키지메인히어로그리드/724c69b9aeb2689cd61d20b56baa17a9093971ca.png";
-import imgF from "../../imports/세미패키지메인히어로그리드/176f62c60c3978e3ac5e3d4bb41f76b68f88c0b6.png";
-
 // List view images
 import imgUnion  from "../../imports/세미패키지메인히어로리스트/1b7d77e27b8ba6a7714d11f1d35222896c1a13a8.png";
 import imgStatue from "../../imports/세미패키지메인히어로리스트/53d12808d051374ee7f5af9cc9b1904682827469.png";
@@ -240,6 +233,37 @@ const STYLE = `
     width: 1700px;
     background: #ffffff;
     box-sizing: border-box;
+  }
+
+  .pl-gallery-empty-slot {
+    display: block;
+    background: #ffffff;
+    flex-shrink: 0;
+  }
+
+  .pl-gallery-empty-slot.is-tall {
+    width: 440px;
+    height: 560px;
+  }
+
+  .pl-gallery-empty-slot.is-mid {
+    width: 580px;
+    height: 320px;
+  }
+
+  .pl-gallery-extra-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    width: 1680px;
+    padding: 20px 30px 10px;
+    box-sizing: border-box;
+    background: #ffffff;
+  }
+
+  .pl-gallery-extra-grid .pl-gallery-image-card {
+    width: 100%;
+    height: 320px;
   }
 
   .pl-gallery-left {
@@ -845,7 +869,7 @@ function GalleryImageCard({
       onBlur={onLeave}
       aria-label={item?.title ?? "상품 이미지"}
     >
-      <img src={src} alt="" />
+      {src ? <img src={src} alt="" /> : null}
 
       {/*
         Gallery Hover Caption
@@ -869,6 +893,7 @@ function GalleryView({
 }: {
   items: ProductItem[];
   categories: ProductCategory[];
+  suppressFallbackImages?: boolean;
 }) {
   /*
     Gallery Hover State
@@ -878,72 +903,48 @@ function GalleryView({
     중앙 상품 리스트 hover 상태가 함께 맞춰지도록 한다.
   */
   const [activeProductIndex, setActiveProductIndex] = useState<number | null>(null);
-  const galleryImages = [imgA, imgB, imgC, imgD, imgE, imgF];
-
-  /*
-    Gallery Image ↔ Product Mapping
-    ------------------------------------------
-    갤러리 이미지는 6장, 현재 상품 리스트는 5개일 수 있다.
-    마지막 오른쪽 하단 이미지는 마지막 상품과 연결해
-    이미지 hover 시 중앙 상품명 hover 효과도 같이 보이게 한다.
-  */
-  const getGalleryItemIndex = (imageIndex: number) => {
-    if (items.length <= 0) return 0;
-    return Math.min(imageIndex, items.length - 1);
+  const visibleItems = items.slice(0, 6);
+  const extraItems = items.slice(6);
+  const getGalleryItem = (imageIndex: number) => visibleItems[imageIndex] ?? null;
+  const getGalleryImage = (imageIndex: number) => {
+    const item = getGalleryItem(imageIndex);
+    return item?.image ?? item?.thumbnailUrl ?? "";
   };
+  const renderGallerySlot = (imageIndex: number, variant: "tall" | "mid") => {
+    const item = getGalleryItem(imageIndex);
+    const src = getGalleryImage(imageIndex);
 
-  const getGalleryItem = (imageIndex: number) => items[getGalleryItemIndex(imageIndex)];
+    if (!item) {
+      return <span className={`pl-gallery-empty-slot is-${variant}`} aria-hidden="true" />;
+    }
+
+    return (
+      <GalleryImageCard
+        src={src}
+        item={item}
+        index={imageIndex}
+        activeIndex={activeProductIndex}
+        onHover={setActiveProductIndex}
+        onLeave={() => setActiveProductIndex(null)}
+        variant={variant}
+      />
+    );
+  };
 
   return (
     <div>
-      {/* Left: 2 tall images */}
       <div className="pl-gallery-body">
         <div className="pl-gallery-left">
-          <GalleryImageCard
-            src={galleryImages[0]}
-            item={getGalleryItem(0)}
-            index={0}
-            activeIndex={activeProductIndex}
-            onHover={setActiveProductIndex}
-            onLeave={() => setActiveProductIndex(null)}
-            variant="tall"
-          />
-          <GalleryImageCard
-            src={galleryImages[1]}
-            item={getGalleryItem(1)}
-            index={1}
-            activeIndex={activeProductIndex}
-            onHover={setActiveProductIndex}
-            onLeave={() => setActiveProductIndex(null)}
-            variant="tall"
-          />
+          {renderGallerySlot(0, "tall")}
+          {renderGallerySlot(1, "tall")}
         </div>
 
-        {/* Right: top images / mid info / quote / bottom images */}
         <div className="pl-gallery-right">
-          {/* Top row: 2 images */}
           <div className="pl-gallery-row-images">
-            <GalleryImageCard
-              src={galleryImages[2]}
-              item={getGalleryItem(2)}
-              index={2}
-              activeIndex={activeProductIndex}
-              onHover={setActiveProductIndex}
-              onLeave={() => setActiveProductIndex(null)}
-              variant="mid"
-            />
-            <GalleryImageCard
-              src={galleryImages[3]}
-              item={getGalleryItem(3)}
-              index={3}
-              activeIndex={activeProductIndex}
-              onHover={setActiveProductIndex}
-              onLeave={() => setActiveProductIndex(null)}
-              variant="mid"
-            />
+            {renderGallerySlot(2, "mid")}
+            {renderGallerySlot(3, "mid")}
           </div>
 
-          {/* Mid: categories + product names */}
           <div className="pl-gallery-mid-info">
             <div className="pl-gallery-cats">
               {categories.map((cat, i) => (
@@ -954,7 +955,7 @@ function GalleryView({
             </div>
 
             <div className="pl-gallery-names">
-              {items.map((item, index) => (
+              {visibleItems.map((item, index) => (
                 <a
                   key={item.id}
                   href={item.href ?? "#"}
@@ -974,36 +975,38 @@ function GalleryView({
             </div>
           </div>
 
-          {/* Quote */}
           <div className="pl-gallery-quote">
             A COLLECTION
             <br />OF PLACES
             <br />AND MOMENTS.
           </div>
 
-          {/* Bottom row: 2 images */}
           <div className="pl-gallery-row-images">
-            <GalleryImageCard
-              src={galleryImages[4]}
-              item={getGalleryItem(4)}
-              index={4}
-              activeIndex={activeProductIndex}
-              onHover={setActiveProductIndex}
-              onLeave={() => setActiveProductIndex(null)}
-              variant="mid"
-            />
-            <GalleryImageCard
-              src={galleryImages[5]}
-              item={getGalleryItem(5)}
-              index={5}
-              activeIndex={activeProductIndex}
-              onHover={setActiveProductIndex}
-              onLeave={() => setActiveProductIndex(null)}
-              variant="mid"
-            />
+            {renderGallerySlot(4, "mid")}
+            {renderGallerySlot(5, "mid")}
           </div>
         </div>
       </div>
+
+      {extraItems.length > 0 ? (
+        <div className="pl-gallery-extra-grid">
+          {extraItems.map((item, extraIndex) => {
+            const index = extraIndex + 6;
+            return (
+              <GalleryImageCard
+                key={item.id}
+                src={item.image ?? item.thumbnailUrl ?? ""}
+                item={item}
+                index={index}
+                activeIndex={activeProductIndex}
+                onHover={setActiveProductIndex}
+                onLeave={() => setActiveProductIndex(null)}
+                variant="mid"
+              />
+            );
+          })}
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -1184,18 +1187,22 @@ export default function ProductList({
   categories = [],
   viewMode = "gallery",
   onViewModeChange,
+  suppressFallbackImages = false,
   pageTitle = "세미패키지",
 }: {
   items?: ProductItem[];
   categories?: ProductCategory[];
   viewMode?: "gallery" | "list";
   onViewModeChange?: (mode: "gallery" | "list") => void;
+  suppressFallbackImages?: boolean;
   pageTitle?: string;
 }) {
   const galleryUnderlineLeft = 167;
   const listUnderlineLeft = 311;
 
   const { shellRef, scale } = useProductListScale();
+  const extraGalleryRowCount = Math.ceil(Math.max(0, items.length - 6) / 3);
+  const dynamicGalleryHeight = PRODUCT_LIST_GALLERY_HEIGHT + extraGalleryRowCount * 360;
 
   /*
     ProductList Dynamic Height
@@ -1205,7 +1212,7 @@ export default function ProductList({
   */
   const canvasHeight =
     viewMode === "gallery"
-      ? PRODUCT_LIST_GALLERY_HEIGHT
+      ? Math.max(PRODUCT_LIST_GALLERY_HEIGHT, dynamicGalleryHeight)
       : PRODUCT_LIST_FILTER_HEIGHT + PRODUCT_LIST_BODY_LIST_HEIGHT;
 
   return (
@@ -1266,7 +1273,11 @@ export default function ProductList({
             </div>
           </div>
         ) : viewMode === "gallery" ? (
-          <GalleryView items={items} categories={categories} />
+          <GalleryView
+            items={items}
+            categories={categories}
+            suppressFallbackImages={suppressFallbackImages}
+          />
         ) : (
           <ListView items={items} categories={categories} />
         )}

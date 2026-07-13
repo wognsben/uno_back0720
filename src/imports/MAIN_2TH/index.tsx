@@ -5,6 +5,7 @@
 */
 import { useEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
+import { getProducts, type ProductSummary } from "../../api/reservationApi";
 import imgImage21 from "./66cc55f7b10f09c3fd983a97214f281b9d50cc4f.png";
 
 
@@ -15,7 +16,40 @@ type PackageItem = {
   lines: string[];
   eyebrow: string;
   href: string;
+  image?: string;
 };
+
+function mergeRemoteProducts(items: PackageItem[], remoteProducts: ProductSummary[]) {
+  if (remoteProducts.length > 0) {
+    return remoteProducts.map((product, index) => ({
+      id: product.id,
+      number: String(index + 1).padStart(2, "0"),
+      title: product.title,
+      lines: product.title ? [product.title] : [`${product.productType.toUpperCase()} TOUR`],
+      eyebrow: product.productType === "daily" ? "DAILY TOUR" : "SEMI PACKAGE",
+      href: product.href,
+      image: product.thumbnailUrl,
+    }));
+  }
+
+  const remoteById = new Map(remoteProducts.map((product) => [product.id, product]));
+
+  return items.map((item) => {
+    const remote = remoteById.get(item.id);
+
+    if (!remote) {
+      return item;
+    }
+
+    return {
+      ...item,
+      title: remote.title || item.title,
+      lines: remote.title ? [remote.title] : item.lines,
+      href: remote.href || item.href,
+      image: remote.thumbnailUrl || item.image,
+    };
+  });
+}
 
 const SEMI_PACKAGE_ITEMS: PackageItem[] = [
   {
@@ -413,16 +447,18 @@ function PreviewImage({
                   willChange: "opacity, transform",
                 }}
               >
-                <img
-                  alt=""
-                  className="absolute inset-0 size-full object-cover"
-                  src={imgImage21}
-                  onError={() => setImageError(true)}
-                  style={{
-                    objectPosition: "center center",
-                    transform: "scale(1.04)",
-                  }}
-                />
+                {item.image ? (
+                  <img
+                    alt=""
+                    className="absolute inset-0 size-full object-cover"
+                    src={item.image}
+                    onError={() => setImageError(true)}
+                    style={{
+                      objectPosition: "center center",
+                      transform: "scale(1.04)",
+                    }}
+                  />
+                ) : null}
               </div>
             ))
           ) : (
@@ -498,15 +534,17 @@ function PreviewImage({
                 transition: "width 0.45s cubic-bezier(0.16, 1, 0.3, 1), height 0.45s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease",
               }}
             >
-              <img
-                alt=""
-                className="size-full object-cover"
-                src={imgImage21}
-                style={{
-                  objectPosition: "center center",
-                  transform: "scale(1.08)",
-                }}
-              />
+              {item.image ? (
+                <img
+                  alt=""
+                  className="size-full object-cover"
+                  src={item.image}
+                  style={{
+                    objectPosition: "center center",
+                    transform: "scale(1.08)",
+                  }}
+                />
+              ) : null}
               <span
                 className="absolute left-[-30px] top-[1px] font-en text-[11px] text-[#151515]"
                 style={{
@@ -675,7 +713,29 @@ function Frame() {
   const [category, setCategory] = useState<CategoryKey>("semi");
   const [activeIndex, setActiveIndex] = useState(0);
   const [hasInteracted, setHasInteracted] = useState(false);
-  const items = category === "semi" ? SEMI_PACKAGE_ITEMS : DAILY_TOUR_ITEMS;
+  const [remoteProducts, setRemoteProducts] = useState<ProductSummary[]>([]);
+  const baseItems = category === "semi" ? SEMI_PACKAGE_ITEMS : DAILY_TOUR_ITEMS;
+  const items = mergeRemoteProducts(baseItems, remoteProducts);
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    getProducts({ type: category })
+      .then((response) => {
+        if (!isCancelled) {
+          setRemoteProducts(response.items ?? []);
+        }
+      })
+      .catch(() => {
+        if (!isCancelled) {
+          setRemoteProducts([]);
+        }
+      });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [category]);
 
   /*
     Section2 Desktop Responsive

@@ -30,6 +30,8 @@ function uno_renewal_admin_menu_groups()
             'href' => '/admin/renewal/index.php#members',
             'items' => array(
                 array('label' => '회원 목록', 'href' => '/admin/member.php'),
+                array('label' => '공개 묻고답하기', 'href' => '/admin/renewal/community-qna.php'),
+                array('label' => '여행후기', 'href' => '/admin/renewal/community-reviews.php'),
                 array('label' => '스팸 문의 관리', 'href' => '/admin/renewal/spam-moderation.php'),
                 array('label' => '가이드', 'href' => '/admin/member.php?mb_level=4'),
                 array('label' => 'B2B 회원', 'href' => '/admin/member.php?mb_level=5'),
@@ -42,6 +44,7 @@ function uno_renewal_admin_menu_groups()
                 array('label' => '상품 운영', 'href' => '/admin/renewal/products.php'),
                 array('label' => '상품 네비게이션', 'href' => '/admin/renewal/product-navigation.php'),
                 array('label' => '상품 ID 매핑', 'href' => '/admin/renewal/product-mapping.php'),
+                array('label' => '상품 상세 FAQ', 'href' => '/admin/renewal/faqs.php'),
                 array('label' => '기존 상품 추가', 'href' => '/admin/write.php?bo_table=product'),
             ),
         ),

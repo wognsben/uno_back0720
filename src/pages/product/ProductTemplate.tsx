@@ -17,6 +17,7 @@
 ========================================================== */
 import { useEffect, useMemo, useState } from "react";
 
+import { getProducts, type ProductSummary } from "../../api/reservationApi";
 import CategoryFilter from "./CategoryFilter";
 import ProductList from "./ProductList";
 import {
@@ -46,6 +47,7 @@ export type ProductItem = {
   eyebrow?: string;
   description?: string;
   image?: string;
+  thumbnailUrl?: string;
   href?: string;
 
   /*
@@ -317,6 +319,25 @@ function getFirstProductForFilter(pageData: ProductTemplateData, filterId: strin
   return pageData.products.find((product) => matchesProductFilter(product, filterId));
 }
 
+function mapRemoteProductToProductItem(product: ProductSummary, index: number): ProductItem {
+  return {
+    id: product.id,
+    legacyProductId: product.legacyProductId,
+    legacyFeeOptionId: product.legacyFeeOptionId,
+    legacyPackageScheduleId: product.legacyPackageScheduleId,
+    number: String(index + 1).padStart(2, "0"),
+    title: product.title,
+    region: product.legacyCategory || product.category || "",
+    eyebrow: product.productType === "daily" ? "DAILY TOUR" : "SEMI PACKAGE",
+    image: product.thumbnailUrl,
+    thumbnailUrl: product.thumbnailUrl,
+    href: product.href,
+    productType: product.productType,
+    categoryId: "all",
+    regionId: product.legacyCategory || product.category || "all",
+  };
+}
+
 export default function ProductTemplate({
   pageData = DEFAULT_DATA,
   routeRegionId,
@@ -325,12 +346,79 @@ export default function ProductTemplate({
   routeRegionId?: string;
 }) {
   const [viewMode, setViewMode] = useState<ProductViewMode>("gallery");
+  const [remoteProducts, setRemoteProducts] = useState<ProductSummary[]>([]);
+  const [isRemoteProductsLoading, setIsRemoteProductsLoading] = useState(false);
+
+  useEffect(() => {
+    let isCancelled = false;
+    setIsRemoteProductsLoading(true);
+
+    getProducts(pageData.productType ? { type: pageData.productType } : undefined)
+      .then((response) => {
+        if (!isCancelled) {
+          setRemoteProducts(response.items ?? []);
+          setIsRemoteProductsLoading(false);
+        }
+      })
+      .catch(() => {
+        if (!isCancelled) {
+          setRemoteProducts([]);
+          setIsRemoteProductsLoading(false);
+        }
+      });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [pageData.productType]);
+
+  const resolvedProducts = useMemo(() => {
+    if (remoteProducts.length > 0) {
+      return remoteProducts.map(mapRemoteProductToProductItem);
+    }
+
+    const remoteById = new Map(remoteProducts.map((product) => [product.id, product]));
+
+    return pageData.products.map((product) => {
+      const remote = remoteById.get(product.id);
+
+      if (!remote) {
+        return isRemoteProductsLoading
+          ? {
+              ...product,
+              image: undefined,
+              thumbnailUrl: undefined,
+            }
+          : product;
+      }
+
+      return {
+        ...product,
+        legacyProductId: remote.legacyProductId ?? product.legacyProductId,
+        legacyFeeOptionId: remote.legacyFeeOptionId ?? product.legacyFeeOptionId,
+        title: remote.title || product.title,
+        href: remote.href || product.href,
+        productType: remote.productType ?? product.productType,
+        image: remote.thumbnailUrl || product.image,
+        thumbnailUrl: remote.thumbnailUrl || product.thumbnailUrl,
+      };
+    });
+  }, [pageData.products, remoteProducts, isRemoteProductsLoading]);
+
+  const resolvedPageData = useMemo(
+    () => ({
+      ...pageData,
+      products: resolvedProducts,
+    }),
+    [pageData, resolvedProducts],
+  );
+
   const [activeCategory, setActiveCategory] = useState(() =>
-    getInitialProductFilterId(pageData, routeRegionId),
+    getInitialProductFilterId(resolvedPageData, routeRegionId),
   );
   const [activeProductId, setActiveProductId] = useState(() => {
-    const initialFilterId = getInitialProductFilterId(pageData, routeRegionId);
-    return getFirstProductForFilter(pageData, initialFilterId)?.id ?? pageData.products[0]?.id ?? "";
+    const initialFilterId = getInitialProductFilterId(resolvedPageData, routeRegionId);
+    return getFirstProductForFilter(resolvedPageData, initialFilterId)?.id ?? resolvedPageData.products[0]?.id ?? "";
   });
 
   /*
@@ -340,16 +428,16 @@ export default function ProductTemplate({
     이전 목록의 activeCategory / activeProductId가 남지 않도록 초기화한다.
   */
   useEffect(() => {
-    const nextFilterId = getInitialProductFilterId(pageData, routeRegionId);
+    const nextFilterId = getInitialProductFilterId(resolvedPageData, routeRegionId);
     setActiveCategory(nextFilterId);
     setActiveProductId(
-      getFirstProductForFilter(pageData, nextFilterId)?.id ?? pageData.products[0]?.id ?? "",
+      getFirstProductForFilter(resolvedPageData, nextFilterId)?.id ?? resolvedPageData.products[0]?.id ?? "",
     );
-  }, [pageData, routeRegionId]);
+  }, [resolvedPageData, routeRegionId]);
 
   const activeProduct = useMemo(() => {
-    return pageData.products.find((item) => item.id === activeProductId) ?? pageData.products[0];
-  }, [activeProductId, pageData.products]);
+    return resolvedPageData.products.find((item) => item.id === activeProductId) ?? resolvedPageData.products[0];
+  }, [activeProductId, resolvedPageData.products]);
 
   const filteredProducts = useMemo(() => {
     /*
@@ -359,12 +447,16 @@ export default function ProductTemplate({
       백엔드 연동 전까지는 기존처럼 전체 상품을 유지한다.
       이후 category / region 필드가 연결되면 여기에서만 필터링하면 된다.
     */
-    if (activeCategory === "all") {
-      return pageData.products;
+    if (remoteProducts.length > 0) {
+      return resolvedPageData.products;
     }
 
-    return pageData.products.filter((product) => matchesProductFilter(product, activeCategory));
-  }, [activeCategory, pageData.products]);
+    if (activeCategory === "all") {
+      return resolvedPageData.products;
+    }
+
+    return resolvedPageData.products.filter((product) => matchesProductFilter(product, activeCategory));
+  }, [activeCategory, resolvedPageData.products, remoteProducts.length]);
 
   return (
     <div className="product-page-shell">
@@ -409,16 +501,16 @@ export default function ProductTemplate({
 
       <main className="product-page-main">
         <CategoryFilter
-          categories={pageData.categories}
+          categories={resolvedPageData.categories}
           activeCategory={activeCategory}
           onCategoryChange={(categoryId) => {
             setActiveCategory(categoryId);
             const firstMatchedProduct =
               categoryId === "all"
-                ? pageData.products[0]
-                : pageData.products.find((product) => matchesProductFilter(product, categoryId));
+                ? resolvedPageData.products[0]
+                : resolvedPageData.products.find((product) => matchesProductFilter(product, categoryId));
 
-            setActiveProductId(firstMatchedProduct?.id ?? pageData.products[0]?.id ?? "");
+            setActiveProductId(firstMatchedProduct?.id ?? resolvedPageData.products[0]?.id ?? "");
           }}
           activeProduct={activeProduct}
         />
@@ -437,8 +529,9 @@ export default function ProductTemplate({
           items={filteredProducts}
           viewMode={viewMode}
           onViewModeChange={setViewMode}
-          pageTitle={pageData.pageTitle}
-          categories={pageData.categories}
+          pageTitle={resolvedPageData.pageTitle}
+          categories={resolvedPageData.categories}
+          suppressFallbackImages={isRemoteProductsLoading}
         />
       </main>
     </div>

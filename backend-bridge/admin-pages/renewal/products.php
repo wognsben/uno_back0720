@@ -131,7 +131,7 @@ uno_renewal_admin_require_access('/admin/renewal/products.php');
 
     .tools {
       display: grid;
-      grid-template-columns: 220px minmax(0, 1fr);
+      grid-template-columns: 220px 260px minmax(0, 1fr);
       gap: 10px;
       margin: 28px 0 14px;
     }
@@ -302,6 +302,29 @@ uno_renewal_admin_require_access('/admin/renewal/products.php');
       background: rgba(154, 106, 0, .07);
     }
 
+    .badge.bad {
+      border-color: rgba(159, 41, 41, .26);
+      color: #9f2929;
+      background: rgba(159, 41, 41, .07);
+    }
+
+    .badge.media {
+      font-size: 11px;
+      color: var(--muted);
+      background: #fafaf8;
+    }
+
+    .media-link {
+      display: inline-flex;
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .media-link:hover .badge {
+      border-color: #151515;
+      color: #151515;
+    }
+
     .status-select {
       min-height: 36px;
       padding: 0 34px 0 12px;
@@ -411,6 +434,13 @@ uno_renewal_admin_require_access('/admin/renewal/products.php');
         <option value="ready">상품 준비중</option>
         <option value="unmapped">미연결</option>
       </select>
+      <select data-filter-media>
+        <option value="">전체 이미지 상태</option>
+        <option value="missing-any">필수 이미지 누락</option>
+        <option value="missing-course">v2_course 누락</option>
+        <option value="missing-ad">v2_tourAd 누락</option>
+        <option value="missing-info">v2_tourInfo 누락</option>
+      </select>
       <input type="search" data-search placeholder="상품명, 카테고리, legacy ID, productId 검색">
     </section>
 
@@ -452,6 +482,7 @@ uno_renewal_admin_require_access('/admin/renewal/products.php');
     const dailyListEl = document.querySelector("[data-list-daily]");
     const statusEl = document.querySelector("[data-status]");
     const filterStatusEl = document.querySelector("[data-filter-status]");
+    const filterMediaEl = document.querySelector("[data-filter-media]");
     const searchEl = document.querySelector("[data-search]");
     const countAllEl = document.querySelector("[data-count-all]");
     const countActiveEl = document.querySelector("[data-count-active]");
@@ -509,8 +540,20 @@ uno_renewal_admin_require_access('/admin/renewal/products.php');
       return String(a.title || "").localeCompare(String(b.title || ""), "ko");
     });
 
+    const mediaMissing = (product, key) => {
+      const counts = product.mediaCounts || {};
+      return Number(counts[key] || 0) <= 0;
+    };
+
+    const hasRequiredMediaMissing = (product) => {
+      return mediaMissing(product, "tourCourse") ||
+        mediaMissing(product, "tourAd") ||
+        mediaMissing(product, "tourInfo");
+    };
+
     const filteredProducts = (type) => {
       const status = filterStatusEl.value;
+      const media = filterMediaEl.value;
       const keyword = searchEl.value.trim().toLowerCase();
 
       return normalizedProducts().filter((product) => {
@@ -525,6 +568,10 @@ uno_renewal_admin_require_access('/admin/renewal/products.php');
         if (status === "active" && !product.isActive) return false;
         if (status === "ready" && (!product.isMapped || product.isActive)) return false;
         if (status === "unmapped" && product.isMapped) return false;
+        if (media === "missing-any" && !hasRequiredMediaMissing(product)) return false;
+        if (media === "missing-course" && !mediaMissing(product, "tourCourse")) return false;
+        if (media === "missing-ad" && !mediaMissing(product, "tourAd")) return false;
+        if (media === "missing-info" && !mediaMissing(product, "tourInfo")) return false;
         if (keyword && !haystack.includes(keyword)) return false;
         return true;
       });
@@ -566,6 +613,35 @@ uno_renewal_admin_require_access('/admin/renewal/products.php');
       return "unmapped";
     };
 
+    const mediaBadge = (label, count, href, required = true) => {
+      const countNumber = Number(count || 0);
+      const tone = !required || countNumber > 0 ? 'media' : 'bad';
+      const badge = '<span class="badge ' + tone + '">' + escapeHtml(label) + ' ' + escapeHtml(countNumber) + '</span>';
+
+      if (!href) {
+        return badge;
+      }
+
+      return '<a class="media-link" href="' + escapeHtml(href) + '" target="_blank" rel="noopener">' + badge + '</a>';
+    };
+
+    const mediaBadges = (product) => {
+      const counts = product.mediaCounts || {};
+      const links = product.legacyMediaLinks || {};
+      const productCount = Number(counts.product || 0);
+      const tourTopCount = Number(counts.tourTop || 0);
+      const tourCourseCount = Number(counts.tourCourse || 0);
+      const tourAdCount = Number(counts.tourAd || 0);
+      const tourInfoCount = Number(counts.tourInfo || 0);
+      return [
+        mediaBadge('product', productCount, links.product, false),
+        mediaBadge('v2_tourTop', tourTopCount, links.tourTop, false),
+        mediaBadge('v2_course', tourCourseCount, links.tourCourse),
+        mediaBadge('v2_tourAd', tourAdCount, links.tourAd),
+        mediaBadge('v2_tourInfo', tourInfoCount, links.tourInfo),
+      ].join("");
+    };
+
     const statusSelect = (product) => {
       const value = productStatusValue(product);
       return (
@@ -579,6 +655,7 @@ uno_renewal_admin_require_access('/admin/renewal/products.php');
 
     const renderProduct = (product) => {
       const frontendHref = product.productId ? product.href : "";
+      const apiHref = product.productId ? "/api/products/detail.php?id=" + encodeURIComponent(product.productId) + "&mode=full" : "";
       const editHref = product.renewalEditHref || ("/admin/renewal/product-edit.php?legacyProductId=" + encodeURIComponent(product.legacyProductId || ""));
       return (
         '<article class="row">' +
@@ -589,10 +666,11 @@ uno_renewal_admin_require_access('/admin/renewal/products.php');
               '<span class="meta">' + escapeHtml(product.category || "-") + ' · legacy #' + escapeHtml(product.legacyProductId || "-") + '</span>' +
               '<span class="meta">productId: ' + escapeHtml(product.productId || "미연결") + '</span>' +
             '</a>' +
-            '<div class="row-meta">' + statusSelect(product) + '</div>' +
+            '<div class="row-meta">' + statusSelect(product) + mediaBadges(product) + '</div>' +
             '<div class="row-actions">' +
               '<a class="mini primary" href="' + escapeHtml(editHref) + '">수정</a>' +
               (frontendHref ? '<a class="mini" href="' + escapeHtml(frontendHref) + '" target="_blank" rel="noreferrer">보기</a>' : '') +
+              (apiHref ? '<a class="mini" href="' + escapeHtml(apiHref) + '" target="_blank" rel="noreferrer">API 확인</a>' : '') +
             '</div>' +
           '</div>' +
         '</article>'
@@ -711,7 +789,7 @@ uno_renewal_admin_require_access('/admin/renewal/products.php');
       }
     });
 
-    [filterStatusEl, searchEl].forEach((input) => {
+    [filterStatusEl, filterMediaEl, searchEl].forEach((input) => {
       input.addEventListener("input", render);
       input.addEventListener("change", render);
     });

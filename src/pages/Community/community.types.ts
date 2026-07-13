@@ -21,9 +21,13 @@ export type CommunityNavItem = {
 
 export type CommunityPost = {
     id: string;
-    type: Exclude<CommunityType, "faq" | "inquiry">;
+    type: Exclude<CommunityType, "faq">;
+    board?: string;
+    legacyBoardUrl?: string;
     title: string;
     excerpt?: string;
+    contentHtml?: string;
+    contentText?: string;
     author?: string;
     date: string;
     views?: number;
@@ -53,7 +57,7 @@ export type CommunityLayoutProps = {
 };
 
 export type CommunityListProps = {
-    type: Exclude<CommunityType, "faq" | "inquiry">;
+    type: Exclude<CommunityType, "faq">;
     items: CommunityPost[];
 };
 
@@ -67,11 +71,14 @@ export type CommunityDetailProps = {
 
 export type CommunitySearchProps = {
     placeholder?: string;
+    value?: string;
+    onSearch?: (value: string) => void;
 };
 
 export type CommunityPaginationProps = {
     currentPage: number;
     totalPages: number;
+    onPageChange?: (page: number) => void;
 };
 
 export type CommunityNavigationProps = {

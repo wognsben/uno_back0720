@@ -117,6 +117,31 @@ function uno_api_admin_products_thumbnail_url($legacyProductId)
     return '/bbs/data/file/product/' . str_replace('%2F', '/', rawurlencode((string) $row['bf_file']));
 }
 
+function uno_api_admin_products_file_count($boardTable, $legacyProductId)
+{
+    if (!function_exists('sql_fetch')) {
+        return 0;
+    }
+
+    $boardTable = preg_replace('/[^a-zA-Z0-9_]/', '', (string) $boardTable);
+    $legacyProductId = (int) $legacyProductId;
+
+    if ($boardTable === '' || $legacyProductId <= 0) {
+        return 0;
+    }
+
+    $fileTable = uno_api_admin_products_file_table();
+    $row = sql_fetch(
+        "select count(*) as cnt
+           from {$fileTable}
+          where bo_table = '{$boardTable}'
+            and wr_id = '{$legacyProductId}'
+            and bf_file <> ''"
+    );
+
+    return $row && isset($row['cnt']) ? (int) $row['cnt'] : 0;
+}
+
 $productTable = uno_api_reservation_table_product();
 $mappingByLegacy = uno_api_admin_products_mapping_by_legacy();
 $limit = isset($_GET['limit']) ? (int) $_GET['limit'] : 300;
@@ -168,6 +193,20 @@ while ($row = sql_fetch_array($result)) {
         'href' => $href,
         'legacyFeeOptionId' => $mapping && isset($mapping['legacyFeeOptionId']) ? $mapping['legacyFeeOptionId'] : null,
         'thumbnailUrl' => uno_api_admin_products_thumbnail_url($legacyProductId),
+        'mediaCounts' => array(
+            'product' => uno_api_admin_products_file_count('product', $legacyProductId),
+            'tourTop' => uno_api_admin_products_file_count('v2_tourTop', $legacyProductId),
+            'tourCourse' => uno_api_admin_products_file_count('v2_course', $legacyProductId),
+            'tourAd' => uno_api_admin_products_file_count('v2_tourAd', $legacyProductId),
+            'tourInfo' => uno_api_admin_products_file_count('v2_tourInfo', $legacyProductId),
+        ),
+        'legacyMediaLinks' => array(
+            'product' => '/admin/write.php?w=u&bo_table=product&wr_id=' . $legacyProductId,
+            'tourTop' => '/admin/tourCourse.php?bo_table=v2_tourTop&wr_id=' . $legacyProductId,
+            'tourCourse' => '/admin/tourCourse.php?bo_table=v2_course&wr_id=' . $legacyProductId,
+            'tourAd' => '/admin/tourCourse.php?bo_table=v2_tourAd&wr_id=' . $legacyProductId,
+            'tourInfo' => '/admin/tourCourse.php?bo_table=v2_tourInfo&wr_id=' . $legacyProductId,
+        ),
         'renewalEditHref' => '/admin/renewal/product-edit.php?legacyProductId=' . $legacyProductId,
         'legacyEditHref' => '/admin/write.php?w=u&bo_table=product&wr_id=' . $legacyProductId,
     );

@@ -3,26 +3,30 @@
 
    Product Type A Detail Page
 
-   사용 페이지
-   - 세미패키지 상세
-   - 데일리투어 상세
+   ?�용 ?�이지
+   - ?��??�키지 ?�세
+   - ?�일리투???�세
 
-   백엔드 연동
+   백엔???�동
    ------------------------------------------
-   product        ← 상품 기본 정보
-   guide          ← 가이드 소개
-   reviews        ← 리뷰
-   schedule       ← 일정 / 출발 / 도착 / 가격 / 예약 정보
-   availableDates ← 가능 예약 날짜
-   detailImages   ← 상세페이지 이미지
-   notices        ← 환불 규정 / 예약 안내 / 중요 고지 / 필수 준비품
+   product        ???�품 기본 ?�보
+   guide          ??가?�드 ?�개
+   reviews        ??리뷰
+   schedule       ???�정 / 출발 / ?�착 / 가�?/ ?�약 ?�보
+   availableDates ??가???�약 ?�짜
+   detailImages   ???�세?�이지 ?��?지
+   notices        ???�불 규정 / ?�약 ?�내 / 중요 고�? / ?�수 준비품
 
-   Header / ProductNavigation / Footer는 App.tsx 공통 컴포넌트 사용
+   Header / ProductNavigation / Footer??App.tsx 공통 컴포?�트 ?�용
 ========================================================== */
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { MouseEvent } from "react";
 
+import {
+  getProductDetail,
+  type ProductDetailResponse,
+} from "../../api/reservationApi";
 import { saveRecentlyViewedProduct } from "../../utils/recentlyViewed";
 import ReservationModule from "./product_com/ReservationModule";
 import BookingSide from "./product_com/Booking_side";
@@ -51,23 +55,23 @@ import type {
   ReviewItem,
 } from "./product_com/product_document";
 
-import imgHero from "../../imports/세미패키지메인히어로그리드/3f5da2e34aadc41b88babc2cb3cf79d54480fb17.png";
-import imgDetailA from "../../imports/세미패키지메인히어로그리드/4330107f5001d8438ca2a32856e91d36fc97e09f.png";
-import imgDetailB from "../../imports/세미패키지메인히어로그리드/a1bb687947753b4c890d720a1b31402344e5c88d.png";
-import imgDetailC from "../../imports/세미패키지메인히어로그리드/ca8b91484dd437b9300e61e1611bbff92bf1b412.png";
+import imgHero from "../../imports/?��??�키지메인?�어로그리드/3f5da2e34aadc41b88babc2cb3cf79d54480fb17.png";
+import imgDetailA from "../../imports/?��??�키지메인?�어로그리드/4330107f5001d8438ca2a32856e91d36fc97e09f.png";
+import imgDetailB from "../../imports/?��??�키지메인?�어로그리드/a1bb687947753b4c890d720a1b31402344e5c88d.png";
+import imgDetailC from "../../imports/?��??�키지메인?�어로그리드/ca8b91484dd437b9300e61e1611bbff92bf1b412.png";
 
 /* Desktop Responsive Base
-   - 실제 ProductDetail canvas는 Figma 기준 1700px
-   - 화면에서 보이는 desktop 원본 기준은 1600px로 제한
-   - 1600px 이하에서는 canvas 전체를 부모 폭에 맞춰 scale 처리 */
+   - ?�제 ProductDetail canvas??Figma 기�? 1700px
+   - ?�면?�서 보이??desktop ?�본 기�??� 1600px�??�한
+   - 1600px ?�하?�서??canvas ?�체�?부�???�� 맞춰 scale 처리 */
 const DETAIL_CANVAS_WIDTH = 1700;
 const DETAIL_DESKTOP_BASE_WIDTH = 1600;
 
 /*
   Recently Viewed Storage
   ------------------------------------------
-  Header VIEWED 자동 오픈 기능에서 사용할 수 있도록
-  상세페이지 진입 시 현재 상품 정보를 sessionStorage에 저장한다.
+  Header VIEWED ?�동 ?�픈 기능?�서 ?�용?????�도�?
+  ?�세?�이지 진입 ???�재 ?�품 ?�보�?sessionStorage???�?�한??
 */
 type ProductKind = "semi" | "daily";
 type RelatedProduct = InfiniteOtherProduct;
@@ -87,70 +91,70 @@ const SEMI_DETAIL_DATA = {
   /*
     Product Type Split
     ------------------------------------------
-    semi  : 세미패키지 상세. 항공권형 일정표 + 예약 패널 중심.
-    daily : 데일리투어 상세. 현지 즉시 예약 성격이 강하므로 달력형 예약 UI를 우선 노출.
+    semi  : ?��??�키지 ?�세. ??��권형 ?�정??+ ?�약 ?�널 중심.
+    daily : ?�일리투???�세. ?��? 즉시 ?�약 ?�격??강하므�??�력???�약 UI�??�선 ?�출.
 
-    실제 백엔드 연동 시 category 값(semi / daily)에 따라 이 값을 교체한다.
+    ?�제 백엔???�동 ??category �?semi / daily)???�라 ??값을 교체?�다.
   */
   productType: "semi" as ProductKind,
 
   eyebrow: "SEMI PACKAGE · ITALY",
-  title: "이탈리아 일주 9박 11일",
+  title: "ITALY GRAND TOUR",
   titleEn: "ITALY GRAND TOUR",
   region: "ROME · FIRENZE · VENEZIA · NAPOLI",
   routeCode: "UNO / IT11",
-  duration: "9박 11일",
+  duration: "9D11N",
   basePrice: 2890000,
   currency: "KRW",
 
   /*
     Currency Backend Fields
     ------------------------------------------
-    백엔드 연동 시 currency / price를 분리해서 받는다.
-    currency 값(KRW / EUR / USD / JPY)에 따라 프론트에서 화폐 기호만 매핑한다.
+    백엔???�동 ??currency / price�?분리?�서 받는??
+    currency �?KRW / EUR / USD / JPY)???�라 ?�론?�에???�폐 기호�?매핑?�다.
   */
 
   /*
     Premium Travel Document Backend Fields
     ------------------------------------------
-    세미패키지 상세의 PREMIUM TRAVEL DOCUMENT 영역에 표시되는 데이터다.
-    실제 백엔드 연동 시 schedule / flight / ticket / route / status 값을
-    관리자 입력값으로 교체한다.
+    ?��??�키지 ?�세??PREMIUM TRAVEL DOCUMENT ?�역???�시?�는 ?�이?�다.
+    ?�제 백엔???�동 ??schedule / flight / ticket / route / status 값을
+    관리자 ?�력값으�?교체?�다.
 
-    - ticket.status       ← 출발확정 / 예약가능 / 마감임박 등 상태
-    - ticket.outbound     ← 가는편 항공 또는 대표 이동 일정
-    - ticket.inbound      ← 오는편 항공 또는 대표 이동 일정
-    - routeCode / duration← 상품 코드와 여행 기간
+    - ticket.status       ??출발?�정 / ?�약가??/ 마감?�박 ???�태
+    - ticket.outbound     ??가?�편 ??�� ?�는 ?�???�동 ?�정
+    - ticket.inbound      ???�는????�� ?�는 ?�???�동 ?�정
+    - routeCode / duration???�품 코드?� ?�행 기간
   */
   ticket: {
-    status: "출발 확정",
+    status: "출발 ?�정",
     outbound: {
-      label: "가는편",
-      airline: "터키항공",
-      departDate: "10월 17일(토)",
-      arriveDate: "10월 18일(일)",
+      label: "가?�편",
+      airline: "?�키??��",
+      departDate: "10??17????",
+      arriveDate: "10??18????",
       fromCode: "ICN",
-      fromCity: "인천",
+      fromCity: "?�천",
       toCode: "FCO",
       toCity: "로마",
       departTime: "23:20",
       arriveTime: "09:50",
-      duration: "17시간 30분",
-      transfer: "이스탄불 경유",
+      duration: "17?�간 30�?,
+      transfer: "?�스?�불 경유",
     },
     inbound: {
-      label: "오는편",
-      airline: "터키항공",
-      departDate: "10월 25일(일)",
-      arriveDate: "10월 26일(월)",
+      label: "?�는??,
+      airline: "?�키??��",
+      departDate: "10??25????",
+      arriveDate: "10??26????",
       fromCode: "FCO",
       fromCity: "로마",
       toCode: "ICN",
-      toCity: "인천",
+      toCity: "?�천",
       departTime: "19:25",
       arriveTime: "18:20",
-      duration: "22시간 55분",
-      transfer: "이스탄불 경유",
+      duration: "22?�간 55�?,
+      transfer: "?�스?�불 경유",
     },
   },
   heroImage: imgHero,
@@ -158,157 +162,157 @@ const SEMI_DETAIL_DATA = {
   /*
     Detail Tab Backend Fields
     ------------------------------------------
-    상세페이지 탭 콘텐츠는 모두 백엔드 관리자 입력값으로 교체한다.
+    ?�세?�이지 ??콘텐츠는 모두 백엔??관리자 ?�력값으�?교체?�다.
 
-    - review        ← 리뷰 탭 본문
-    - scheduleIntro ← 코스 일정 탭 상단 설명
-    - scheduleDays  ← 코스 일정 상세 DAY 리스트
-    - guide         ← 가이드 정보 탭 본문
-    - included      ← 포함 탭 본문
-    - excluded      ← 불포함 탭 본문
-    - reservationNotice ← 예약 안내 탭 본문
+    - review        ??리뷰 ??본문
+    - scheduleIntro ??코스 ?�정 ???�단 ?�명
+    - scheduleDays  ??코스 ?�정 ?�세 DAY 리스??
+    - guide         ??가?�드 ?�보 ??본문
+    - included      ???�함 ??본문
+    - excluded      ??불포????본문
+    - reservationNotice ???�약 ?�내 ??본문
 
-    현재 문자열은 프론트 UI 확인용 더미 데이터다.
+    ?�재 문자?��? ?�론??UI ?�인???��? ?�이?�다.
   */
   guide:
-    "우노트래블의 이탈리아 전문 가이드가 도시의 역사, 미술, 음식, 동선까지 여행의 밀도를 설계합니다. 단순 관광이 아니라 도시의 맥락을 이해하는 여정으로 구성합니다.",
+    "?�노?�래블의 ?�탈리아 ?�문 가?�드가 ?�시????��, 미술, ?�식, ?�선까�? ?�행??밀?��? ?�계?�니?? ?�순 관광이 ?�니???�시??맥락???�해?�는 ?�정?�로 구성?�니??",
   included:
-    "전문 가이드 해설, 현지 일정 관리, 주요 구간 동선 안내가 포함됩니다.",
+    "?�문 가?�드 ?�설, ?��? ?�정 관�? 주요 구간 ?�선 ?�내가 ?�함?�니??",
   excluded:
-    "항공권, 개인 식비, 여행자 보험, 자유 일정 비용은 상품별 조건에 따라 별도 안내됩니다.",
+    "??���? 개인 ?�비, ?�행??보험, ?�유 ?�정 비용?� ?�품�?조건???�라 별도 ?�내?�니??",
   seller:
-    "우노트래블은 이탈리아와 지중해 지역을 중심으로 세미패키지와 데일리투어를 운영합니다. 예약 전 일정, 가능 날짜, 포함 조건을 확인한 뒤 상담을 통해 최종 확정합니다.",
+    "?�노?�래블�? ?�탈리아?� 지중해 지??�� 중심?�로 ?��??�키지?� ?�일리투?��? ?�영?�니?? ?�약 ???�정, 가???�짜, ?�함 조건???�인?????�담???�해 최종 ?�정?�니??",
   review:
-    "일정이 빡빡하지 않고 주요 도시의 분위기를 충분히 느낄 수 있었다는 후기가 많습니다. 특히 남부 일정과 미술관 해설에 대한 만족도가 높습니다.",
+    "?�정??빡빡?��? ?�고 주요 ?�시??분위기�? 충분???�낄 ???�었?�는 ?�기가 많습?�다. ?�히 ?��? ?�정�?미술관 ?�설???�??만족?��? ?�습?�다.",
   reviews: [
     {
       id: "review-semi-01",
       nickname: "김민서",
       writtenAt: "2026.06.18",
-      productTitle: "이탈리아 일주 9박 11일",
+      productTitle: "?�탈리아 ?�주 9�?11??,
       rating: 5,
-      title: "부모님과 함께 가기에도 일정이 안정적이었습니다.",
-      body: "도시마다 이동 시간이 과하게 길지 않았고, 가이드 설명이 단순한 관광지 소개가 아니라 배경을 이해하게 해주는 방식이라 만족도가 높았습니다.",
+      title: "부모님�??�께 가기에???�정???�정?�이?�습?�다.",
+      body: "?�시마다 ?�동 ?�간??과하�?길�? ?�았�? 가?�드 ?�명???�순??관광�? ?�개가 ?�니??배경???�해?�게 ?�주??방식?�라 만족?��? ?�았?�니??",
     },
     {
       id: "review-semi-02",
-      nickname: "박지훈",
+      nickname: "박�???,
       writtenAt: "2026.05.29",
-      productTitle: "이탈리아 일주 9박 11일",
+      productTitle: "?�탈리아 ?�주 9�?11??,
       rating: 5,
-      title: "처음 이탈리아를 가는 사람에게 맞는 구성입니다.",
-      body: "로마, 피렌체, 베네치아를 빠르게 훑는 느낌이 아니라 핵심을 정리해주는 흐름이 좋았습니다. 자유시간도 적당해서 부담이 덜했습니다.",
+      title: "처음 ?�탈리아�?가???�람?�게 맞는 구성?�니??",
+      body: "로마, ?�렌�? 베네치아�?빠르�??�는 ?�낌???�니???�심???�리?�주???�름??좋았?�니?? ?�유?�간???�당?�서 부?�이 ?�했?�니??",
     },
     {
       id: "review-semi-03",
-      nickname: "이수현",
+      nickname: "?�수??,
       writtenAt: "2026.04.12",
-      productTitle: "이탈리아 일주 9박 11일",
+      productTitle: "?�탈리아 ?�주 9�?11??,
       rating: 4.8,
-      title: "남부 일정이 특히 기억에 남았습니다.",
-      body: "개별 여행으로는 동선 짜기가 어려웠을 것 같은 구간을 편하게 다녀왔습니다. 중간중간 식사 추천까지 현실적으로 안내해줘서 좋았습니다.",
+      title: "?��? ?�정???�히 기억???�았?�니??",
+      body: "개별 ?�행?�로???�선 짜기가 ?�려?�을 �?같�? 구간???�하�??��??�습?�다. 중간중간 ?�사 추천까�? ?�실?�으�??�내?�줘??좋았?�니??",
     },
   ] as ReviewItem[],
   reservationNotice:
-    "출발일, 항공, 현지 상황에 따라 세부 일정은 일부 조정될 수 있습니다. 예약 확정 전 가능 날짜, 포함 조건, 최종 금액을 다시 확인합니다.",
+    "출발?? ??��, ?��? ?�황???�라 ?��? ?�정?� ?��? 조정?????�습?�다. ?�약 ?�정 ??가???�짜, ?�함 조건, 최종 금액???�시 ?�인?�니??",
   scheduleIntro:
-    "선택한 출발일 기준으로 가이드가 안내하는 대표 일정입니다. 실제 이동 순서와 세부 방문지는 현지 상황과 예약 상태에 따라 일부 조정될 수 있습니다.",
+    "?�택??출발??기�??�로 가?�드가 ?�내?�는 ?�???�정?�니?? ?�제 ?�동 ?�서?� ?��? 방문지???��? ?�황�??�약 ?�태???�라 ?��? 조정?????�습?�다.",
   scheduleDays: [
     {
       day: "DAY 01",
       city: "ROME",
       time: "14:00",
-      title: "로마 도착 · 오리엔테이션",
-      body: "현지 미팅 후 숙소 체크인, 일정 안내, 주변 동선 브리핑을 진행합니다.",
+      title: "로마 ?�착 · ?�리?�테?�션",
+      body: "?��? 미팅 ???�소 체크?? ?�정 ?�내, 주�? ?�선 브리?�을 진행?�니??",
     },
     {
       day: "DAY 02",
       city: "ROME",
       time: "09:30",
-      title: "고대 로마와 도시 산책",
-      body: "콜로세움, 포로 로마노 주변을 중심으로 로마의 시작과 도시 구조를 이해합니다.",
+      title: "고�? 로마?� ?�시 ?�책",
+      body: "콜로?��?, ?�로 로마??주�???중심?�로 로마???�작�??�시 구조�??�해?�니??",
     },
     {
       day: "DAY 03",
       city: "FIRENZE",
       time: "10:00",
-      title: "피렌체 이동 · 르네상스 해설",
-      body: "피렌체의 광장, 성당, 미술관 동선을 따라 르네상스의 맥락을 읽습니다.",
+      title: "?�렌�??�동 · 르네?�스 ?�설",
+      body: "?�렌체의 광장, ?�당, 미술관 ?�선???�라 르네?�스??맥락???�습?�다.",
     },
     {
       day: "DAY 04",
       city: "VENEZIA",
-      time: "11:10",
-      title: "베네치아 수상 도시 경험",
-      body: "수상 교통과 골목 동선을 활용해 베네치아의 도시 구조를 체험합니다.",
+                  {"1:1 \uC0C1\uB2F4\uD558\uAE30"}
+      title: "베네치아 ?�상 ?�시 경험",
+      body: "?�상 교통�?골목 ?�선???�용??베네치아???�시 구조�?체험?�니??",
     },
     {
       day: "DAY 05",
       city: "NAPOLI",
       time: "09:00",
-      title: "남부 이동 · 빛과 해안",
-      body: "나폴리와 남부 루트를 연결해 이탈리아 남부의 분위기를 완성합니다.",
+      title: "?��? ?�동 · 빛과 ?�안",
+      body: "?�폴리�? ?��? 루트�??�결???�탈리아 ?��???분위기�? ?�성?�니??",
     },
   ] as DetailScheduleDay[],
   /*
     Reservation Backend Fields
     ------------------------------------------
-    예약 패널 / 다른 가능 예약 날짜 확인하기 / 장바구니 / 예약 페이지 이동에
-    공통으로 사용되는 예약 가능 일정 데이터다.
+    ?�약 ?�널 / ?�른 가???�약 ?�짜 ?�인?�기 / ?�바구니 / ?�약 ?�이지 ?�동??
+    공통?�로 ?�용?�는 ?�약 가???�정 ?�이?�다.
 
-    실제 백엔드 연동 시 관리자에서 입력한 출발일, 요일, 잔여석, 정원, 가격,
-    예약 상태, 담당 가이드 값을 availableDates로 주입한다.
+    ?�제 백엔???�동 ??관리자?�서 ?�력??출발?? ?�일, ?�여?? ?�원, 가�?
+    ?�약 ?�태, ?�당 가?�드 값을 availableDates�?주입?�다.
 
-    - seats    ← 현재 예약 가능한 잔여석
-    - capacity ← 총 정원
-    - price    ← 해당 출발일 1인 가격
-    - status   ← 예약 가능 / 마감 임박 / 마감 등 상태
-    - guide    ← 담당 가이드 또는 운영팀 정보
+    - seats    ???�재 ?�약 가?�한 ?�여??
+    - capacity ??�??�원
+    - price    ???�당 출발??1??가�?
+    - status   ???�약 가??/ 마감 ?�박 / 마감 ???�태
+    - guide    ???�당 가?�드 ?�는 ?�영?� ?�보
   */
   availableDates: [
     {
       id: "2026-07-15",
       label: "2026.07.15",
-      day: "수",
+      day: "??,
       seats: 8,
       capacity: 12,
       price: 2890000,
-      status: "예약 가능",
+      status: "?�약 가??,
       guide: "UNO GUIDE A",
     },
     {
       id: "2026-08-03",
       label: "2026.08.03",
-      day: "월",
+      day: "??,
       seats: 3,
       capacity: 12,
       price: 2990000,
-      status: "마감 임박",
+      status: "마감 ?�박",
       guide: "UNO GUIDE B",
     },
     {
       id: "2026-09-11",
       label: "2026.09.11",
-      day: "금",
+      day: "�?,
       seats: 12,
       capacity: 12,
       price: 2890000,
-      status: "예약 가능",
+      status: "?�약 가??,
       guide: "UNO GUIDE A",
     },
   ] as AvailableDate[],
   /*
     Daily Tour Calendar Backend Fields
     ------------------------------------------
-    데일리투어 상세의 달력 예약 UI에 사용하는 날짜 데이터다.
-    오늘 이전 날짜는 프론트에서 disabled 처리하고, 실제 예약 가능 여부는
-    백엔드 availableDates 응답을 기준으로 판단한다.
+    ?�일리투???�세???�력 ?�약 UI???�용?�는 ?�짜 ?�이?�다.
+    ?�늘 ?�전 ?�짜???�론?�에??disabled 처리?�고, ?�제 ?�약 가???��???
+    백엔??availableDates ?�답??기�??�로 ?�단?�다.
   */
   dailyAvailableDates: [
     {
       id: "2026-07-04",
       label: "2026.07.04",
-      day: "토",
+      day: "??,
       seats: 0,
       capacity: 12,
       price: 89000,
@@ -318,41 +322,41 @@ const SEMI_DETAIL_DATA = {
     {
       id: "2026-07-15",
       label: "2026.07.15",
-      day: "수",
+      day: "??,
       seats: 6,
       capacity: 12,
       price: 89000,
-      status: "예약 가능",
+      status: "?�약 가??,
       guide: "ROME GUIDE A",
     },
     {
       id: "2026-07-18",
       label: "2026.07.18",
-      day: "토",
+      day: "??,
       seats: 2,
       capacity: 12,
       price: 99000,
-      status: "마감 임박",
+      status: "마감 ?�박",
       guide: "ROME GUIDE B",
     },
     {
       id: "2026-07-22",
       label: "2026.07.22",
-      day: "수",
+      day: "??,
       seats: 8,
       capacity: 12,
       price: 89000,
-      status: "예약 가능",
+      status: "?�약 가??,
       guide: "ROME GUIDE A",
     },
     {
       id: "2026-07-27",
       label: "2026.07.27",
-      day: "월",
+      day: "??,
       seats: 10,
       capacity: 12,
       price: 89000,
-      status: "예약 가능",
+      status: "?�약 가??,
       guide: "ROME GUIDE A",
     },
   ] as AvailableDate[],
@@ -360,38 +364,38 @@ const SEMI_DETAIL_DATA = {
     {
       src: imgDetailA,
       kicker: "CITY",
-      title: "도시의 중심을 천천히 걷는 일정",
-      body: "이탈리아의 대표 도시를 빠르게 소비하지 않고, 각 도시의 고유한 리듬에 맞춰 이동합니다.",
+      title: "?�시??중심??천천??걷는 ?�정",
+      body: "?�탈리아???�???�시�?빠르�??�비?��? ?�고, �??�시??고유??리듬??맞춰 ?�동?�니??",
     },
     {
       src: imgDetailB,
       kicker: "ART",
-      title: "미술과 건축의 맥락을 읽는 시간",
-      body: "작품명만 나열하는 해설이 아니라 시대와 도시의 관계를 함께 설명합니다.",
+      title: "미술�?건축??맥락???�는 ?�간",
+      body: "?�품명만 ?�열?�는 ?�설???�니???��??� ?�시??관계�? ?�께 ?�명?�니??",
     },
     {
       src: imgDetailC,
       kicker: "SOUTH",
-      title: "남부의 빛과 풍경을 포함한 루트",
-      body: "로마 중심 일정에서 끝나지 않고 남부의 풍경까지 연결해 완성도를 높입니다.",
+      title: "?��???빛과 ?�경???�함??루트",
+      body: "로마 중심 ?�정?�서 ?�나지 ?�고 ?��????�경까�? ?�결???�성?��? ?�입?�다.",
     },
   ],
   notices: [
     {
-      title: "환불 규정",
-      body: "예약 확정 후 취소 시점에 따라 취소 수수료가 발생할 수 있습니다. 실제 환불 규정은 최종 예약 확정서와 약관 기준으로 안내됩니다.",
+      title: "?�불 규정",
+      body: "?�약 ?�정 ??취소 ?�점???�라 취소 ?�수료�? 발생?????�습?�다. ?�제 ?�불 규정?� 최종 ?�약 ?�정?��? ?��? 기�??�로 ?�내?�니??",
     },
     {
-      title: "필수 준비품",
-      body: "여권, 편한 워킹화, 얇은 겉옷, 유럽용 멀티 어댑터, 개인 상비약을 준비해 주세요. 미술관 입장 시 큰 캐리어 반입이 제한될 수 있습니다.",
+      title: "?�수 준비품",
+      body: "?�권, ?�한 ?�킹?? ?��? 겉옷, ?�럽??멀???�댑?? 개인 ?�비?�을 준비해 주세?? 미술관 ?�장 ????캐리??반입???�한?????�습?�다.",
     },
   ] as DetailNotice[],
   /*
     Meeting Point Backend Fields
     ------------------------------------------
-    PREMIUM TRAVEL DOCUMENT 또는 DAILY TOUR CALENDAR 하단에 노출되는 미팅 장소 데이터다.
-    세미패키지 / 데일리투어 모두 동일 컴포넌트를 사용하며, 실제 백엔드 연동 시
-    meetingPoint 값을 상품별 미팅 장소 또는 대표 집결지로 교체한다.
+    PREMIUM TRAVEL DOCUMENT ?�는 DAILY TOUR CALENDAR ?�단???�출?�는 미팅 ?�소 ?�이?�다.
+    ?��??�키지 / ?�일리투??모두 ?�일 컴포?�트�??�용?�며, ?�제 백엔???�동 ??
+    meetingPoint 값을 ?�품�?미팅 ?�소 ?�는 ?�??집결지�?교체?�다.
   */
   meetingPoint: {
     name: "Roma Termini Station",
@@ -407,18 +411,18 @@ const SEMI_DETAIL_DATA = {
   /*
     Related Products Backend Fields
     ------------------------------------------
-    상세페이지 하단 추천 상품 영역이다.
-    현재 상품과 같은 productType만 보여준다.
+    ?�세?�이지 ?�단 추천 ?�품 ?�역?�다.
+    ?�재 ?�품�?같�? productType�?보여준??
 
-    - semi  상세: relatedSemiPackages
-    - daily 상세: relatedDailyTours
+    - semi  ?�세: relatedSemiPackages
+    - daily ?�세: relatedDailyTours
 
-    실제 백엔드 연동 시 현재 productId를 제외한 관련 상품 배열을 내려준다.
+    ?�제 백엔???�동 ???�재 productId�??�외??관???�품 배열???�려준??
   */
   relatedSemiPackages: [
     {
       id: "italy-9",
-      title: "이탈리아 일주 7박 9일",
+      title: "?�탈리아 ?�주 7�?9??,
       eyebrow: "CLASSIC ITALY",
       duration: "7N 9D",
       price: 2590000,
@@ -427,7 +431,7 @@ const SEMI_DETAIL_DATA = {
     },
     {
       id: "dolomiti-11",
-      title: "이탈리아 일주 + 돌로미티 11일",
+      title: "?�탈리아 ?�주 + ?�로미티 11??,
       eyebrow: "DOLOMITI LIMITED",
       duration: "11D",
       price: 3290000,
@@ -436,7 +440,7 @@ const SEMI_DETAIL_DATA = {
     },
     {
       id: "sicilia-9",
-      title: "지중해의 황금빛 시칠리아 일주 9일",
+      title: "지중해???�금�??�칠리아 ?�주 9??,
       eyebrow: "SICILIA COLLECTION",
       duration: "9D",
       price: 2790000,
@@ -445,7 +449,7 @@ const SEMI_DETAIL_DATA = {
     },
     {
       id: "spain-9",
-      title: "스페인 클래식 세미패키지 9일",
+      title: "?�페???�래???��??�키지 9??,
       eyebrow: "SPAIN CLASSIC",
       duration: "9D",
       price: 2690000,
@@ -454,7 +458,7 @@ const SEMI_DETAIL_DATA = {
     },
     {
       id: "portugal-8",
-      title: "포르투갈 리스본 · 포르투 8일",
+      title: "?�르?�갈 리스�?· ?�르??8??,
       eyebrow: "PORTUGAL ROUTE",
       duration: "8D",
       price: 2490000,
@@ -463,7 +467,7 @@ const SEMI_DETAIL_DATA = {
     },
     {
       id: "egypt-8",
-      title: "이집트 고대문명 세미패키지 8일",
+      title: "?�집??고�?문명 ?��??�키지 8??,
       eyebrow: "EGYPT HERITAGE",
       duration: "8D",
       price: 2890000,
@@ -477,11 +481,11 @@ const SEMI_DETAIL_DATA = {
 /*
   Daily Detail Mock Data
   ------------------------------------------
-  데일리투어 상세페이지는 세미패키지의 PREMIUM TRAVEL DOCUMENT가 아니라
-  DAILY TOUR CALENDAR를 중심으로 예약 UI를 구성한다.
+  ?�일리투???�세?�이지???��??�키지??PREMIUM TRAVEL DOCUMENT가 ?�니??
+  DAILY TOUR CALENDAR�?중심?�로 ?�약 UI�?구성?�다.
 
-  실제 백엔드 연동 시 product id / category / region 값으로
-  아래 데이터 전체를 관리자 입력값으로 교체한다.
+  ?�제 백엔???�동 ??product id / category / region 값으�?
+  ?�래 ?�이???�체�?관리자 ?�력값으�?교체?�다.
 */
 const DAILY_DETAIL_DATA = {
   ...SEMI_DETAIL_DATA,
@@ -492,82 +496,82 @@ const DAILY_DETAIL_DATA = {
   href: "/product/detail/daily/rome-vatican-daily",
   productType: "daily" as ProductKind,
   eyebrow: "DAILY TOUR · ROME",
-  title: "로마 바티칸 데일리 투어",
+  title: "로마 바티�??�일�??�어",
   titleEn: "ROME VATICAN DAY TOUR",
   region: "ROME · VATICAN · MUSEUM",
   routeCode: "UNO / RM01",
-  duration: "1일",
+  duration: "1??,
   basePrice: 89000,
   currency: "KRW",
   guide:
-    "로마 현지 전문 가이드가 바티칸 박물관, 성 베드로 대성당, 로마 도심 동선을 당일 일정에 맞게 안내합니다. 현지 합류형 투어이므로 날짜와 잔여석 확인이 예약의 핵심입니다.",
+    "로마 ?��? ?�문 가?�드가 바티�?박물관, ??베드�??�?�당, 로마 ?�심 ?�선???�일 ?�정??맞게 ?�내?�니?? ?��? ?�류???�어?��?�??�짜?� ?�여???�인???�약???�심?�니??",
   included:
-    "전문 가이드 해설, 현지 일정 안내, 주요 코스 동선 브리핑이 포함됩니다.",
+    "?�문 가?�드 ?�설, ?��? ?�정 ?�내, 주요 코스 ?�선 브리?�이 ?�함?�니??",
   excluded:
-    "입장권, 개인 식비, 교통비, 여행자 보험, 개인 이어폰 등은 상품 조건에 따라 별도입니다.",
+    "?�장�? 개인 ?�비, 교통�? ?�행??보험, 개인 ?�어???��? ?�품 조건???�라 별도?�니??",
   review:
-    "짧은 하루 안에 핵심 동선을 효율적으로 볼 수 있었다는 후기가 많습니다. 특히 바티칸 해설과 현지 이동 안내에 대한 만족도가 높습니다.",
+    "짧�? ?�루 ?�에 ?�심 ?�선???�율?�으�?�????�었?�는 ?�기가 많습?�다. ?�히 바티�??�설�??��? ?�동 ?�내???�??만족?��? ?�습?�다.",
   reviews: [
     {
       id: "review-daily-01",
-      nickname: "정유나",
+      nickname: "?�유??,
       writtenAt: "2026.06.22",
-      productTitle: "로마 바티칸 데일리 투어",
+      productTitle: "로마 바티�??�일�??�어",
       rating: 5,
-      title: "혼자 갔는데도 합류가 어렵지 않았습니다.",
-      body: "미팅 장소 안내가 명확했고, 사람이 많은 구간에서도 가이드가 계속 동선을 정리해줘서 따라가기 편했습니다. 작품 설명도 너무 길지 않아 좋았습니다.",
+      title: "?�자 갔는?�도 ?�류가 ?�렵지 ?�았?�니??",
+      body: "미팅 ?�소 ?�내가 명확?�고, ?�람??많�? 구간?�서??가?�드가 계속 ?�선???�리?�줘???�라가�??�했?�니?? ?�품 ?�명???�무 길�? ?�아 좋았?�니??",
     },
     {
       id: "review-daily-02",
-      nickname: "한도윤",
+      nickname: "?�도??,
       writtenAt: "2026.06.09",
-      productTitle: "로마 바티칸 데일리 투어",
+      productTitle: "로마 바티�??�일�??�어",
       rating: 4.9,
-      title: "바티칸을 처음 보는 사람에게 적당한 밀도입니다.",
-      body: "사전 지식 없이 갔는데 꼭 봐야 할 작품 위주로 설명해줘서 이해가 쉬웠습니다. 현장 입장 대기 상황도 계속 공유해줘서 불안하지 않았습니다.",
+      title: "바티칸을 처음 보는 ?�람?�게 ?�당??밀?�입?�다.",
+      body: "?�전 지???�이 갔는??�?봐야 ???�품 ?�주�??�명?�줘???�해가 ?�웠?�니?? ?�장 ?�장 ?��??�황??계속 공유?�줘??불안?��? ?�았?�니??",
     },
     {
       id: "review-daily-03",
-      nickname: "오세린",
+      nickname: "?�세�?,
       writtenAt: "2026.05.31",
-      productTitle: "로마 바티칸 데일리 투어",
+      productTitle: "로마 바티�??�일�??�어",
       rating: 4.8,
-      title: "짧은 일정에서 시간을 아끼기 좋았습니다.",
-      body: "로마에 머무는 시간이 짧아서 신청했는데 개인적으로 갔으면 놓쳤을 포인트를 많이 들었습니다. 끝난 뒤 주변 이동 팁도 도움이 됐습니다.",
+      title: "짧�? ?�정?�서 ?�간???�끼�?좋았?�니??",
+      body: "로마??머무???�간??짧아???�청?�는??개인?�으�?갔으�??�쳤???�인?��? 많이 ?�었?�니?? ?�난 ??주�? ?�동 ?�도 ?��????�습?�다.",
     },
   ] as ReviewItem[],
   reservationNotice:
-    "데일리투어는 현지 합류형 상품입니다. 미팅 시간, 장소, 현지 상황에 따른 코스 변경 가능성을 예약 확정 전 반드시 확인합니다.",
+    "?�일리투?�는 ?��? ?�류???�품?�니?? 미팅 ?�간, ?�소, ?��? ?�황???�른 코스 변�?가?�성???�약 ?�정 ??반드???�인?�니??",
   scheduleIntro:
-    "데일리투어는 선택 날짜 기준으로 현지에서 합류하는 코스입니다. 실제 미팅 장소와 시간은 예약 확정 후 안내됩니다.",
+    "?�일리투?�는 ?�택 ?�짜 기�??�로 ?��??�서 ?�류?�는 코스?�니?? ?�제 미팅 ?�소?� ?�간?� ?�약 ?�정 ???�내?�니??",
   scheduleDays: [
     {
       day: "COURSE 01",
       city: "VATICAN",
       time: "09:00",
-      title: "바티칸 미팅 · 투어 시작",
-      body: "지정 미팅 포인트에서 가이드와 합류 후 전체 동선과 유의사항을 안내합니다.",
+      title: "바티�?미팅 · ?�어 ?�작",
+      body: "지??미팅 ?�인?�에??가?�드?� ?�류 ???�체 ?�선�??�의?�항???�내?�니??",
     },
     {
       day: "COURSE 02",
       city: "MUSEUM",
       time: "10:00",
-      title: "바티칸 박물관 해설",
-      body: "주요 작품과 공간을 중심으로 시대적 맥락을 설명합니다.",
+      title: "바티�?박물관 ?�설",
+      body: "주요 ?�품�?공간??중심?�로 ?��???맥락???�명?�니??",
     },
     {
       day: "COURSE 03",
       city: "BASILICA",
       time: "13:30",
-      title: "성 베드로 대성당 주변 안내",
-      body: "현장 상황에 따라 대성당 및 광장 주변 동선을 안내합니다.",
+      title: "??베드�??�?�당 주�? ?�내",
+      body: "?�장 ?�황???�라 ?�?�당 �?광장 주�? ?�선???�내?�니??",
     },
   ] as DetailScheduleDay[],
   dailyAvailableDates: [
     {
       id: "2026-07-04",
       label: "2026.07.04",
-      day: "토",
+      day: "??,
       seats: 0,
       capacity: 12,
       price: 89000,
@@ -577,46 +581,46 @@ const DAILY_DETAIL_DATA = {
     {
       id: "2026-07-15",
       label: "2026.07.15",
-      day: "수",
+      day: "??,
       seats: 6,
       capacity: 12,
       price: 89000,
-      status: "예약 가능",
+      status: "?�약 가??,
       guide: "ROME GUIDE A",
     },
     {
       id: "2026-07-18",
       label: "2026.07.18",
-      day: "토",
+      day: "??,
       seats: 2,
       capacity: 12,
       price: 99000,
-      status: "마감 임박",
+      status: "마감 ?�박",
       guide: "ROME GUIDE B",
     },
     {
       id: "2026-07-22",
       label: "2026.07.22",
-      day: "수",
+      day: "??,
       seats: 8,
       capacity: 12,
       price: 89000,
-      status: "예약 가능",
+      status: "?�약 가??,
       guide: "ROME GUIDE A",
     },
     {
       id: "2026-07-27",
       label: "2026.07.27",
-      day: "월",
+      day: "??,
       seats: 10,
       capacity: 12,
       price: 89000,
-      status: "예약 가능",
+      status: "?�약 가??,
       guide: "ROME GUIDE A",
     },
   ] as AvailableDate[],
   meetingPoint: {
-    name: "바티칸 박물관 입구 앞",
+    name: "바티�?박물관 ?�구 ??,
     address: "Viale Vaticano, 00165 Roma RM, Italy",
     time: "08:50",
     lat: 41.9065,
@@ -628,7 +632,7 @@ const DAILY_DETAIL_DATA = {
   relatedDailyTours: [
     {
       id: "rome-city-walk",
-      title: "로마 시티워크 데일리 투어",
+      title: "로마 ?�티?�크 ?�일�??�어",
       eyebrow: "ROME WALK",
       duration: "1D",
       price: 79000,
@@ -637,7 +641,7 @@ const DAILY_DETAIL_DATA = {
     },
     {
       id: "firenze-uffizi-daily",
-      title: "피렌체 우피치 미술관 투어",
+      title: "?�렌�??�피�?미술관 ?�어",
       eyebrow: "FIRENZE ART",
       duration: "1D",
       price: 99000,
@@ -646,7 +650,7 @@ const DAILY_DETAIL_DATA = {
     },
     {
       id: "napoli-pompei-daily",
-      title: "나폴리 · 폼페이 데일리 투어",
+      title: "?�폴�?· ?�페???�일�??�어",
       eyebrow: "NAPOLI POMPEI",
       duration: "1D",
       price: 119000,
@@ -655,7 +659,7 @@ const DAILY_DETAIL_DATA = {
     },
     {
       id: "venezia-walk-daily",
-      title: "베네치아 골목 산책 데일리 투어",
+      title: "베네치아 골목 ?�책 ?�일�??�어",
       eyebrow: "VENEZIA WALK",
       duration: "1D",
       price: 89000,
@@ -664,7 +668,7 @@ const DAILY_DETAIL_DATA = {
     },
     {
       id: "milano-design-daily",
-      title: "밀라노 디자인 · 두오모 데일리 투어",
+      title: "밀?�노 ?�자??· ?�오�??�일�??�어",
       eyebrow: "MILANO DESIGN",
       duration: "1D",
       price: 109000,
@@ -673,7 +677,7 @@ const DAILY_DETAIL_DATA = {
     },
     {
       id: "amalfi-coast-daily",
-      title: "아말피 코스트 데일리 투어",
+      title: "?�말??코스???�일�??�어",
       eyebrow: "AMALFI COAST",
       duration: "1D",
       price: 149000,
@@ -689,8 +693,8 @@ function useProductDetailScale() {
   /*
     Desktop Responsive Initial Scale
     ------------------------------------------
-    SPA 방식으로 상세페이지 진입 시 ResizeObserver 실행 전
-    canvas가 순간적으로 줄어드는 layout jump를 줄인다.
+    SPA 방식?�로 ?�세?�이지 진입 ??ResizeObserver ?�행 ??
+    canvas가 ?�간?�으�?줄어?�는 layout jump�?줄인??
   */
   const getProductDetailScale = (width: number) => {
     const safeWidth = Math.max(width, 1024);
@@ -717,9 +721,9 @@ function useProductDetailScale() {
         DETAIL_DESKTOP_BASE_WIDTH;
 
       /* Desktop Responsive
-         - 1600px 이상: 1600px를 원본 표시 기준으로 고정
-         - 1600px 이하: 부모 폭 기준으로 1700px canvas를 축소
-         - 100vw를 쓰지 않아 vertical scrollbar 폭으로 인한 가로 스크롤을 방지 */
+         - 1600px ?�상: 1600px�??�본 ?�시 기�??�로 고정
+         - 1600px ?�하: 부�???기�??�로 1700px canvas�?축소
+         - 100vw�??��? ?�아 vertical scrollbar ??���??�한 가�??�크롤을 방�? */
       const nextScale = getProductDetailScale(shellWidth);
 
       setScale(nextScale);
@@ -825,6 +829,7 @@ const STYLE = `
   }
 
   .pd-hero-lead {
+    display: none;
     margin: 46px 0 0;
     max-width: 520px;
     font-family: var(--font-ko);
@@ -870,6 +875,7 @@ const STYLE = `
   }
 
   .pd-hero-media-card figcaption {
+    display: none;
     position: absolute;
     left: 22px;
     right: 22px;
@@ -1380,14 +1386,14 @@ const STYLE = `
   /*
     WebGL Media Fallback
     ------------------------------------------
-    Astro / Three.js 적용 전 클라이언트 시연용 CSS fallback이다.
-    실제 WebGL 연결 시 [data-webgl-media] 이미지만 Canvas Media 대상으로 변환한다.
-    body overflow hidden / ScrollSmoother는 ProductDetail.tsx가 아니라 App 레벨 wrapper에서 처리한다.
+    Astro / Three.js ?�용 ???�라?�언???�연??CSS fallback?�다.
+    ?�제 WebGL ?�결 ??[data-webgl-media] ?��?지�?Canvas Media ?�?�으�?변?�한??
+    body overflow hidden / ScrollSmoother??ProductDetail.tsx가 ?�니??App ?�벨 wrapper?�서 처리?�다.
   */
   body.unotravel-product-detail-webgl {
     /*
-      ScrollSmoother / WebGL Canvas 연결 시 사용하는 전역 플래그.
-      실제 overflow hidden은 App/Layout의 smoother wrapper가 준비된 상태에서만 켠다.
+      ScrollSmoother / WebGL Canvas ?�결 ???�용?�는 ?�역 ?�래�?
+      ?�제 overflow hidden?� App/Layout??smoother wrapper가 준비된 ?�태?�서�?켠다.
     */
   }
 
@@ -1885,7 +1891,8 @@ const STYLE = `
   /* Final Detail Body / Inline Sticky Booking Cleanup */
   .pd-body-section {
     width: 1700px;
-    margin: 0 0 96px;
+    max-width: 100%;
+    margin: 0 auto 96px;
     padding: 90px 50px 110px;
     box-sizing: border-box;
     display: block;
@@ -1897,32 +1904,70 @@ const STYLE = `
     max-width: 1480px;
     margin: 0 auto;
     display: grid;
-    grid-template-columns: minmax(0, 960px) 420px;
+    grid-template-columns: minmax(0, 1fr);
     gap: 80px;
     align-items: start;
+    justify-items: center;
   }
 
   .pd-body-image-list {
     width: 100%;
     max-width: 960px;
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 34px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+  }
+
+  .pd-body-html {
+    width: 100%;
+    max-width: 960px;
+    min-width: 0;
+    overflow: hidden;
+    color: #2a241f;
+    font-size: 16px;
+    line-height: 1.75;
+    word-break: keep-all;
+  }
+
+  .pd-body-html:not(:last-child) {
+    margin-bottom: 36px;
+  }
+
+  .pd-body-html :where(img, iframe, video) {
+    max-width: 100%;
+  }
+
+  .pd-body-html :where(img) {
+    height: auto;
+    display: block;
+  }
+
+  .pd-body-html :where(table) {
+    max-width: 100%;
+    border-collapse: collapse;
+  }
+
+  .pd-body-html :where(p, ul, ol, table, blockquote) {
+    margin: 0 0 18px;
   }
 
   .pd-body-image-frame {
     width: 100%;
-    aspect-ratio: 16 / 9;
-    margin: 0;
-    overflow: hidden;
-    background: #ffffff;
+    margin: 0 auto;
+    overflow: visible;
+    background: transparent;
+    display: flex;
+    justify-content: center;
   }
 
   .pd-body-image-frame .pd-body-image {
-    width: 100%;
-    height: 100%;
+    width: auto;
+    max-width: 100%;
+    height: auto;
     display: block;
-    object-fit: contain;
+    object-fit: initial;
     object-position: center;
   }
 
@@ -1966,12 +2011,186 @@ const STYLE = `
   }
 
   .pd-body-layout.is-image-with-booking {
-    grid-template-columns: minmax(0, 960px) 420px;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .pd-body-layout.is-image-with-booking .pd-booking-aside {
+    display: none;
+  }
+
+  .pd-detail-faq-section {
+    width: 1700px;
+    max-width: 100%;
+    margin: 0 auto;
+    padding: 0 50px 120px;
+    box-sizing: border-box;
+    background: #ffffff;
+  }
+
+  .pd-detail-faq-inner {
+    width: 100%;
+    max-width: 1480px;
+    margin: 0 auto;
+    border-top: 1px solid rgba(21, 21, 21, 0.16);
+    padding-top: 44px;
+  }
+
+  .pd-detail-faq-head {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 24px;
+    margin-bottom: 26px;
+  }
+
+  .pd-detail-faq-title {
+    margin: 0;
+    font-family: var(--font-en);
+    font-size: 48px;
+    line-height: 0.95;
+    letter-spacing: 0;
+    font-weight: 520;
+    color: #151515;
+  }
+
+  .pd-detail-faq-title {
+    font-size: 0;
+  }
+
+  .pd-detail-faq-title::before {
+    content: "?�주 묻는 FAQ";
+    font-family: var(--font-ko);
+    font-size: 48px;
+    line-height: 0.95;
+    letter-spacing: 0;
+    font-weight: 520;
+  }
+
+  .pd-detail-faq-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 42px;
+    border: 1px solid rgba(21, 21, 21, 0.18);
+    border-radius: 999px;
+    padding: 0 18px;
+    color: #151515;
+    text-decoration: none;
+    font-family: var(--font-ko);
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+
+  .pd-detail-faq-action {
+    font-size: 0;
+  }
+
+  .pd-detail-faq-action::before {
+    content: "?�주 묻는 FAQ";
+    font-size: 13px;
+    font-weight: 800;
+  }
+
+  .pd-detail-faq-list {
+    display: grid;
+    gap: 0;
+    border-top: 1px solid rgba(21, 21, 21, 0.1);
+  }
+
+  .pd-detail-faq-item {
+    display: grid;
+    grid-template-columns: 220px minmax(0, 1fr);
+    gap: 34px;
+    padding: 24px 0;
+    border-bottom: 1px solid rgba(21, 21, 21, 0.1);
+  }
+
+  .pd-detail-faq-item > div {
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .pd-detail-faq-meta {
+    font-family: var(--font-en);
+    font-size: 11px;
+    line-height: 1;
+    letter-spacing: 0.14em;
+    color: rgba(21, 21, 21, 0.46);
+    text-transform: uppercase;
+  }
+
+  .pd-detail-faq-question {
+    margin: 0;
+    font-family: var(--font-ko);
+    font-size: 20px;
+    line-height: 1.36;
+    letter-spacing: -0.045em;
+    color: #151515;
+    word-break: keep-all;
+    overflow-wrap: anywhere;
+  }
+
+  .pd-detail-faq-answer {
+    margin: 10px 0 0;
+    width: 100%;
+    max-width: 840px;
+    font-family: var(--font-ko);
+    font-size: 15px;
+    line-height: 1.76;
+    letter-spacing: -0.035em;
+    color: rgba(21, 21, 21, 0.64);
+    word-break: keep-all;
+    overflow-wrap: anywhere;
+  }
+
+  .pd-detail-faq-answer :where(*) {
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .pd-detail-faq-answer :where(p, ul, ol, table, blockquote) {
+    margin-top: 0;
+    margin-bottom: 12px;
+  }
+
+  .pd-detail-faq-answer :where(img) {
+    max-width: 100%;
+    height: auto;
   }
 
   /* Body booking CSS moved to ReservationModule.tsx. */
 
 `;
+
+function legacyHtmlToText(value?: string) {
+  const raw = value?.trim() ?? "";
+  if (!raw) return "";
+
+  const withBreaks = raw
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/p>/gi, "\n")
+    .replace(/<\/li>/gi, "\n");
+
+  if (typeof window !== "undefined" && window.DOMParser) {
+    const doc = new window.DOMParser().parseFromString(withBreaks, "text/html");
+    return (doc.body.textContent ?? "")
+      .replace(/\u00a0/g, " ")
+      .replace(/[ \t]+\n/g, "\n")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim();
+  }
+
+  return withBreaks
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/\s+/g, " ")
+    .trim();
+}
 
 export default function ProductDetail({
   products = [],
@@ -1982,10 +2201,10 @@ export default function ProductDetail({
     /*
       WebGL / ScrollSmoother Page Flag
       ------------------------------------------
-      Astro 레퍼런스의 body overflow hidden / 전체 canvas 방식은
-      ProductDetail 단독 CSS가 아니라 App/Layout 레벨에서 동작해야 한다.
-      여기서는 상세페이지 진입 시 body에 플래그 클래스만 부여해서
-      전역 WebGL Canvas / ScrollSmoother가 이 페이지를 감지할 수 있게 한다.
+      Astro ?�퍼?�스??body overflow hidden / ?�체 canvas 방식?�
+      ProductDetail ?�독 CSS가 ?�니??App/Layout ?�벨?�서 ?�작?�야 ?�다.
+      ?�기?�는 ?�세?�이지 진입 ??body???�래�??�래?�만 부?�해??
+      ?�역 WebGL Canvas / ScrollSmoother가 ???�이지�?감�??????�게 ?�다.
     */
     document.body.classList.add("unotravel-product-detail-webgl");
 
@@ -1997,17 +2216,17 @@ export default function ProductDetail({
   /*
     Product Detail Route Split
     ------------------------------------------
-    App.tsx는 /product/detail/... 경로에서 ProductDetail 하나만 렌더링한다.
-    따라서 상세페이지 내부에서 현재 pathname / product id를 기준으로
-    세미패키지와 데일리투어 데이터를 분기한다.
+    App.tsx??/product/detail/... 경로?�서 ProductDetail ?�나�??�더링한??
+    ?�라???�세?�이지 ?��??�서 ?�재 pathname / product id�?기�??�로
+    ?��??�키지?� ?�일리투???�이?��? 분기?�다.
 
-    VIEWED Panel / Related Product / ProductList에서 SPA 이동해도
-    ProductDetail 컴포넌트가 그대로 유지될 수 있으므로, 현재 pathname을 state로 관리한다.
-    history.pushState 이후 발생하는 unotravel:navigate 이벤트를 구독해서
-    새로고침 없이 현재 상품 데이터를 다시 계산한다.
+    VIEWED Panel / Related Product / ProductList?�서 SPA ?�동?�도
+    ProductDetail 컴포?�트가 그�?�??��??????�으므�? ?�재 pathname??state�?관리한??
+    history.pushState ?�후 발생?�는 unotravel:navigate ?�벤?��? 구독?�서
+    ?�로고침 ?�이 ?�재 ?�품 ?�이?��? ?�시 계산?�다.
 
-    실제 백엔드 연동 시에는 이 분기 대신 productId로 API를 조회하고,
-    응답의 category 값(semi / daily)에 따라 문서형 UI 또는 캘린더형 UI를 노출한다.
+    ?�제 백엔???�동 ?�에????분기 ?�??productId�?API�?조회?�고,
+    ?�답??category �?semi / daily)???�라 문서??UI ?�는 캘린?�형 UI�??�출?�다.
   */
   const [currentPathname, setCurrentPathname] = useState(() => {
     if (typeof window === "undefined") return "";
@@ -2029,6 +2248,50 @@ export default function ProductDetail({
       window.removeEventListener("unotravel:navigate", syncPathname);
     };
   }, []);
+
+  const [remoteProductDetail, setRemoteProductDetail] =
+    useState<ProductDetailResponse | null>(null);
+  const [isRemoteProductDetailLoading, setIsRemoteProductDetailLoading] =
+    useState(false);
+
+  useEffect(() => {
+    if (!currentPathname.startsWith("/product/detail/")) {
+      setRemoteProductDetail(null);
+      setIsRemoteProductDetailLoading(false);
+      return;
+    }
+
+    const productId = decodeURIComponent(
+      currentPathname.split("/").filter(Boolean).at(-1) ?? "",
+    );
+
+    if (!productId) {
+      setRemoteProductDetail(null);
+      setIsRemoteProductDetailLoading(false);
+      return;
+    }
+
+    let isCancelled = false;
+    setIsRemoteProductDetailLoading(true);
+
+    getProductDetail(productId, { mode: "full" })
+      .then((detail) => {
+        if (!isCancelled) {
+          setRemoteProductDetail(detail);
+          setIsRemoteProductDetailLoading(false);
+        }
+      })
+      .catch(() => {
+        if (!isCancelled) {
+          setRemoteProductDetail(null);
+          setIsRemoteProductDetailLoading(false);
+        }
+      });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [currentPathname]);
 
   const DETAIL_DATA = useMemo(() => {
     const pathname = currentPathname;
@@ -2053,25 +2316,134 @@ export default function ProductDetail({
       productId.includes("amalfi-");
 
     const baseDetailData = isDailyDetail ? DAILY_DETAIL_DATA : SEMI_DETAIL_DATA;
-    const fallbackRelatedProduct = [
-      ...SEMI_DETAIL_DATA.relatedSemiPackages,
-      ...DAILY_DETAIL_DATA.relatedDailyTours,
-    ].find((product) => product.id === productId);
-
-    const sourceProduct = currentListProduct ?? fallbackRelatedProduct;
+    const remoteBasePrice = remoteProductDetail?.price?.deposit;
+    const remoteThumbnailUrl =
+      remoteProductDetail?.heroImageUrl || remoteProductDetail?.thumbnailUrl;
+    const remoteDetailHtml = remoteProductDetail?.detailHtml?.trim() ?? "";
+    const remoteHeroImages = (remoteProductDetail?.heroImages ?? [])
+      .filter((image) => image.url)
+      .map((image, index) => ({
+        src: image.url,
+        kicker: image.source || `HERO ${String(index + 1).padStart(2, "0")}`,
+        title: image.source || `HERO ${String(index + 1).padStart(2, "0")}`,
+      }));
+    const remoteBodyImages = (remoteProductDetail?.bodyImages ?? remoteProductDetail?.detailImages ?? [])
+      .filter((image) => image.url)
+      .map((image, index) => ({
+        src: image.url,
+        kicker: image.source || `BODY ${String(index + 1).padStart(2, "0")}`,
+        title: image.source || `BODY ${String(index + 1).padStart(2, "0")}`,
+      }));
+    const remoteTourCourseImages = (remoteProductDetail?.tourCourseImages ?? [])
+      .filter((image) => image.url)
+      .map((image, index) => ({
+        src: image.url,
+        source: image.source,
+        title: image.source || `TOUR COURSE ${String(index + 1).padStart(2, "0")}`,
+      }));
+    const remoteTourAdImages = (remoteProductDetail?.tourAdImages ?? [])
+      .filter((image) => image.url)
+      .map((image, index) => ({
+        src: image.url,
+        source: image.source,
+        title: image.source || `FEATURE ${String(index + 1).padStart(2, "0")}`,
+      }));
+    const remoteTourBannerImages = (remoteProductDetail?.tourBannerImages ?? [])
+      .filter((image) => image.url)
+      .map((image, index) => ({
+        src: image.url,
+        source: image.source,
+        title: image.source || `BANNER ${String(index + 1).padStart(2, "0")}`,
+      }));
+    const remoteTourInfoImages = (remoteProductDetail?.tourInfoImages ?? [])
+      .filter((image) => image.url)
+      .map((image, index) => ({
+        src: image.url,
+        kicker: image.source || `TOUR INFO ${String(index + 1).padStart(2, "0")}`,
+        title: image.source || `TOUR INFO ${String(index + 1).padStart(2, "0")}`,
+      }));
+    const remoteTourOptions = remoteProductDetail?.tourOptions;
+    const remoteTourDay = legacyHtmlToText(remoteTourOptions?.tourDay);
+    const remoteTourTime = legacyHtmlToText(remoteTourOptions?.tourTime);
+    const remoteIncluded = legacyHtmlToText(remoteTourOptions?.includes);
+    const remoteExcluded = legacyHtmlToText(remoteTourOptions?.excludes);
+    const remoteMeeting = legacyHtmlToText(remoteTourOptions?.meeting);
+    const remoteMeetingTime = legacyHtmlToText(remoteTourOptions?.meetingTime);
+    const remoteBeforeNotice = legacyHtmlToText(remoteTourOptions?.beforeNotice);
+    const remotePreparation = legacyHtmlToText(remoteTourOptions?.preparation);
+    const remoteCancelRules = legacyHtmlToText(remoteTourOptions?.cancelRules);
+    const remoteNotices = [
+      remoteBeforeNotice ? { title: "?�행 ??준비사??, body: remoteBeforeNotice } : null,
+      remotePreparation ? { title: "준비물", body: remotePreparation } : null,
+      remoteCancelRules ? { title: "취소 �??�불", body: remoteCancelRules } : null,
+    ].filter((notice): notice is DetailNotice => Boolean(notice));
+    const legacyContentOverrides = {
+      guide:
+        [remoteTourDay, remoteTourTime].filter(Boolean).join("\n") ||
+        baseDetailData.guide,
+      included: remoteIncluded || baseDetailData.included,
+      excluded: remoteExcluded || baseDetailData.excluded,
+      reservationNotice:
+        remoteBeforeNotice ||
+        remotePreparation ||
+        remoteCancelRules ||
+        baseDetailData.reservationNotice,
+      notices: remoteNotices.length > 0 ? remoteNotices : baseDetailData.notices,
+      meetingPoint: {
+        ...baseDetailData.meetingPoint,
+        name: remoteMeeting ? "미팅 ?�소" : baseDetailData.meetingPoint.name,
+        address: remoteMeeting || baseDetailData.meetingPoint.address,
+        time: remoteMeetingTime || baseDetailData.meetingPoint.time,
+        mapUrl: remoteTourOptions?.map || baseDetailData.meetingPoint.mapUrl,
+        directionUrl:
+          remoteTourOptions?.map ||
+          baseDetailData.meetingPoint.directionUrl,
+      },
+    };
+    const sourceProduct = currentListProduct;
+    const remoteOrListTitle =
+      remoteProductDetail?.title ?? currentListProduct?.title ?? "";
 
     if (!sourceProduct || productId === baseDetailData.id) {
       return {
         ...baseDetailData,
         id: productId || baseDetailData.id,
-        legacyProductId:
-          getLegacyProductId(productId) ?? baseDetailData.legacyProductId,
-        legacyFeeOptionId:
-          getLegacyFeeOptionId(productId) ?? baseDetailData.legacyFeeOptionId,
         legacyPackageScheduleId:
           getLegacyPackageScheduleId(productId) ??
           baseDetailData.legacyPackageScheduleId,
         href: pathname || baseDetailData.href,
+        productType: remoteProductDetail?.productType ?? baseDetailData.productType,
+        title: remoteOrListTitle,
+        titleEn: "",
+        eyebrow: "",
+        region: "",
+        duration: "",
+        legacyProductId:
+          remoteProductDetail?.legacyProductId ??
+          getLegacyProductId(productId) ??
+          baseDetailData.legacyProductId,
+        legacyFeeOptionId:
+          remoteProductDetail?.legacyFeeOptionId ??
+          getLegacyFeeOptionId(productId) ??
+          baseDetailData.legacyFeeOptionId,
+        basePrice: remoteBasePrice ?? 0,
+        heroImage:
+          remoteThumbnailUrl ||
+          (isRemoteProductDetailLoading || !remoteProductDetail ? "" : baseDetailData.heroImage),
+        heroImages:
+          remoteHeroImages.length > 0
+            ? remoteHeroImages
+            : isRemoteProductDetailLoading || !remoteProductDetail
+              ? []
+              : [],
+        detailImages: remoteBodyImages.length > 0 ? remoteBodyImages : [],
+        detailHtml: remoteDetailHtml,
+        hasRemoteDetailImages: remoteBodyImages.length > 0,
+        courseImages: remoteTourCourseImages,
+        featureImages: [...remoteTourAdImages, ...remoteTourBannerImages],
+        remoteImages: remoteProductDetail?.images ?? [],
+        faqs: remoteProductDetail?.faqs ?? baseDetailData.faqs,
+        ...legacyContentOverrides,
       };
     }
 
@@ -2086,10 +2458,12 @@ export default function ProductDetail({
       ...baseDetailData,
       id: sourceProduct.id,
       legacyProductId:
+        remoteProductDetail?.legacyProductId ??
         sourceProduct.legacyProductId ??
         getLegacyProductId(sourceProduct.id) ??
         baseDetailData.legacyProductId,
       legacyFeeOptionId:
+        remoteProductDetail?.legacyFeeOptionId ??
         sourceProduct.legacyFeeOptionId ??
         getLegacyFeeOptionId(sourceProduct.id) ??
         baseDetailData.legacyFeeOptionId,
@@ -2098,25 +2472,49 @@ export default function ProductDetail({
         getLegacyPackageScheduleId(sourceProduct.id) ??
         baseDetailData.legacyPackageScheduleId,
       href: sourceProduct.href ?? pathname ?? baseDetailData.href,
-      productType: productListType ?? baseDetailData.productType,
+      productType:
+        remoteProductDetail?.productType ?? productListType ?? baseDetailData.productType,
       eyebrow: sourceProduct.eyebrow ?? sourceRegion ?? baseDetailData.eyebrow,
-      title: sourceProduct.title,
+      title: remoteProductDetail?.title ?? sourceProduct.title,
+      titleEn: "",
       region: sourceRegion ?? baseDetailData.region,
       duration: sourceProduct.duration ?? baseDetailData.duration,
       basePrice:
-        sourceProduct.price ?? sourceBasePrice ?? baseDetailData.basePrice,
+        remoteBasePrice ??
+        sourceProduct.price ??
+        sourceBasePrice ??
+        (isRemoteProductDetailLoading || !remoteProductDetail ? 0 : baseDetailData.basePrice),
       heroImage:
-        sourceProduct.image ?? sourceThumbnail ?? baseDetailData.heroImage,
+        remoteThumbnailUrl ||
+        (isRemoteProductDetailLoading || !remoteProductDetail ? "" : (
+        sourceProduct.image ||
+        sourceThumbnail ||
+        baseDetailData.heroImage
+        )),
+      heroImages:
+        remoteHeroImages.length > 0
+          ? remoteHeroImages
+          : isRemoteProductDetailLoading || !remoteProductDetail
+            ? []
+            : [],
+      detailImages: remoteBodyImages.length > 0 ? remoteBodyImages : [],
+      detailHtml: remoteDetailHtml,
+      hasRemoteDetailImages: remoteBodyImages.length > 0,
+      courseImages: remoteTourCourseImages,
+      featureImages: [...remoteTourAdImages, ...remoteTourBannerImages],
+      remoteImages: remoteProductDetail?.images ?? [],
+      faqs: remoteProductDetail?.faqs ?? baseDetailData.faqs,
+      ...legacyContentOverrides,
     };
-  }, [currentPathname, products]);
+  }, [currentPathname, products, remoteProductDetail, isRemoteProductDetailLoading]);
   /*
     Reservation Source
     ------------------------------------------
-    ProductDetail은 상품 타입에 맞는 예약 가능 일정 배열만 ReservationModule로 전달한다.
-    날짜 선택 / 인원 선택 / 예약 payload 생성 / 장바구니 저장은 ReservationModule 내부에서 처리한다.
+    ProductDetail?� ?�품 ?�?�에 맞는 ?�약 가???�정 배열�?ReservationModule�??�달?�다.
+    ?�짜 ?�택 / ?�원 ?�택 / ?�약 payload ?�성 / ?�바구니 ?�?��? ReservationModule ?��??�서 처리?�다.
 
-    백엔드 연동 시 상품 상세 API에서 내려주는 productType과 예약 가능 일정 배열을
-    이 구조에 맞춰 매핑한다.
+    백엔???�동 ???�품 ?�세 API?�서 ?�려주는 productType�??�약 가???�정 배열??
+    ??구조??맞춰 매핑?�다.
   */
   const availableDateSource =
     DETAIL_DATA.productType === "daily"
@@ -2126,20 +2524,69 @@ export default function ProductDetail({
   /*
     Review Page Surface
     ------------------------------------------
-    리뷰 탭은 상세페이지 안에서 요약만 보여주고,
-    전체 리뷰는 차후 제작할 리뷰 페이지/리뷰 컴포넌트를
-    Modal Surface 형태로 열어 예약 흐름이 끊기지 않게 한다.
+    리뷰 ??? ?�세?�이지 ?�에???�약�?보여주고,
+    ?�체 리뷰??차후 ?�작??리뷰 ?�이지/리뷰 컴포?�트�?
+    Modal Surface ?�태�??�어 ?�약 ?�름???�기지 ?�게 ?�다.
 
-    실제 백엔드 연동 시 review list / review summary / review rating 데이터를 연결한다.
+    ?�제 백엔???�동 ??review list / review summary / review rating ?�이?��? ?�결?�다.
   */
   const [isReviewSurfaceOpen, setIsReviewSurfaceOpen] = useState(false);
   const [activeNotice, setActiveNotice] = useState<DetailNotice | null>(null);
   const isDailyTour = DETAIL_DATA.productType === "daily";
+  const [heroRotationIndex, setHeroRotationIndex] = useState(0);
+  const heroRotationImages = useMemo(() => {
+    const images = [
+      DETAIL_DATA.heroImage
+        ? {
+            src: DETAIL_DATA.heroImage,
+            kicker: "MAIN",
+            title: DETAIL_DATA.title,
+          }
+        : null,
+      ...DETAIL_DATA.heroImages,
+    ].filter((image): image is { src: string; kicker: string; title: string } => {
+      return Boolean(image && image.src);
+    });
+
+    const seen = new Set<string>();
+    return images.filter((image) => {
+      if (seen.has(image.src)) return false;
+      seen.add(image.src);
+      return true;
+    });
+  }, [DETAIL_DATA.heroImage, DETAIL_DATA.heroImages, DETAIL_DATA.title]);
+  const shouldRotateHero = heroRotationImages.length >= 3;
+  const rotatedHeroImages = useMemo(() => {
+    if (!shouldRotateHero) {
+      return heroRotationImages;
+    }
+
+    return heroRotationImages.map((_, index) => {
+      return heroRotationImages[(heroRotationIndex + index) % heroRotationImages.length];
+    });
+  }, [heroRotationImages, heroRotationIndex, shouldRotateHero]);
+  const primaryHeroImage = rotatedHeroImages[0]?.src ?? "";
+  const secondaryHeroImages = rotatedHeroImages.slice(1, 3);
+
+  useEffect(() => {
+    if (!shouldRotateHero) {
+      setHeroRotationIndex(0);
+      return;
+    }
+
+    const timer = window.setInterval(() => {
+      setHeroRotationIndex((index) => (index + 1) % heroRotationImages.length);
+    }, 3000);
+
+    return () => {
+      window.clearInterval(timer);
+    };
+  }, [heroRotationImages.length, shouldRotateHero]);
   /*
     Recently Viewed
     ------------------------------------------
-    Header의 VIEWED는 전역 기능이므로 상세페이지 진입 시 현재 상품 정보만 저장한다.
-    저장/중복 제거/최대 5개 유지/sessionStorage key 관리는 recentlyViewed 유틸에서 처리한다.
+    Header??VIEWED???�역 기능?��?�??�세?�이지 진입 ???�재 ?�품 ?�보�??�?�한??
+    ?�??중복 ?�거/최�? 5�??��?/sessionStorage key 관리는 recentlyViewed ?�틸?�서 처리?�다.
   */
   useEffect(() => {
     if (!currentPathname.startsWith("/product/detail/")) return;
@@ -2200,7 +2647,7 @@ export default function ProductDetail({
       <section
         ref={shellRef}
         className="pd-shell"
-        aria-label={`${DETAIL_DATA.title} 상품 상세페이지`}
+        aria-label={`${DETAIL_DATA.title} ?�품 ?�세?�이지`}
       >
         <style>{STYLE}</style>
       <div className="pd-canvas" style={{ zoom: scale }}>
@@ -2214,39 +2661,39 @@ export default function ProductDetail({
 
               <p className="pd-hero-lead">
                 {isDailyTour
-                  ? "현지에서 바로 합류하는 데일리투어입니다. 날짜, 잔여석, 미팅 정보를 먼저 확인한 뒤 예약을 확정합니다."
-                  : "도시의 이동, 항공 일정, 현지 동선을 하나의 여행 문서처럼 정리한 프리미엄 세미패키지입니다."}
+                  ? "?��??�서 바로 ?�류?�는 ?�일리투?�입?�다. ?�짜, ?�여?? 미팅 ?�보�?먼�? ?�인?????�약???�정?�니??"
+                  : "?�시???�동, ??�� ?�정, ?��? ?�선???�나???�행 문서처럼 ?�리???�리미엄 ?��??�키지?�니??"}
               </p>
 
-              <div className="pd-hero-price-summary" aria-label="상품 시작가">
-                <span>FROM</span>
-                <strong>
-                  <PriceText price={DETAIL_DATA.basePrice} currency={DETAIL_DATA.currency} />
-                </strong>
-              </div>
+              {DETAIL_DATA.basePrice > 0 ? (
+                <div className="pd-hero-price-summary" aria-label="?�품 ?�작가">
+                  <span>FROM</span>
+                  <strong>
+                    <PriceText price={DETAIL_DATA.basePrice} currency={DETAIL_DATA.currency} />
+                  </strong>
+                </div>
+              ) : null}
 
             </div>
 
-            <div className="pd-hero-visual" aria-label="상품 이미지 갤러리">
+            <div className="pd-hero-visual" aria-label="?�품 ?��?지 갤러�?>
               <figure className="pd-hero-media-card is-large">
-                <img
-                  className="pd-hero-image"
-                  src={DETAIL_DATA.heroImage}
-                  alt=""
-                />
-                <figcaption>MAIN VISUAL · {DETAIL_DATA.routeCode}</figcaption>
+                {primaryHeroImage ? (
+                  <img
+                    className="pd-hero-image"
+                    src={primaryHeroImage}
+                    alt=""
+                  />
+                ) : null}
               </figure>
 
               <div className="pd-hero-media-grid">
-                {DETAIL_DATA.detailImages.slice(0, 2).map((image) => (
+                {secondaryHeroImages.map((image) => (
                   <figure
                     key={image.kicker}
                     className="pd-hero-media-card is-small"
                   >
                     <img className="pd-hero-image" src={image.src} alt="" />
-                    <figcaption>
-                      {image.kicker} · {image.title}
-                    </figcaption>
                   </figure>
                 ))}
               </div>
@@ -2283,36 +2730,38 @@ export default function ProductDetail({
         {/* Detail Body Image Area */}
         <section
           className="pd-body-section"
-          aria-label="상품 상세 이미지 영역"
+          aria-label="?�품 ?�세 ?��?지 ?�역"
           data-webgl-section="detail-body"
         >
           <div className="pd-body-layout is-image-with-booking">
             <div className="pd-body-image-list">
-              {DETAIL_DATA.detailImages.map((item) => (
-                <figure
-                  key={`body-${item.title}`}
-                  className="pd-body-image-frame"
-                  data-webgl-media-wrap
-                >
-                  <img
-                    className="pd-body-image"
-                    src={item.src}
-                    alt=""
-                    data-webgl-media
-                    data-webgl-media-kind="detail"
-                  />
-                </figure>
-              ))}
+              {DETAIL_DATA.hasRemoteDetailImages
+                ? DETAIL_DATA.detailImages.map((item) => (
+                    <figure
+                      key={`body-${item.title}`}
+                      className="pd-body-image-frame"
+                      data-webgl-media-wrap
+                    >
+                      <img
+                        className="pd-body-image"
+                        src={item.src}
+                        alt=""
+                        data-webgl-media
+                        data-webgl-media-kind="detail"
+                      />
+                    </figure>
+                  ))
+                : null}
             </div>
 
             {/* Body Booking Aside
                ------------------------------------------
-               Hero 하단의 기본 ReservationModule은 그대로 유지한다.
-               이 영역은 상세 바디 접근성을 위한 별도 sticky 간소 예약 패널이다.
-               Booking_side.tsx에서 세미패키지는 출발일 선택,
-               데일리투어는 미니 캘린더로 분기한다.
+               Hero ?�단??기본 ReservationModule?� 그�?�??��??�다.
+               ???�역?� ?�세 바디 ?�근?�을 ?�한 별도 sticky 간소 ?�약 ?�널?�다.
+               Booking_side.tsx?�서 ?��??�키지??출발???�택,
+               ?�일리투?�는 미니 캘린?�로 분기?�다.
             */}
-            <aside className="pd-booking-aside" aria-label="간소 예약 패널">
+            <aside className="pd-booking-aside" aria-label="간소 ?�약 ?�널">
               <div className="pd-booking-aside-sticky">
                 <BookingSide
                   product={{
@@ -2336,6 +2785,56 @@ export default function ProductDetail({
             </aside>
           </div>
         </section>
+
+        {true && (
+          /*
+            Product-detail bottom QNA/FAQ section.
+            This is the content shown under the product detail body image.
+            It is not the public community Q&A board (`bo_table=qna`).
+          */
+          <section className="pd-detail-faq-section" id="faq" aria-label="FAQ">
+            <div className="pd-detail-faq-inner">
+              <div className="pd-detail-faq-head">
+                <h2 className="pd-detail-faq-title">{"\uC790\uC8FC \uBB3B\uB294 FAQ"}</h2>
+                <a className="pd-detail-faq-action" href="/mypage/inquiry">
+                  {"1:1 \uC0C1\uB2F4\uD558\uAE30"}
+                </a>
+              </div>
+
+              <div className="pd-detail-faq-list">
+                {DETAIL_DATA.faqs && DETAIL_DATA.faqs.length > 0 ? (
+                  DETAIL_DATA.faqs.map((faq) => (
+                  <article key={faq.id} className="pd-detail-faq-item">
+                    <span className="pd-detail-faq-meta">
+                      {faq.category || "FAQ"}
+                    </span>
+                    <div>
+                      <h3 className="pd-detail-faq-question">{"\uB4F1\uB85D\uB41C FAQ\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4."}</h3>
+                      <div className="pd-detail-faq-answer">
+                        {faq.answerHtml ? (
+                          <div dangerouslySetInnerHTML={{ __html: faq.answerHtml }} />
+                        ) : (
+                        <p>{"\uAD00\uB9AC\uC790\uC5D0\uC11C \uC0C1\uD488 FAQ\uB97C \uC5F0\uACB0\uD558\uBA74 \uC774 \uC601\uC5ED\uC5D0 \uD45C\uC2DC\uB429\uB2C8\uB2E4."}</p>
+                        )}
+                      </div>
+                    </div>
+                  </article>
+                  ))
+                ) : (
+                  <article className="pd-detail-faq-item">
+                    <span className="pd-detail-faq-meta">FAQ</span>
+                    <div>
+                      <h3 className="pd-detail-faq-question">{"\uB4F1\uB85D\uB41C FAQ\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4."}</h3>
+                      <div className="pd-detail-faq-answer">
+                        <p>{"\uAD00\uB9AC\uC790\uC5D0\uC11C \uC0C1\uD488 FAQ\uB97C \uC5F0\uACB0\uD558\uBA74 \uC774 \uC601\uC5ED\uC5D0 \uD45C\uC2DC\uB429\uB2C8\uB2E4."}</p>
+                      </div>
+                    </div>
+                  </article>
+                )}
+              </div>
+            </div>
+          </section>
+        )}
 
         <InfiniteOther
           products={relatedProducts}
@@ -2376,7 +2875,7 @@ export default function ProductDetail({
                 className="pd-notice-modal-confirm"
                 onClick={() => setActiveNotice(null)}
               >
-                확인
+                ?�인
               </button>
             </div>
           </aside>
@@ -2393,21 +2892,21 @@ export default function ProductDetail({
             className="pd-review-surface"
             role="dialog"
             aria-modal="true"
-            aria-label="전체 리뷰"
+            aria-label="?�체 리뷰"
             onClick={(event) => event.stopPropagation()}
           >
             <div className="pd-review-surface-head">
               <div>
                 <div className="pd-review-surface-kicker">REVIEW PAGE</div>
                 <h2 className="pd-review-surface-title">
-                  여행자 리뷰를 한 화면에서 확인합니다.
+                  ?�행??리뷰�????�면?�서 ?�인?�니??
                 </h2>
               </div>
               <button
                 type="button"
                 className="pd-review-surface-close"
                 onClick={() => setIsReviewSurfaceOpen(false)}
-                aria-label="리뷰 닫기"
+                aria-label="리뷰 ?�기"
               >
                 ×
               </button>
@@ -2416,14 +2915,14 @@ export default function ProductDetail({
             {/*
               Review Page Backend Fields
               ------------------------------------------
-              차후 리뷰 페이지를 별도 컴포넌트로 분리할 때 이 Surface 내부에 연결한다.
+              차후 리뷰 ?�이지�?별도 컴포?�트�?분리??????Surface ?��????�결?�다.
 
-              - reviews       ← 리뷰 목록
-              - reviewSummary ← 평점 / 후기 수 / 만족도 요약
-              - reviewImages  ← 리뷰 이미지
-              - reviewer      ← 작성자 / 작성일 / 예약 상품 정보
+              - reviews       ??리뷰 목록
+              - reviewSummary ???�점 / ?�기 ??/ 만족???�약
+              - reviewImages  ??리뷰 ?��?지
+              - reviewer      ???�성??/ ?�성??/ ?�약 ?�품 ?�보
 
-              현재는 해당 productId에 연결된 실제 리뷰 형태의 Mock Data를 사용한다.
+              ?�재???�당 productId???�결???�제 리뷰 ?�태??Mock Data�??�용?�다.
             */}
             <div className="pd-review-surface-summary">
               <p className="pd-review-summary-text">{DETAIL_DATA.review}</p>

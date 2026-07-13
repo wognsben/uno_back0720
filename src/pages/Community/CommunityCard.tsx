@@ -4,6 +4,7 @@ export default function CommunityCard({ item }: CommunityCardProps) {
     const isReview = item.type === "review";
     const isEvent = item.type === "event";
     const isNotice = item.type === "notice";
+    const isInquiry = item.type === "inquiry";
 
     const handleNavigate = (event: React.MouseEvent<HTMLAnchorElement>) => {
         event.preventDefault();
@@ -33,6 +34,7 @@ export default function CommunityCard({ item }: CommunityCardProps) {
                             {isReview && "REVIEW"}
                             {isNotice && "NOTICE"}
                             {isEvent && "EVENT"}
+                            {isInquiry && "Q&A"}
                         </span>
 
                         {item.isPinned && (

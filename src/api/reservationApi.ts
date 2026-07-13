@@ -79,6 +79,39 @@ export type PackageScheduleOption = {
   isDefault?: boolean;
 };
 
+export type ProductFaqItem = {
+  id: number | string;
+  categoryId?: string;
+  category?: string;
+  question: string;
+  answerHtml?: string;
+  answerText: string;
+  order?: number;
+  legacyProductIds?: Array<number | string>;
+};
+
+export type ProductImageItem = {
+  no: number;
+  source?: string;
+  url: string;
+  width?: number;
+  height?: number;
+};
+
+export type ProductTourOptions = {
+  meeting?: string;
+  meetingTime?: string;
+  tourDay?: string;
+  tourTime?: string;
+  includes?: string;
+  excludes?: string;
+  map?: string;
+  youtube?: string;
+  beforeNotice?: string;
+  preparation?: string;
+  cancelRules?: string;
+};
+
 export type ProductDetailResponse = ProductSummary & {
   reservationDefaults?: {
     requiresPassport?: boolean;
@@ -88,7 +121,24 @@ export type ProductDetailResponse = ProductSummary & {
   };
   feeOptions: ProductFeeOption[];
   packageSchedules?: PackageScheduleOption[];
+  faqs?: ProductFaqItem[];
   detailHtml?: string;
+  heroImageUrl?: string;
+  heroImages?: ProductImageItem[];
+  images?: ProductImageItem[];
+  detailImages?: ProductImageItem[];
+  tourTopImages?: ProductImageItem[];
+  tourCourseImages?: ProductImageItem[];
+  tourInfoImages?: ProductImageItem[];
+  tourAdImages?: ProductImageItem[];
+  tourBannerImages?: ProductImageItem[];
+  meetingImages?: ProductImageItem[];
+  tourOptions?: ProductTourOptions;
+  bodyImages?: ProductImageItem[];
+  productDocumentImages?: {
+    course?: ProductImageItem[];
+    features?: ProductImageItem[];
+  };
 };
 
 export type ProductListResponse = {
@@ -317,6 +367,46 @@ export type CommunityInquiryCreateResponse = {
   nextUrl?: string;
 };
 
+export type CommunityBoardType = "notice" | "review" | "qna";
+
+// `qna` here means the public community Q&A board only.
+// Product-detail bottom QNA/FAQ is separate and is exposed as ProductDetailResponse.faqs.
+
+export type CommunityBoardPost = {
+  id: string;
+  type: "notice" | "review" | "inquiry";
+  board: string;
+  legacyBoardUrl?: string;
+  title: string;
+  excerpt?: string;
+  contentHtml?: string;
+  contentText?: string;
+  author?: string;
+  date: string;
+  views?: number;
+  href: string;
+  isPinned?: boolean;
+  isNew?: boolean;
+};
+
+export type CommunityPostsResponse = {
+  type: CommunityBoardType;
+  board: string;
+  items: CommunityBoardPost[];
+  pagination: {
+    page: number;
+    perPage: number;
+    total: number;
+    totalPages: number;
+  };
+};
+
+export type CommunityPostDetailResponse = {
+  type: CommunityBoardType;
+  board: string;
+  item: CommunityBoardPost;
+};
+
 export type InquiryMessage = {
   id: number | string;
   role: "user" | "admin";
@@ -459,3 +549,17 @@ export const createCommunityInquiry = (body: InquiryCreateRequest) =>
     method: "POST",
     body,
   });
+
+export const getCommunityPosts = (query: {
+  type: CommunityBoardType;
+  page?: number;
+  perPage?: number;
+  search?: string;
+}) => unoApiData<CommunityPostsResponse>("/community/posts.php", { query });
+
+export const getCommunityPostDetail = (
+  type: CommunityBoardType,
+  id: number | string,
+) => unoApiData<CommunityPostDetailResponse>("/community/posts.php", {
+  query: { type, id },
+});

@@ -81,6 +81,21 @@ uno_renewal_admin_render_pagehead(
       .uno-media-preview { display: grid; grid-template-columns: 180px minmax(0, 1fr); gap: 18px; align-items: start; }
       .uno-media-preview img { width: 180px; height: 226px; object-fit: cover; border: 1px solid var(--uno-line); background: #ededeb; }
       .uno-media-empty { width: 180px; height: 226px; display: grid; place-items: center; border: 1px solid var(--uno-line); background: #ededeb; color: #aaa; font-weight: 900; }
+      .uno-media-audit { display: grid; gap: 16px; margin-top: 18px; }
+      .uno-media-group { border: 1px solid var(--uno-line); background: #fff; padding: 16px; }
+      .uno-media-group-head { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; margin-bottom: 12px; }
+      .uno-media-group-head h4 { margin: 0; font-size: 17px; letter-spacing: .2px; }
+      .uno-media-group-head p { margin: 5px 0 0; color: var(--uno-muted); line-height: 1.55; }
+      .uno-media-tools { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+      .uno-media-edit-link { min-height: 30px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--uno-line); padding: 0 10px; color: var(--uno-ink); text-decoration: none; font-size: 12px; font-weight: 900; background: #fafaf8; }
+      .uno-media-edit-link:hover { border-color: var(--uno-ink); }
+      .uno-media-count { display: inline-flex; align-items: center; min-height: 30px; border: 1px solid var(--uno-line); padding: 0 10px; font-size: 12px; font-weight: 900; white-space: nowrap; }
+      .uno-media-count.is-empty { color: var(--uno-danger); border-color: rgba(159, 41, 41, .24); background: rgba(159, 41, 41, .07); }
+      .uno-media-strip { display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 10px; }
+      .uno-media-tile { min-width: 0; border: 1px solid var(--uno-line); background: #fafaf8; overflow: hidden; }
+      .uno-media-tile img { width: 100%; max-height: 420px; object-fit: contain; display: block; background: #ededeb; }
+      .uno-media-tile span { display: block; padding: 8px; color: var(--uno-muted); font-size: 11px; line-height: 1.35; word-break: break-all; }
+      .uno-media-warning { margin: 12px 0 0; padding: 12px; border: 1px solid rgba(159, 41, 41, .24); background: rgba(159, 41, 41, .07); color: var(--uno-danger); font-size: 13px; font-weight: 800; line-height: 1.55; }
       .uno-wide-textarea textarea { min-height: 280px; font-family: Consolas, "Noto Sans KR", monospace; font-size: 14px; }
       @media (max-width: 860px) {
         .uno-product-hero, .uno-product-state, .uno-form-grid, .uno-hub-grid, .uno-hub-grid.is-operational { grid-template-columns: 1fr; }
@@ -192,6 +207,70 @@ uno_renewal_admin_render_pagehead(
         .join("<br>");
       const valueOrDash = (value) => { const text = String(value ?? "").trim(); return text === "" ? "-" : text; };
       const chip = (label, tone = "") => '<span class="uno-admin-chip ' + tone + '">' + escapeHtml(label) + '</span>';
+      const mediaTile = (image) => {
+        const label = "#" + escapeHtml(image.no ?? "-") + " " + escapeHtml(image.source || image.file || "image");
+        return '<a class="uno-media-tile" href="' + escapeHtml(image.url || "#") + '" target="_blank" rel="noopener">' +
+          '<img src="' + escapeHtml(image.url || "") + '" alt="" loading="lazy">' +
+          '<span>' + label + '</span>' +
+        '</a>';
+      };
+      const mediaGroup = (title, description, images, emptyText, editHref = "") => {
+        const list = Array.isArray(images) ? images.filter((image) => image && image.url) : [];
+        return '<section class="uno-media-group">' +
+          '<div class="uno-media-group-head"><div><h4>' + escapeHtml(title) + '</h4><p>' + escapeHtml(description) + '</p></div>' +
+          '<div class="uno-media-tools">' +
+          (editHref ? '<a class="uno-media-edit-link" href="' + escapeHtml(editHref) + '" target="_blank" rel="noopener">기존 관리자에서 수정</a>' : '') +
+          '<strong class="uno-media-count ' + (list.length ? '' : 'is-empty') + '">' + list.length + ' files</strong></div></div>' +
+          (list.length ? '<div class="uno-media-strip">' + list.map(mediaTile).join("") + '</div>' : '<p class="uno-media-warning">' + escapeHtml(emptyText) + '</p>') +
+        '</section>';
+      };
+      const mediaAudit = (product, mode = "all") => {
+        const media = product.media || {};
+        const links = media.legacyAdminLinks || {};
+        const groups = [];
+        if (mode === "all" || mode === "hero") {
+          groups.push(mediaGroup(
+            "write.php 파일 #1~#11 / 상품 상세 히어로 썸네일",
+            "bo_table=product. 파일 #1은 상품 목록 대표 썸네일 겸 히어로 첫 썸네일이고, 파일 #2 이후도 바디가 아니라 히어로 갤러리입니다.",
+            media.productImages || [],
+            "product 첨부 이미지가 없습니다. 상품 목록 썸네일과 히어로 갤러리가 비어 보일 수 있습니다.",
+            links.product || ""
+          ));
+          groups.push(mediaGroup(
+            "tourCourse.php v2_tourTop / 상세 히어로 메인",
+            "bo_table=v2_tourTop. 상세페이지 상단 히어로의 메인 이미지로 사용합니다.",
+            media.tourTopImages || [],
+            "v2_tourTop 이미지가 없습니다. 프런트는 product 파일 #1을 보조 이미지로 사용할 수 있습니다.",
+            links.tourTop || ""
+          ));
+        }
+        if (mode === "all" || mode === "body") {
+          groups.push(mediaGroup(
+            "tourCourse.php v2_course / PRODUCT DOCUMENT 투어코스",
+            "bo_table=v2_course. 상세페이지 바디가 아니라 PRODUCT DOCUMENT의 투어코스 이미지입니다.",
+            media.tourCourseImages || [],
+            "v2_course 이미지가 없습니다. PRODUCT DOCUMENT 투어코스 영역이 비어 보일 수 있습니다.",
+            links.tourCourse || ""
+          ));
+        }
+        if (mode === "all" || mode === "body") {
+          groups.push(mediaGroup(
+            "tourCourse.php v2_tourAd / PRODUCT DOCUMENT 특장점",
+            "bo_table=v2_tourAd. 이 상품을 왜 구매해야 하는지 보여주는 특장점 이미지입니다.",
+            media.tourAdImages || [],
+            "v2_tourAd 이미지가 없습니다. PRODUCT DOCUMENT 특장점 영역이 비어 보일 수 있습니다.",
+            links.tourAd || ""
+          ));
+          groups.push(mediaGroup(
+            "tourCourse.php v2_tourInfo / 상세 바디 투어설명",
+            "bo_table=v2_tourInfo. 상세페이지 바디에 들어가는 관광지 설명/투어설명 이미지입니다.",
+            media.tourInfoImages || [],
+            "v2_tourInfo 이미지가 없습니다. 상세페이지 바디 투어설명이 비어 보입니다.",
+            links.tourInfo || ""
+          ));
+        }
+        return '<div class="uno-media-audit">' + groups.join("") + '</div>';
+      };
 
       const apiRequest = async (body = null) => {
         const options = { credentials: "same-origin" };
@@ -369,6 +448,7 @@ uno_renewal_admin_render_pagehead(
             '</div>' +
           '</div>' +
           '<p class="uno-section-note" style="margin-top:16px;">상세 본문 이미지와 코스 이미지는 다음 단계에서 별도 이미지 관리 모달로 분리합니다.</p>' +
+          mediaAudit(product, "all") +
           actionLinks(product);
       };
 
@@ -573,7 +653,7 @@ uno_renewal_admin_render_pagehead(
       };
 
       const refreshCurrentModal = () => { renderProduct(); if (state.activeModal) openModal(state.activeModal); };
-      const openModal = (key) => { const section = window.productHubSections && window.productHubSections[key]; if (!section) return; state.activeModal = key; modalTitleEl.textContent = section.title; modalEyebrowEl.textContent = section.eyebrow; modalBodyEl.innerHTML = key === "semi" ? buildSemiScheduleEditor() : key === "daily" ? buildDailyCalendarEditor() : section.body; modalEl.classList.add("is-open"); modalEl.setAttribute("aria-hidden", "false"); };
+      const openModal = (key) => { const section = window.productHubSections && window.productHubSections[key]; if (!section) return; state.activeModal = key; modalTitleEl.textContent = section.title; modalEyebrowEl.textContent = section.eyebrow; modalBodyEl.innerHTML = key === "semi" ? buildSemiScheduleEditor() : key === "daily" ? buildDailyCalendarEditor() : section.body; if (key === "detail") { modalBodyEl.insertAdjacentHTML("beforeend", '<p class="uno-section-note" style="margin-top:16px;">상세페이지 바디 투어설명은 tourCourse.php의 v2_tourInfo 파일입니다. v2_course는 PRODUCT DOCUMENT 투어코스입니다.</p>' + mediaAudit(state.data.product || {}, "body")); } modalEl.classList.add("is-open"); modalEl.setAttribute("aria-hidden", "false"); };
       const closeModal = () => { modalEl.classList.remove("is-open"); modalEl.setAttribute("aria-hidden", "true"); };
 
       const uploadThumbnail = async (file) => {

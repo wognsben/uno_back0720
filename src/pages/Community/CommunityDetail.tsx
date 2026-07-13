@@ -57,14 +57,11 @@ export default function CommunityDetail({
             )}
 
             <div className="community-detail-content">
-                <p>{item.excerpt}</p>
-
-                {/* Backend Mapping
-                    - wr_content
-                    - review content
-                    - notice content
-                    - event content
-                */}
+                {item.contentHtml ? (
+                    <div dangerouslySetInnerHTML={{ __html: item.contentHtml }} />
+                ) : (
+                    <p>{item.contentText ?? item.excerpt}</p>
+                )}
             </div>
 
             <footer className="community-detail-footer">

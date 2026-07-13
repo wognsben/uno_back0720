@@ -195,6 +195,52 @@ function uno_api_editor_thumbnail_url($legacyProductId)
     return '/bbs/data/file/product/' . str_replace('%2F', '/', rawurlencode((string) $row['bf_file']));
 }
 
+function uno_api_editor_board_file_url($boardTable, $fileName)
+{
+    $boardTable = preg_replace('/[^a-zA-Z0-9_]/', '', (string) $boardTable);
+    $fileName = (string) $fileName;
+
+    if ($boardTable === '' || $fileName === '') {
+        return '';
+    }
+
+    return '/bbs/data/file/' . $boardTable . '/' . str_replace('%2F', '/', rawurlencode($fileName));
+}
+
+function uno_api_editor_fetch_board_files($boardTable, $legacyProductId)
+{
+    $boardTable = preg_replace('/[^a-zA-Z0-9_]/', '', (string) $boardTable);
+    $legacyProductId = (int) $legacyProductId;
+
+    if ($boardTable === '' || $legacyProductId <= 0) {
+        return array();
+    }
+
+    $fileTable = uno_api_editor_file_table();
+    $result = sql_query(
+        "select bf_no, bf_source, bf_file, bf_filesize
+           from {$fileTable}
+          where bo_table = '{$boardTable}'
+            and wr_id = '{$legacyProductId}'
+            and bf_file <> ''
+          order by bf_no asc"
+    );
+
+    $files = array();
+    while ($row = sql_fetch_array($result)) {
+        $fileName = isset($row['bf_file']) ? (string) $row['bf_file'] : '';
+        $files[] = array(
+            'no' => isset($row['bf_no']) ? (int) $row['bf_no'] : 0,
+            'source' => isset($row['bf_source']) ? (string) $row['bf_source'] : '',
+            'file' => $fileName,
+            'url' => uno_api_editor_board_file_url($boardTable, $fileName),
+            'size' => isset($row['bf_filesize']) ? (int) $row['bf_filesize'] : 0,
+        );
+    }
+
+    return $files;
+}
+
 function uno_api_editor_fetch_product($legacyProductId)
 {
     $legacyProductId = (int) $legacyProductId;
@@ -216,6 +262,11 @@ function uno_api_editor_fetch_product($legacyProductId)
     $mapping = uno_api_editor_mapping_by_legacy($legacyProductId);
     $productType = uno_api_editor_product_type($row, $mapping);
     $productId = $mapping && isset($mapping['productId']) ? (string) $mapping['productId'] : '';
+    $productImages = uno_api_editor_fetch_board_files('product', $legacyProductId);
+    $tourTopImages = uno_api_editor_fetch_board_files('v2_tourTop', $legacyProductId);
+    $tourCourseImages = uno_api_editor_fetch_board_files('v2_course', $legacyProductId);
+    $tourInfoImages = uno_api_editor_fetch_board_files('v2_tourInfo', $legacyProductId);
+    $tourAdImages = uno_api_editor_fetch_board_files('v2_tourAd', $legacyProductId);
 
     return array(
         'legacyProductId' => $legacyProductId,
@@ -233,6 +284,29 @@ function uno_api_editor_fetch_product($legacyProductId)
         'thumbnailUrl' => uno_api_editor_thumbnail_url($legacyProductId),
         'frontendHref' => $productId !== '' ? uno_api_reservation_href_for_product($productId, $productType) : '',
         'legacyEditHref' => '/admin/write.php?w=u&bo_table=product&wr_id=' . $legacyProductId,
+        'media' => array(
+            'productImages' => $productImages,
+            'heroImages' => array_slice($productImages, 0, 9),
+            'tourTopImages' => $tourTopImages,
+            'tourCourseImages' => $tourCourseImages,
+            'tourInfoImages' => $tourInfoImages,
+            'tourAdImages' => $tourAdImages,
+            'counts' => array(
+                'product' => count($productImages),
+                'hero' => min(count($productImages), 9),
+                'tourTop' => count($tourTopImages),
+                'tourCourse' => count($tourCourseImages),
+                'tourInfo' => count($tourInfoImages),
+                'tourAd' => count($tourAdImages),
+            ),
+            'legacyAdminLinks' => array(
+                'product' => '/admin/write.php?w=u&bo_table=product&wr_id=' . $legacyProductId,
+                'tourTop' => '/admin/tourCourse.php?bo_table=v2_tourTop&wr_id=' . $legacyProductId,
+                'tourCourse' => '/admin/tourCourse.php?bo_table=v2_course&wr_id=' . $legacyProductId,
+                'tourInfo' => '/admin/tourCourse.php?bo_table=v2_tourInfo&wr_id=' . $legacyProductId,
+                'tourAd' => '/admin/tourCourse.php?bo_table=v2_tourAd&wr_id=' . $legacyProductId,
+            ),
+        ),
         'extras' => array(
             'originalFeeText' => isset($row['fee_org']) ? (string) $row['fee_org'] : '',
             'b2bStatus' => isset($row['wr_b2b_result']) ? (string) $row['wr_b2b_result'] : '',

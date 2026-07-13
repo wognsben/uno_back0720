@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+﻿import { useMemo, useState } from "react";
 
 export type ProductDetailTab =
   | "review"
@@ -42,6 +42,12 @@ export type MeetingPoint = {
   directionUrl: string;
 };
 
+export type ProductDocumentImage = {
+  src: string;
+  title?: string;
+  source?: string;
+};
+
 export type ProductDocumentData = {
   productType: "semi" | "daily";
   guide: string;
@@ -52,6 +58,8 @@ export type ProductDocumentData = {
   reservationNotice: string;
   scheduleIntro: string;
   scheduleDays: DetailScheduleDay[];
+  courseImages?: ProductDocumentImage[];
+  featureImages?: ProductDocumentImage[];
   notices: DetailNotice[];
   meetingPoint: MeetingPoint;
 };
@@ -71,28 +79,27 @@ const PRODUCT_DOCUMENT_TABS: Array<{
 }> = [
   { key: "guide", label: "가이드 정보", index: "01" },
   { key: "review", label: "리뷰", index: "02" },
-  { key: "course", label: "코스 일정", index: "03" },
-  { key: "meeting", label: "미팅 장소", index: "04" },
-  { key: "notice", label: "예약 안내", index: "05" },
-  { key: "included", label: "포함/불포함", index: "06" },
+  { key: "meeting", label: "미팅 장소", index: "03" },
+  { key: "notice", label: "예약 안내", index: "04" },
+  { key: "included", label: "포함/불포함", index: "05" },
 ];
 
 const INCLUDED_ITEMS = [
   {
     title: "전문 가이드 해설",
-    desc: "도시의 역사, 미술, 건축 맥락을 현지 동선에 맞춰 안내합니다.",
+    desc: "상품별 일정과 현장 동선에 맞춰 주요 포인트를 안내합니다.",
   },
   {
-    title: "현지 일정 관리",
-    desc: "출발 시간, 이동 순서, 현장 상황을 기준으로 일정 밀도를 조정합니다.",
+    title: "현장 일정 관리",
+    desc: "출발 시간, 이동 순서, 현장 상황을 기준으로 일정을 관리합니다.",
   },
   {
     title: "주요 구간 동선 안내",
-    desc: "개별 이동이 복잡한 구간은 사전 안내와 현장 브리핑을 제공합니다.",
+    desc: "복잡한 이동 구간은 사전 안내와 현장 브리핑을 제공합니다.",
   },
   {
-    title: "예약 전 조건 확인",
-    desc: "출발일, 잔여석, 포함 조건, 최종 금액을 확정 전 다시 확인합니다.",
+    title: "예약 조건 확인",
+    desc: "출발일, 잔여석, 포함 조건, 최종 금액은 예약 확정 시 다시 확인합니다.",
   },
 ];
 
@@ -102,12 +109,12 @@ const EXCLUDED_ITEMS = [
     desc: "상품 조건에 따라 별도 구매 또는 별도 안내될 수 있습니다.",
   },
   {
-    title: "개인 식비",
-    desc: "자유 일정과 개인 취향에 따라 발생하는 식사 비용은 포함되지 않습니다.",
+    title: "개인 경비",
+    desc: "자유 일정과 개인 취향에 따라 발생하는 비용은 포함되지 않습니다.",
   },
   {
     title: "여행자 보험",
-    desc: "개별 가입을 권장하며, 예약 전 필요 시 별도 안내합니다.",
+    desc: "개별 가입을 권장하며, 예약 시 필요하면 별도 안내합니다.",
   },
   {
     title: "자유 일정 비용",
@@ -118,18 +125,43 @@ const EXCLUDED_ITEMS = [
 const STYLE = `
   .pd-product-document-strip {
     width: 1700px;
-    padding: 0 50px 0;
+    max-width: 100%;
+    margin: 0 auto;
+    padding: 0 50px 36px;
     box-sizing: border-box;
     border-top: 0;
   }
 
   .pd-product-document-label {
-    margin-bottom: 24px;
+    width: 100%;
+    min-height: 72px;
+    margin: 0;
+    border-top: 1px solid rgba(21, 21, 21, 0.18);
+    border-bottom: 1px solid rgba(21, 21, 21, 0.18);
+    background: #ffffff;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     font-family: var(--font-en);
-    font-size: 12px;
+    font-size: 18px;
     line-height: 1;
-    letter-spacing: 0.22em;
-    color: rgba(21, 21, 21, 0.42);
+    letter-spacing: 0.16em;
+    color: #151515;
+    text-align: left;
+  }
+
+  .pd-product-document-label strong {
+    font: inherit;
+    font-weight: 700;
+    color: #151515;
+  }
+
+  .pd-product-document-label span {
+    font-family: var(--font-ko);
+    font-size: 13px;
+    letter-spacing: -0.02em;
+    color: rgba(21, 21, 21, 0.5);
   }
 
   .pd-product-document-row {
@@ -220,6 +252,51 @@ const STYLE = `
 
   .pd-product-document-content-main {
     min-width: 0;
+  }
+
+  .pd-document-image-groups {
+    display: none;
+    width: 1600px;
+    margin: 0 50px 84px;
+    display: grid;
+    gap: 58px;
+  }
+
+  .pd-document-image-group {
+    display: grid;
+    gap: 14px;
+  }
+
+  .pd-document-image-heading {
+    margin: 0;
+    font-family: var(--font-en);
+    font-size: 13px;
+    line-height: 1;
+    letter-spacing: 0.18em;
+    color: rgba(21, 21, 21, 0.52);
+    text-transform: uppercase;
+  }
+
+  .pd-document-image-list {
+    display: grid;
+    gap: 0;
+    justify-items: center;
+  }
+
+  .pd-document-image-frame {
+    width: 100%;
+    max-width: 960px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: center;
+    background: transparent;
+  }
+
+  .pd-document-image-frame img {
+    width: auto;
+    max-width: 100%;
+    height: auto;
+    display: block;
   }
 
   .pd-document-review > p,
@@ -569,7 +646,8 @@ function ProductDocument({
   onOpenReview,
   onOpenNotice,
 }: ProductDocumentProps) {
-  const [activeTab, setActiveTab] = useState<ProductDetailTab | null>(null);
+  const [activeTab, setActiveTab] = useState<ProductDetailTab | null>("guide");
+  const [isDocumentOpen, setIsDocumentOpen] = useState(true);
 
   const activeTabContent = useMemo(() => {
     if (!activeTab) {
@@ -594,46 +672,47 @@ function ProductDocument({
       return {
         kicker: "03 · 코스 일정",
         text: isDailyTour
-          ? "데일리투어는 현지에서 바로 합류하는 경우가 많기 때문에 달력에서 실제 가능 날짜를 먼저 확인하는 흐름이 중요합니다. 오늘 이전 날짜는 선택할 수 없도록 처리합니다."
+          ? "?곗씪由ы닾?대뒗 ?꾩??먯꽌 諛붾줈 ?⑸쪟?섎뒗 寃쎌슦媛 留롪린 ?뚮Ц???щ젰?먯꽌 ?ㅼ젣 媛???좎쭨瑜?癒쇱? ?뺤씤?섎뒗 ?먮쫫??以묒슂?⑸땲?? ?ㅻ뒛 ?댁쟾 ?좎쭨???좏깮?????녿룄濡?泥섎━?⑸땲??"
           : detailData.scheduleIntro,
       };
     }
 
     if (activeTab === "meeting") {
       return {
-        kicker: "04 · 미팅 장소",
+        kicker: "03 · 미팅 장소",
         text: detailData.meetingPoint.address,
       };
     }
 
     if (activeTab === "notice") {
       return {
-        kicker: "05 · 예약 안내",
+        kicker: "04 · 예약 안내",
         text: detailData.reservationNotice,
       };
     }
 
     return {
-      kicker: "06 · 포함/불포함",
+      kicker: "05 · 포함/불포함",
       text: `${detailData.included}\n${detailData.excluded}`,
     };
   }, [activeTab, detailData, isDailyTour]);
 
   const noticeButtons = detailData.notices.filter(
-    (notice) => notice.title !== "예약 안내",
+    (notice) => notice.title !== "?덉빟 ?덈궡",
   );
 
   const [contentIndex, contentKicker] = activeTabContent
     ? activeTabContent.kicker.split(" · ")
     : ["", ""];
-
   return (
     <>
       <style>{STYLE}</style>
 
       <section className="pd-product-document-strip" aria-label="Product document navigation">
-        <div className="pd-product-document-label">PRODUCT DOCUMENT</div>
-        <div className="pd-product-document-row" role="tablist" aria-label="상품 상세 문서">
+        <div className="pd-product-document-label">
+          <strong>PRODUCT DOCUMENT</strong>
+        </div>
+        <div className="pd-product-document-row" role="tablist" aria-label="?곹뭹 ?곸꽭 臾몄꽌">
           {PRODUCT_DOCUMENT_TABS.map((item) => (
             <button
               key={item.key}
@@ -671,7 +750,7 @@ function ProductDocument({
                     onClick={onOpenReview}
                   >
                     <span>
-                      {review.nickname} · {review.writtenAt}
+                      {review.nickname} 쨌 {review.writtenAt}
                     </span>
                     <strong>{review.title}</strong>
                   </button>
@@ -679,7 +758,7 @@ function ProductDocument({
               </div>
 
               <button type="button" className="pd-body-text-button" onClick={onOpenReview}>
-                전체 리뷰 보기 →
+                ?꾩껜 由щ럭 蹂닿린 ??
               </button>
             </div>
           )}
@@ -718,7 +797,7 @@ function ProductDocument({
           {activeTab === "included" && (
             <div className="pd-document-text-block">
               <p className="pd-body-paragraph">{detailData.included}</p>
-              <div className="pd-body-document-table" aria-label="포함 항목">
+              <div className="pd-body-document-table" aria-label="?ы븿 ??ぉ">
                 {INCLUDED_ITEMS.map((item, index) => (
                   <div key={item.title} className="pd-body-document-row">
                     <span>{String(index + 1).padStart(2, "0")}</span>
@@ -733,7 +812,7 @@ function ProductDocument({
               <p className="pd-body-paragraph pd-document-excluded-lead">
                 {detailData.excluded}
               </p>
-              <div className="pd-body-document-table is-muted" aria-label="불포함 항목">
+              <div className="pd-body-document-table is-muted" aria-label="遺덊룷????ぉ">
                 {EXCLUDED_ITEMS.map((item, index) => (
                   <div key={item.title} className="pd-body-document-row">
                     <span>{String(index + 1).padStart(2, "0")}</span>

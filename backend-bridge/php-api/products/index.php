@@ -58,6 +58,122 @@ function uno_api_products_list_fetch_package_price($legacyProductId)
     );
 }
 
+function uno_api_products_list_file_table()
+{
+    global $g5;
+    return isset($g5['board_file_table']) ? $g5['board_file_table'] : 'g5_board_file';
+}
+
+function uno_api_products_list_file_url($fileName)
+{
+    $fileName = trim((string) $fileName);
+
+    if ($fileName === '') {
+        return '';
+    }
+
+    return '/bbs/data/file/product/' . str_replace('%2F', '/', rawurlencode($fileName));
+}
+
+function uno_api_products_list_thumbnail_url($legacyProductId)
+{
+    if (!function_exists('sql_fetch')) {
+        return '';
+    }
+
+    $legacyProductId = (int) $legacyProductId;
+    $fileTable = uno_api_products_list_file_table();
+    $row = sql_fetch(
+        "select bf_file
+           from {$fileTable}
+          where bo_table = 'product'
+            and wr_id = '{$legacyProductId}'
+            and bf_no = '0'
+            and bf_file <> ''
+          limit 1"
+    );
+
+    if (!$row || empty($row['bf_file'])) {
+        return '';
+    }
+
+    return uno_api_products_list_file_url($row['bf_file']);
+}
+
+function uno_api_products_list_mapping_by_legacy()
+{
+    $items = array();
+    $rows = function_exists('uno_api_product_mapping_fetch_rows')
+        ? uno_api_product_mapping_fetch_rows(false)
+        : array();
+
+    foreach ($rows as $row) {
+        if (empty($row['legacyProductId'])) {
+            continue;
+        }
+
+        $items[(string) ((int) $row['legacyProductId'])] = $row;
+    }
+
+    return $items;
+}
+
+function uno_api_products_list_default_product_id($legacyProductId, $productType)
+{
+    $prefix = $productType === 'semi' ? 'semi' : 'daily';
+    return $prefix . '-' . (int) $legacyProductId;
+}
+
+function uno_api_products_list_product_type_from_row($row)
+{
+    $category = isset($row['ca_name']) ? (string) $row['ca_name'] : '';
+
+    if (strpos($category, '세미패키지') !== false || strpos($category, '패키지') !== false) {
+        return 'semi';
+    }
+
+    if (isset($row['nation']) && (string) $row['nation'] === 'semi') {
+        return 'semi';
+    }
+
+    return 'daily';
+}
+
+function uno_api_products_list_category_condition($category)
+{
+    $category = trim((string) $category);
+
+    if ($category === '') {
+        return '';
+    }
+
+    $safe = uno_api_reservation_escape($category);
+    return "(ca_name = '{$safe}' or ca_name like '%, {$safe}%' or ca_name like '%{$safe},%')";
+}
+
+function uno_api_products_list_type_condition($type)
+{
+    if ($type === 'daily') {
+        return uno_api_products_list_category_condition('데이투어');
+    }
+
+    if ($type !== 'semi') {
+        return '';
+    }
+
+    $categories = array('세미패키지', '유럽', '아프리카-중동', '아시아', '프리미엄일주', '현대미술', '트래킹');
+    $conditions = array();
+
+    foreach ($categories as $category) {
+        $condition = uno_api_products_list_category_condition($category);
+        if ($condition !== '') {
+            $conditions[] = $condition;
+        }
+    }
+
+    return count($conditions) > 0 ? '(' . implode(' or ', $conditions) . ')' : '';
+}
+
 if (!function_exists('sql_fetch')) {
     uno_api_error('SERVER_ERROR', 'Gnuboard DB 함수를 찾을 수 없습니다.', 500);
 }
@@ -104,6 +220,7 @@ foreach (uno_api_product_map() as $productId => $mapping) {
         'category' => '',
         'legacyCategory' => isset($product['ca_name']) ? (string) $product['ca_name'] : '',
         'href' => uno_api_reservation_href_for_product($productId, $productType),
+        'thumbnailUrl' => uno_api_products_list_thumbnail_url($legacyProductId),
         'price' => $price,
         'requiresPassport' => uno_api_reservation_bool(isset($product['is_passport']) ? $product['is_passport'] : ''),
         'requiresRoomInfo' => uno_api_reservation_bool(isset($product['is_roominfo']) ? $product['is_roominfo'] : ''),

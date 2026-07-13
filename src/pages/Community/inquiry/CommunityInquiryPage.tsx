@@ -7,8 +7,14 @@ import { useState, type FormEvent } from "react";
 
 import { UnoApiRequestError } from "../../../api/apiClient";
 import { isLocalAuthSessionActive } from "../../../api/authSession";
-import { createCommunityInquiry } from "../../../api/reservationApi";
+import {
+  createCommunityInquiry,
+} from "../../../api/reservationApi";
 import CommunityLayout from "../CommunityLayout";
+import CommunityList from "../CommunityList";
+import CommunityPagination from "../CommunityPagination";
+import CommunitySearch from "../CommunitySearch";
+import { useCommunityPosts } from "../useCommunityPosts";
 
 const LOGIN_PATH = "/login";
 const MY_INQUIRY_PATH = "/mypage/inquiry";
@@ -34,6 +40,15 @@ export default function CommunityInquiryPage() {
     message: string;
   } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const {
+    items,
+    page,
+    search,
+    totalPages,
+    setPage,
+    handleSearch,
+    reload,
+  } = useCommunityPosts("qna");
 
   const openMyInquiry = () => {
     navigateTo(MY_INQUIRY_PATH);
@@ -78,6 +93,8 @@ export default function CommunityInquiryPage() {
       });
       setSubject("");
       setContent("");
+      setPage(1);
+      reload();
       setStatus({
         type: "success",
         message: "공개 문의가 등록되었습니다. 답변은 커뮤니티 문의 게시판에서 확인할 수 있습니다.",
@@ -156,6 +173,18 @@ export default function CommunityInquiryPage() {
           </article>
         </div>
       </section>
+
+      <CommunitySearch
+        placeholder="공개 문의를 검색하세요."
+        value={search}
+        onSearch={handleSearch}
+      />
+      <CommunityList type="inquiry" items={items} />
+      <CommunityPagination
+        currentPage={page}
+        totalPages={totalPages}
+        onPageChange={setPage}
+      />
 
       {isLoginModalOpen && (
         <div

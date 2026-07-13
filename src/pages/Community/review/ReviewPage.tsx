@@ -2,17 +2,31 @@ import CommunityLayout from "../CommunityLayout";
 import CommunityList from "../CommunityList";
 import CommunityPagination from "../CommunityPagination";
 import CommunitySearch from "../CommunitySearch";
-
-import { COMMUNITY_POSTS } from "../community.data";
+import { useCommunityPosts } from "../useCommunityPosts";
 
 export default function ReviewPage() {
-    const items = COMMUNITY_POSTS.filter((item) => item.type === "review");
+    const {
+        items,
+        page,
+        search,
+        totalPages,
+        setPage,
+        handleSearch,
+    } = useCommunityPosts("review");
 
     return (
         <CommunityLayout type="review">
-            <CommunitySearch placeholder="여행후기를 검색하세요." />
+            <CommunitySearch
+                placeholder="여행후기를 검색하세요."
+                value={search}
+                onSearch={handleSearch}
+            />
             <CommunityList type="review" items={items} />
-            <CommunityPagination currentPage={1} totalPages={3} />
+            <CommunityPagination
+                currentPage={page}
+                totalPages={totalPages}
+                onPageChange={setPage}
+            />
         </CommunityLayout>
     );
 }

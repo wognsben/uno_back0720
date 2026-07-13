@@ -5,6 +5,7 @@ import imgSemiPortugal from "../세미패키지메인히어로그리드/a1bb6879
 import imgSemiGreeceTurkey from "../세미패키지메인히어로그리드/ca8b91484dd437b9300e61e1611bbff92bf1b412.png";
 import imgSemiEgypt from "../세미패키지메인히어로그리드/724c69b9aeb2689cd61d20b56baa17a9093971ca.png";
 import imgDailyItaly from "../세미패키지메인히어로그리드/176f62c60c3978e3ac5e3d4bb41f76b68f88c0b6.png";
+import { getProducts, type ProductSummary } from "../../api/reservationApi";
 
 /*
   ProductNavigation 공통화
@@ -118,16 +119,37 @@ const HERO_ITEMS: HeroItem[] = [
 ];
 
 
-function useHeroRotation() {
+function mapRemoteProductToHeroItem(product: ProductSummary, index: number): HeroItem {
+  const category = product.productType === "daily" ? "daily" : "semi";
+
+  return {
+    id: product.id,
+    category,
+    country: product.legacyCategory || (category === "daily" ? "DAILY TOUR" : "SEMI PACKAGE"),
+    countryKo: product.legacyCategory || "",
+    title: category === "daily" ? "DAILY TOUR" : "SEMI PACKAGE",
+    subtitle: product.title,
+    meta: ["UNOTRAVEL", category === "daily" ? "DAILY TOUR" : "SEMI PACKAGE", String(index + 1).padStart(2, "0")],
+    image: product.thumbnailUrl || "",
+    href: product.href,
+  };
+}
+
+function useHeroRotation(itemCount: number) {
   const [activeIndex, setActiveIndex] = useState(0);
 
   useEffect(() => {
+    if (itemCount <= 1) {
+      setActiveIndex(0);
+      return;
+    }
+
     const timer = window.setInterval(() => {
-      setActiveIndex((prev) => (prev + 1) % HERO_ITEMS.length);
+      setActiveIndex((prev) => (prev + 1) % itemCount);
     }, 5200);
 
     return () => window.clearInterval(timer);
-  }, []);
+  }, [itemCount]);
 
   return { activeIndex, setActiveIndex };
 }
@@ -416,10 +438,37 @@ function Frame1({ item }: { item: HeroItem }) {
 }
 
 export default function Frame() {
-  const { activeIndex } = useHeroRotation();
-  const activeItem = HERO_ITEMS[activeIndex];
+  const [remoteHeroItems, setRemoteHeroItems] = useState<HeroItem[]>([]);
 
-  const loadedImages = useMemo(() => [...new Set(HERO_ITEMS.map((item) => item.image))], []);
+  useEffect(() => {
+    let isCancelled = false;
+
+    getProducts()
+      .then((response) => {
+        if (isCancelled) return;
+
+        setRemoteHeroItems(
+          (response.items ?? [])
+            .map(mapRemoteProductToHeroItem)
+            .filter((item) => item.image),
+        );
+      })
+      .catch(() => {
+        if (!isCancelled) {
+          setRemoteHeroItems([]);
+        }
+      });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, []);
+
+  const heroItems = remoteHeroItems;
+  const { activeIndex } = useHeroRotation(heroItems.length);
+  const activeItem = heroItems[activeIndex % Math.max(heroItems.length, 1)];
+
+  const loadedImages = useMemo(() => [...new Set(heroItems.map((item) => item.image).filter(Boolean))], [heroItems]);
 
   return (
     <div className="relative left-0 top-0 w-full min-w-[1024px] overflow-hidden bg-white">
@@ -725,7 +774,7 @@ export default function Frame() {
         ))}
       </div>
 
-      <Frame1 item={activeItem} />
+      {activeItem ? <Frame1 item={activeItem} /> : <div className="hero-grid-shell bg-white w-full" style={{ height: 725 }} />}
         </div>
       </div>
     </div>

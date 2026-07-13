@@ -87,9 +87,12 @@ import ContactPage from "../pages/contact_page/ContactPage";
 ========================================================== */
 import CommunityPage from "../pages/Community/CommunityPage";
 import ReviewPage from "../pages/Community/review/ReviewPage";
+import ReviewDetail from "../pages/Community/review/ReviewDetail";
 import NoticeBoardPage from "../pages/Community/notice/NoticePage";
+import NoticeDetail from "../pages/Community/notice/NoticeDetail";
 import EventPage from "../pages/Community/event/EventPage";
 import CommunityInquiryPage from "../pages/Community/inquiry/CommunityInquiryPage";
+import CommunityInquiryDetail from "../pages/Community/inquiry/CommunityInquiryDetail";
 import FaqPage from "../pages/Community/faq/FaqPage";
 import "../pages/Community/community.css";
 
@@ -601,12 +604,16 @@ export default function App() {
 */
   const isCommunityIndexPage = pathname === "/community";
   const isCommunityReviewPage = pathname === "/community/review";
+  const isCommunityReviewDetailPage = pathname.startsWith("/community/review/");
   const isCommunityNoticePage = pathname === "/community/notice";
+  const isCommunityNoticeDetailPage = pathname.startsWith("/community/notice/");
   const isCommunityEventPage = pathname === "/community/event";
   const isCommunityFaqPage = pathname === "/community/faq";
   const isCommunityInquiryPage = pathname === "/community/inquiry";
+  const isCommunityInquiryDetailPage = pathname.startsWith("/community/inquiry/");
   const isCommunityRoute =
     pathname === "/community" || pathname.startsWith("/community/");
+  const communityDetailId = pathname.split("/").filter(Boolean)[2] ?? "";
 
   /*
   Product Detail Route
@@ -761,12 +768,18 @@ export default function App() {
           <CommunityPage />
         ) : isCommunityReviewPage ? (
           <ReviewPage />
+        ) : isCommunityReviewDetailPage ? (
+          <ReviewDetail id={communityDetailId} />
         ) : isCommunityNoticePage ? (
           <NoticeBoardPage />
+        ) : isCommunityNoticeDetailPage ? (
+          <NoticeDetail id={communityDetailId} />
         ) : isCommunityEventPage ? (
           <EventPage />
         ) : isCommunityInquiryPage ? (
           <CommunityInquiryPage />
+        ) : isCommunityInquiryDetailPage ? (
+          <CommunityInquiryDetail id={communityDetailId} />
         ) : isCommunityFaqPage ? (
           <FaqPage />
         ) : (
