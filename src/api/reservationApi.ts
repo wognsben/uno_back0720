@@ -90,6 +90,14 @@ export type ProductFaqItem = {
   legacyProductIds?: Array<number | string>;
 };
 
+export type ProductGuideItem = {
+  id: number | string;
+  name: string;
+  bodyText?: string;
+  imageUrl?: string;
+  imageAlt?: string;
+};
+
 export type ProductImageItem = {
   no: number;
   source?: string;
@@ -135,6 +143,8 @@ export type ProductDetailResponse = ProductSummary & {
   meetingImages?: ProductImageItem[];
   tourOptions?: ProductTourOptions;
   bodyImages?: ProductImageItem[];
+  guideInfo?: string;
+  guides?: ProductGuideItem[];
   productDocumentImages?: {
     course?: ProductImageItem[];
     features?: ProductImageItem[];

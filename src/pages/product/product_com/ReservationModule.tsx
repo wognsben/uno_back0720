@@ -465,7 +465,10 @@ const canIncrease = safePeople < safeMaxPeople;
       />
     </div>
   ) : (
-    <BookingBoardingPass />
+    <BookingBoardingPass
+      outbound={product.ticket?.outbound}
+      inbound={product.ticket?.inbound}
+    />
   )}
 </div>
 

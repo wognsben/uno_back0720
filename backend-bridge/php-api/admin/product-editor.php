@@ -46,6 +46,45 @@ function uno_api_editor_escape($value)
     return uno_api_reservation_escape((string) $value);
 }
 
+function uno_api_editor_text_from_html($value)
+{
+    $text = html_entity_decode(strip_tags((string) $value), ENT_QUOTES, 'UTF-8');
+    $text = preg_replace('/[ \t]+/', ' ', $text);
+    $text = preg_replace('/\R{3,}/', "\n\n", $text);
+    return trim($text);
+}
+
+function uno_api_editor_guide_table()
+{
+    global $g5;
+    return isset($g5['write_prefix']) ? $g5['write_prefix'] . 'admGuideInfo' : 'g5_write_admGuideInfo';
+}
+
+function uno_api_editor_fetch_guide_options()
+{
+    if (!function_exists('sql_query') || !function_exists('sql_fetch_array')) {
+        return array();
+    }
+
+    $guideTable = uno_api_editor_guide_table();
+    $result = sql_query(
+        "select wr_id, wr_subject, wr_content
+           from {$guideTable}
+          order by wr_subject asc, wr_id asc"
+    );
+
+    $items = array();
+    while ($row = sql_fetch_array($result)) {
+        $items[] = array(
+            'id' => isset($row['wr_id']) ? (int) $row['wr_id'] : 0,
+            'title' => isset($row['wr_subject']) ? stripslashes((string) $row['wr_subject']) : '',
+            'bodyText' => isset($row['wr_content']) ? uno_api_editor_text_from_html(stripslashes((string) $row['wr_content'])) : '',
+        );
+    }
+
+    return $items;
+}
+
 function uno_api_editor_boarding_label($body)
 {
     $custom = uno_api_editor_text(isset($body['boardingLabel']) ? $body['boardingLabel'] : '');
@@ -487,6 +526,7 @@ function uno_api_editor_get_payload($legacyProductId)
     $product = uno_api_editor_fetch_product($legacyProductId);
     $data = array(
         'product' => $product,
+        'guideOptions' => uno_api_editor_fetch_guide_options(),
         'productOptions' => uno_api_editor_fetch_product_options($legacyProductId),
         'semiSchedules' => array(),
         'dailyFeeOptions' => array(),

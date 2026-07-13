@@ -2,7 +2,6 @@
 
 export type ProductDetailTab =
   | "review"
-  | "course"
   | "guide"
   | "included"
   | "excluded"
@@ -48,9 +47,18 @@ export type ProductDocumentImage = {
   source?: string;
 };
 
+export type ProductDocumentGuide = {
+  id: number | string;
+  name: string;
+  bodyText?: string;
+  imageUrl?: string;
+  imageAlt?: string;
+};
+
 export type ProductDocumentData = {
   productType: "semi" | "daily";
   guide: string;
+  guides?: ProductDocumentGuide[];
   included: string;
   excluded: string;
   review: string;
@@ -422,6 +430,60 @@ const STYLE = `
     word-break: keep-all;
   }
 
+  .pd-guide-list {
+    display: grid;
+    gap: 14px;
+    margin-top: 24px;
+  }
+
+  .pd-guide-card {
+    display: grid;
+    grid-template-columns: 112px minmax(0, 1fr);
+    gap: 18px;
+    align-items: start;
+    padding: 20px 22px;
+    border: 1px solid rgba(21, 21, 21, 0.12);
+    background: #ffffff;
+  }
+
+  .pd-guide-card.is-text-only {
+    grid-template-columns: 1fr;
+  }
+
+  .pd-guide-photo {
+    width: 112px;
+    aspect-ratio: 1 / 1.2;
+    overflow: hidden;
+    background: rgba(21, 21, 21, 0.06);
+  }
+
+  .pd-guide-photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .pd-guide-card strong {
+    display: block;
+    font-family: var(--font-ko);
+    font-size: 18px;
+    line-height: 1.35;
+    letter-spacing: -0.045em;
+    color: #151515;
+  }
+
+  .pd-guide-card p {
+    margin: 10px 0 0;
+    font-family: var(--font-ko);
+    font-size: 14px;
+    line-height: 1.75;
+    letter-spacing: -0.035em;
+    color: rgba(21, 21, 21, 0.64);
+    white-space: pre-line;
+    word-break: keep-all;
+  }
+
   .pd-body-text-button {
     appearance: none;
     margin-top: 22px;
@@ -642,12 +704,11 @@ function MeetingPointBlock({ meetingPoint }: { meetingPoint: MeetingPoint }) {
 function ProductDocument({
   detailData,
   selectedGuide,
-  isDailyTour,
   onOpenReview,
   onOpenNotice,
 }: ProductDocumentProps) {
-  const [activeTab, setActiveTab] = useState<ProductDetailTab | null>("guide");
-  const [isDocumentOpen, setIsDocumentOpen] = useState(true);
+  const [activeTab, setActiveTab] = useState<ProductDetailTab | null>(null);
+  const [isDocumentOpen, setIsDocumentOpen] = useState(false);
 
   const activeTabContent = useMemo(() => {
     if (!activeTab) {
@@ -665,15 +726,6 @@ function ProductDocument({
       return {
         kicker: "02 · 리뷰",
         text: detailData.review,
-      };
-    }
-
-    if (activeTab === "course") {
-      return {
-        kicker: "03 · 코스 일정",
-        text: isDailyTour
-          ? "?곗씪由ы닾?대뒗 ?꾩??먯꽌 諛붾줈 ?⑸쪟?섎뒗 寃쎌슦媛 留롪린 ?뚮Ц???щ젰?먯꽌 ?ㅼ젣 媛???좎쭨瑜?癒쇱? ?뺤씤?섎뒗 ?먮쫫??以묒슂?⑸땲?? ?ㅻ뒛 ?댁쟾 ?좎쭨???좏깮?????녿룄濡?泥섎━?⑸땲??"
-          : detailData.scheduleIntro,
       };
     }
 
@@ -695,10 +747,10 @@ function ProductDocument({
       kicker: "05 · 포함/불포함",
       text: `${detailData.included}\n${detailData.excluded}`,
     };
-  }, [activeTab, detailData, isDailyTour]);
+  }, [activeTab, detailData]);
 
   const noticeButtons = detailData.notices.filter(
-    (notice) => notice.title !== "?덉빟 ?덈궡",
+    (notice) => notice.title !== "예약 안내",
   );
 
   const [contentIndex, contentKicker] = activeTabContent
@@ -708,19 +760,28 @@ function ProductDocument({
     <>
       <style>{STYLE}</style>
 
-      <section className="pd-product-document-strip" aria-label="Product document navigation">
+      <section className="pd-product-document-strip" aria-label="상품 상세 문서 내비게이션">
         <div className="pd-product-document-label">
           <strong>PRODUCT DOCUMENT</strong>
         </div>
-        <div className="pd-product-document-row" role="tablist" aria-label="?곹뭹 ?곸꽭 臾몄꽌">
+        <div className="pd-product-document-row" role="tablist" aria-label="상품 상세 문서">
           {PRODUCT_DOCUMENT_TABS.map((item) => (
             <button
               key={item.key}
               type="button"
-              className={`pd-product-document-item ${activeTab === item.key ? "is-active" : ""}`}
-              onClick={() => setActiveTab(item.key)}
+              className={`pd-product-document-item ${activeTab === item.key && isDocumentOpen ? "is-active" : ""}`}
+              onClick={() => {
+                if (activeTab === item.key && isDocumentOpen) {
+                  setIsDocumentOpen(false);
+                  return;
+                }
+
+                setActiveTab(item.key);
+                setIsDocumentOpen(true);
+              }}
               role="tab"
-              aria-selected={activeTab === item.key}
+              aria-expanded={activeTab === item.key && isDocumentOpen}
+              aria-selected={activeTab === item.key && isDocumentOpen}
             >
               <span>{item.label}</span>
               <strong>{item.index}</strong>
@@ -729,8 +790,8 @@ function ProductDocument({
         </div>
       </section>
 
-      {activeTab && activeTabContent && (
-        <section className="pd-product-document-content" aria-label="Product document content">
+      {isDocumentOpen && activeTab && activeTabContent && (
+        <section className="pd-product-document-content" aria-label="상품 상세 문서 내용">
           <div className="pd-product-document-content-left">
             <div className="pd-document-content-index">{contentIndex}</div>
             <div className="pd-document-content-kicker">{contentKicker}</div>
@@ -750,7 +811,7 @@ function ProductDocument({
                     onClick={onOpenReview}
                   >
                     <span>
-                      {review.nickname} 쨌 {review.writtenAt}
+                      {review.nickname} · {review.writtenAt}
                     </span>
                     <strong>{review.title}</strong>
                   </button>
@@ -758,35 +819,38 @@ function ProductDocument({
               </div>
 
               <button type="button" className="pd-body-text-button" onClick={onOpenReview}>
-                ?꾩껜 由щ럭 蹂닿린 ??
+                전체 리뷰 보기 →
               </button>
-            </div>
-          )}
-
-          {activeTab === "course" && (
-            <div className="pd-document-course">
-              <p className="pd-body-paragraph">{activeTabContent.text}</p>
-              <div className="pd-document-course-list">
-                {detailData.scheduleDays.map((day) => (
-                  <article key={day.day} className="pd-document-course-item">
-                    <span className="pd-document-course-number">{day.day}</span>
-                    <div className="pd-document-course-meta">
-                      <span>{day.city}</span>
-                      <span>{day.time}</span>
-                    </div>
-                    <div className="pd-document-course-copy">
-                      <strong>{day.title}</strong>
-                      <p>{day.body}</p>
-                    </div>
-                  </article>
-                ))}
-              </div>
             </div>
           )}
 
           {activeTab === "guide" && (
             <div className="pd-document-text-block">
               <p className="pd-body-paragraph">{detailData.guide}</p>
+              {detailData.guides && detailData.guides.length > 0 && (
+                <div className="pd-guide-list" aria-label="담당 가이드 소개">
+                  {detailData.guides.map((guide) => (
+                    <article
+                      key={guide.id}
+                      className={`pd-guide-card ${guide.imageUrl ? "" : "is-text-only"}`}
+                    >
+                      {guide.imageUrl ? (
+                        <div className="pd-guide-photo">
+                          <img
+                            src={guide.imageUrl}
+                            alt={guide.imageAlt || guide.name}
+                            loading="lazy"
+                          />
+                        </div>
+                      ) : null}
+                      <div>
+                        <strong>{guide.name}</strong>
+                        {guide.bodyText ? <p>{guide.bodyText}</p> : null}
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              )}
               <div className="pd-body-mini-meta">
                 <span>GUIDE</span>
                 <strong>{selectedGuide}</strong>
@@ -797,7 +861,7 @@ function ProductDocument({
           {activeTab === "included" && (
             <div className="pd-document-text-block">
               <p className="pd-body-paragraph">{detailData.included}</p>
-              <div className="pd-body-document-table" aria-label="?ы븿 ??ぉ">
+              <div className="pd-body-document-table" aria-label="포함 항목">
                 {INCLUDED_ITEMS.map((item, index) => (
                   <div key={item.title} className="pd-body-document-row">
                     <span>{String(index + 1).padStart(2, "0")}</span>
@@ -812,7 +876,7 @@ function ProductDocument({
               <p className="pd-body-paragraph pd-document-excluded-lead">
                 {detailData.excluded}
               </p>
-              <div className="pd-body-document-table is-muted" aria-label="遺덊룷????ぉ">
+              <div className="pd-body-document-table is-muted" aria-label="불포함 항목">
                 {EXCLUDED_ITEMS.map((item, index) => (
                   <div key={item.title} className="pd-body-document-row">
                     <span>{String(index + 1).padStart(2, "0")}</span>

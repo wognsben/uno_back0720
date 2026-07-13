@@ -17,24 +17,25 @@ function uno_renewal_admin_menu_groups()
             'label' => '예약관리',
             'href' => '/admin/renewal/reservations.php',
             'items' => array(
-                array('label' => '리뉴얼 예약관리', 'href' => '/admin/renewal/reservations.php'),
+                array('label' => '예약 목록', 'href' => '/admin/renewal/reservations.php'),
                 array('label' => '세미패키지 예약', 'href' => '/admin/booking.php?sca=세미패키지'),
                 array('label' => '데일리투어 예약', 'href' => '/admin/booking.php?sca=데이투어'),
                 array('label' => '예약 캘린더', 'href' => '/admin/regist_calendar.php'),
-                array('label' => '1:1 문의', 'href' => '/admin/board.php?bo_table=cusTour'),
-                array('label' => 'KSNET 결제 내역', 'href' => '/admin/kscardPayList.php'),
+                array('label' => '관리자 1:1 문의', 'href' => '/admin/renewal/inquiries.php?board=cusTour'),
+                array('label' => 'KSNET 결제 내역', 'href' => '/admin/renewal/payments.php'),
             ),
         ),
         array(
             'label' => '회원관리',
-            'href' => '/admin/renewal/index.php#members',
+            'href' => '/admin/renewal/members.php',
             'items' => array(
-                array('label' => '회원 목록', 'href' => '/admin/member.php'),
+                array('label' => '회원 목록', 'href' => '/admin/renewal/members.php'),
                 array('label' => '공개 묻고답하기', 'href' => '/admin/renewal/community-qna.php'),
                 array('label' => '여행후기', 'href' => '/admin/renewal/community-reviews.php'),
                 array('label' => '스팸 문의 관리', 'href' => '/admin/renewal/spam-moderation.php'),
-                array('label' => '가이드', 'href' => '/admin/member.php?mb_level=4'),
-                array('label' => 'B2B 회원', 'href' => '/admin/member.php?mb_level=5'),
+                array('label' => '가이드', 'href' => '/admin/renewal/members.php?level=4'),
+                array('label' => 'B2B 회원', 'href' => '/admin/renewal/members.php?level=5'),
+                array('label' => 'B2B 매출 집계', 'href' => '/admin/b2b_account.php'),
             ),
         ),
         array(
@@ -50,7 +51,7 @@ function uno_renewal_admin_menu_groups()
         ),
         array(
             'label' => '투어 설정',
-            'href' => '/admin/renewal/index.php#tour-settings',
+            'href' => '/admin/tourClose.php',
             'items' => array(
                 array('label' => '데일리투어 마감/인원', 'href' => '/admin/tourClose.php'),
                 array('label' => '요금 옵션', 'href' => '/admin/tourFee.php'),
@@ -60,7 +61,7 @@ function uno_renewal_admin_menu_groups()
         ),
         array(
             'label' => '사이트 설정',
-            'href' => '/admin/renewal/index.php#site-settings',
+            'href' => '/admin/productDispIndex.php',
             'items' => array(
                 array('label' => '메인/추천 상품', 'href' => '/admin/productDispIndex.php'),
                 array('label' => '약관/개인정보', 'href' => '/admin/Config.php?gubun=privacy'),
@@ -71,9 +72,14 @@ function uno_renewal_admin_menu_groups()
         ),
         array(
             'label' => '기타',
-            'href' => '/admin/renewal/index.php#system',
+            'href' => '/admin/renewal/visits.php',
             'items' => array(
-                array('label' => '접속자', 'href' => '/admin/visitCount.php'),
+                array('label' => '방문자 현황', 'href' => '/admin/renewal/visits.php'),
+                array('label' => '접속자 목록', 'href' => '/admin/renewal/visits.php?view=list'),
+                array('label' => '일별 접속 통계', 'href' => '/admin/renewal/visits.php?view=date'),
+                array('label' => '주간 접속 통계', 'href' => '/admin/renewal/visits.php?view=week'),
+                array('label' => '월간 접속 통계', 'href' => '/admin/renewal/visits.php?view=month'),
+                array('label' => '브라우저 통계', 'href' => '/admin/renewal/visits.php?view=browser'),
                 array('label' => '메일 발송 목록', 'href' => '/admin/emailHistory.php'),
                 array('label' => '비즈톡 현황', 'href' => '/admin/biztalk.php'),
                 array('label' => '리뉴얼 대시보드', 'href' => '/admin/renewal/index.php'),

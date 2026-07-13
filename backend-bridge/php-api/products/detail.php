@@ -36,6 +36,12 @@ function uno_api_table_board_file()
     return isset($g5['board_file_table']) ? $g5['board_file_table'] : 'g5_board_file';
 }
 
+function uno_api_table_guide()
+{
+    global $g5;
+    return isset($g5['write_prefix']) ? $g5['write_prefix'] . 'admGuideInfo' : 'g5_write_admGuideInfo';
+}
+
 function uno_api_bool_field($value)
 {
     $normalized = strtoupper(trim((string) $value));
@@ -90,6 +96,18 @@ function uno_api_product_file_url($fileName)
     return '/bbs/data/file/product/' . str_replace('%2F', '/', rawurlencode($fileName));
 }
 
+function uno_api_board_file_url($boardTable, $fileName)
+{
+    $boardTable = preg_replace('/[^a-zA-Z0-9_]/', '', (string) $boardTable);
+    $fileName = trim((string) $fileName);
+
+    if ($boardTable === '' || $fileName === '') {
+        return '';
+    }
+
+    return '/bbs/data/file/' . $boardTable . '/' . str_replace('%2F', '/', rawurlencode($fileName));
+}
+
 function uno_api_fetch_product_images($legacyProductId)
 {
     if (!function_exists('sql_query') || !function_exists('sql_fetch_array')) {
@@ -121,6 +139,72 @@ function uno_api_fetch_product_images($legacyProductId)
             'width' => isset($row['bf_width']) ? (int) $row['bf_width'] : 0,
             'height' => isset($row['bf_height']) ? (int) $row['bf_height'] : 0,
         );
+    }
+
+    return $items;
+}
+
+function uno_api_guide_ids($value)
+{
+    preg_match_all('/\d+/', (string) $value, $matches);
+    $ids = array();
+    foreach ($matches[0] as $id) {
+        $id = (int) $id;
+        if ($id > 0 && !in_array($id, $ids, true)) {
+            $ids[] = $id;
+        }
+    }
+
+    return $ids;
+}
+
+function uno_api_fetch_product_guides($guideInfo)
+{
+    if (!function_exists('sql_query') || !function_exists('sql_fetch_array')) {
+        return array();
+    }
+
+    $ids = uno_api_guide_ids($guideInfo);
+    if (count($ids) === 0) {
+        return array();
+    }
+
+    $guideTable = uno_api_table_guide();
+    $fileTable = uno_api_table_board_file();
+    $idList = implode(',', array_map('intval', $ids));
+    $result = sql_query(
+        "select g.wr_id, g.wr_subject, g.wr_content, f.bf_file, f.bf_source
+           from {$guideTable} g
+           left join {$fileTable} f
+             on f.bo_table = 'admGuideInfo'
+            and f.wr_id = g.wr_id
+            and f.bf_no = 0
+          where g.wr_id in ({$idList})
+          order by g.wr_subject asc, g.wr_id asc"
+    );
+
+    $byId = array();
+    while ($row = sql_fetch_array($result)) {
+        $id = isset($row['wr_id']) ? (int) $row['wr_id'] : 0;
+        if ($id <= 0) {
+            continue;
+        }
+
+        $content = isset($row['wr_content']) ? stripslashes((string) $row['wr_content']) : '';
+        $byId[$id] = array(
+            'id' => $id,
+            'name' => isset($row['wr_subject']) ? stripslashes((string) $row['wr_subject']) : '',
+            'bodyText' => uno_api_text_from_html($content),
+            'imageUrl' => isset($row['bf_file']) ? uno_api_board_file_url('admGuideInfo', $row['bf_file']) : '',
+            'imageAlt' => isset($row['bf_source']) ? (string) $row['bf_source'] : '',
+        );
+    }
+
+    $items = array();
+    foreach ($ids as $id) {
+        if (isset($byId[$id])) {
+            $items[] = $byId[$id];
+        }
     }
 
     return $items;
@@ -354,7 +438,7 @@ if (!function_exists('sql_fetch')) {
 $legacyProductId = (int) $mapping['legacyProductId'];
 $productTable = uno_api_table_product();
 $product = sql_fetch(
-    "select wr_id, ca_name, wr_subject, wr_content, wr_reg_result, is_passport, is_delivery, is_roominfo
+    "select wr_id, ca_name, wr_subject, wr_content, wr_reg_result, is_passport, is_delivery, is_roominfo, guide_info
        from {$productTable}
       where wr_id = '{$legacyProductId}'"
 );
@@ -418,6 +502,7 @@ $response = array(
     'requiresPassport' => uno_api_bool_field(isset($product['is_passport']) ? $product['is_passport'] : ''),
     'requiresRoomInfo' => uno_api_bool_field(isset($product['is_roominfo']) ? $product['is_roominfo'] : ''),
     'requiresDelivery' => uno_api_bool_field(isset($product['is_delivery']) ? $product['is_delivery'] : ''),
+    'guideInfo' => isset($product['guide_info']) ? (string) $product['guide_info'] : '',
     'reservationDefaults' => array(
         'requiresPassport' => uno_api_bool_field(isset($product['is_passport']) ? $product['is_passport'] : ''),
         'requiresRoomInfo' => uno_api_bool_field(isset($product['is_roominfo']) ? $product['is_roominfo'] : ''),
@@ -452,6 +537,7 @@ if ($mode === 'full') {
     $response['meetingImages'] = $meetingImages;
     $response['tourOptions'] = $tourOptions;
     $response['bodyImages'] = $bodyImages;
+    $response['guides'] = uno_api_fetch_product_guides(isset($product['guide_info']) ? $product['guide_info'] : '');
     $response['productDocumentImages'] = array(
         'course' => $tourCourseImages,
         'features' => array_merge($tourAdImages, $tourBannerImages),

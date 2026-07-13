@@ -1,6 +1,8 @@
 // BoardingPass.tsx
-// 세미패키지 예약 UI 내부의 항공 일정 표시 전용 컴포넌트
-// 항공 일정 원본은 ProductDetail.ticket이며, 백엔드 연동 전에는 fallback 일정으로 화면 깨짐을 방지한다.
+// 세미패키지 예약 UI 내부의 데코용 일정표 컴포넌트
+// 절대 항공권/발권/좌석 예약 기능이 아니다. 프리미엄한 보딩패스 형태로
+// 한국 -> 목적지, 목적지 -> 한국 이동 일정을 보여주는 시각 장식이다.
+// 일정 원본은 ProductDetail.ticket이며, 백엔드 연동 전에는 fallback 일정으로 화면 깨짐을 방지한다.
 
 import imgKoreanAir from "./calendar_src/KoreanAir.png";
 

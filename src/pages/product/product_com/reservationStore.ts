@@ -4,6 +4,7 @@
 // ReservationModule과 Booking_side가 각자 저장 로직을 갖지 않도록 중복과 상태 충돌을 막는 파일이다.
 
 import type { AvailableDate } from "./reservationUtils";
+import type { BoardingPassFlightSegment } from "./BoardingPass";
 import {
   isLocalAuthSessionActive,
   refreshAuthSession,
@@ -29,6 +30,10 @@ export type ReservationProductContext = {
   href: string;
   currency?: string;
   basePrice?: number;
+  ticket?: {
+    outbound?: BoardingPassFlightSegment;
+    inbound?: BoardingPassFlightSegment;
+  };
 };
 
 export type ReservationStoragePayload = {

@@ -19,7 +19,7 @@ uno_renewal_admin_render_pagehead(
     '1:1 문의와 커뮤니티에 반복 등록되는 도박, 성인, 스캠성 게시물을 빠르게 확인하고 작성자 계정을 차단합니다. 글 일괄 삭제는 그누보드 삭제 흐름 확인 후 별도 단계로 분리합니다.',
     array(
         array('label' => '기존 1:1 문의', 'href' => '/admin/board.php?bo_table=cusTour', 'secondary' => true),
-        array('label' => '회원 목록', 'href' => '/admin/member.php', 'secondary' => true),
+        array('label' => '회원 목록', 'href' => '/admin/renewal/members.php', 'secondary' => true),
     )
 );
 ?>

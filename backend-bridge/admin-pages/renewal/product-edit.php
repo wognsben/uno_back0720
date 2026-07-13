@@ -54,6 +54,14 @@ uno_renewal_admin_render_pagehead(
       .uno-form-field textarea { min-height: 92px; resize: vertical; line-height: 1.55; }
       .uno-check-row { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; }
       .uno-check-row label { display: inline-flex; gap: 7px; align-items: center; color: var(--uno-ink); font-weight: 800; }
+      .uno-guide-picker { display: grid; gap: 10px; }
+      .uno-guide-selected { display: flex; flex-wrap: wrap; gap: 6px; min-height: 32px; align-items: center; color: var(--uno-muted); }
+      .uno-guide-chip { display: inline-flex; align-items: center; min-height: 28px; padding: 0 10px; border: 1px solid rgba(21, 21, 21, .14); background: #fafaf8; color: var(--uno-ink); font-size: 12px; font-weight: 900; }
+      .uno-guide-search { min-height: 40px !important; }
+      .uno-guide-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 8px; max-height: 260px; overflow: auto; padding: 10px; border: 1px solid var(--uno-line); background: #fff; }
+      .uno-guide-option { min-width: 0; display: flex; align-items: center; gap: 8px; min-height: 36px; padding: 6px 8px; border: 1px solid rgba(21, 21, 21, .08); background: #fafaf8; color: var(--uno-ink); font-size: 13px; font-weight: 900; line-height: 1.25; }
+      .uno-guide-option input { width: 16px !important; min-height: 16px !important; flex: 0 0 16px; padding: 0; }
+      .uno-guide-option.is-hidden { display: none; }
       .uno-section-note { margin: 0 0 16px; color: var(--uno-muted); line-height: 1.65; word-break: keep-all; }
       .uno-schedule-list { display: grid; gap: 14px; }
       .uno-schedule-card { border: 1px solid var(--uno-line); background: #fff; padding: 16px; }
@@ -64,17 +72,18 @@ uno_renewal_admin_render_pagehead(
       .uno-calendar-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); border-top: 1px solid var(--uno-line); border-left: 1px solid var(--uno-line); background: #fff; }
       .uno-calendar-weekday, .uno-calendar-day { border-right: 1px solid var(--uno-line); border-bottom: 1px solid var(--uno-line); }
       .uno-calendar-weekday { min-height: 38px; display: grid; place-items: center; color: var(--uno-muted); font-size: 12px; font-weight: 900; }
-      .uno-calendar-day { min-height: 168px; padding: 10px; display: grid; gap: 8px; align-content: start; }
-      .uno-calendar-day.is-muted { background: #f7f7f4; }
+      .uno-calendar-day { min-height: 118px; padding: 10px; display: grid; gap: 7px; align-content: start; }
+      .uno-calendar-day.is-empty { background: #f7f7f4; color: rgba(21, 21, 21, .26); }
       .uno-calendar-day strong { font-size: 16px; }
       .uno-calendar-day select, .uno-calendar-day input { width: 100%; min-height: 34px; border: 1px solid var(--uno-line); background: #fff; padding: 6px 8px; }
-      .uno-calendar-count { min-height: 32px; display: flex; align-items: center; color: var(--uno-muted); font-size: 12px; font-weight: 800; }
+      .uno-calendar-count { min-height: 28px; display: flex; align-items: center; color: var(--uno-muted); font-size: 12px; font-weight: 800; line-height: 1.35; }
       .uno-calendar-status { min-height: 30px; display: inline-flex; width: max-content; align-items: center; padding: 0 9px; border: 1px solid var(--uno-line); font-size: 12px; font-weight: 900; }
       .uno-calendar-status.is-available { color: var(--uno-good); border-color: rgba(15, 118, 110, .25); background: rgba(15, 118, 110, .06); }
       .uno-calendar-status.is-soon { color: var(--uno-warn); border-color: rgba(154, 106, 0, .28); background: rgba(154, 106, 0, .07); }
       .uno-calendar-status.is-soldout { color: var(--uno-danger); border-color: rgba(159, 41, 41, .24); background: rgba(159, 41, 41, .07); }
       .uno-calendar-small-button { min-height: 34px; border: 1px solid var(--uno-ink); background: var(--uno-ink); color: #fff; font-weight: 900; cursor: pointer; }
       .uno-calendar-small-button.secondary { background: #fff; color: var(--uno-ink); border-color: var(--uno-line); }
+      .uno-calendar-actions { display: flex; gap: 6px; flex-wrap: wrap; }
       .uno-pattern-panel { margin-top: 18px; border: 1px solid var(--uno-line); background: #fff; padding: 16px; }
       .uno-price-list { display: grid; gap: 14px; }
       .uno-price-row { border: 1px solid var(--uno-line); background: #fff; padding: 16px; }
@@ -295,6 +304,54 @@ uno_renewal_admin_render_pagehead(
       const textareaField = (label, name, value = "", placeholder = "") => '<div class="uno-form-field full"><label>' + escapeHtml(label) + '</label><textarea data-field="' + escapeHtml(name) + '" placeholder="' + escapeHtml(placeholder) + '">' + escapeHtml(value) + '</textarea></div>';
       const selectField = (label, name, options, selected = "") => '<div class="uno-form-field"><label>' + escapeHtml(label) + '</label><select data-field="' + escapeHtml(name) + '">' + options.map(([value, text]) => '<option value="' + escapeHtml(value) + '" ' + (value === selected ? 'selected' : '') + '>' + escapeHtml(text) + '</option>').join("") + '</select></div>';
       const readField = (root, name) => { const input = $('[data-field="' + name + '"]', root); if (!input) return ""; return input.type === "checkbox" ? input.checked : input.value.trim(); };
+      const guideIdsFromValue = (value = "") => Array.from(new Set((String(value || "").match(/\d+/g) || []).map(String)));
+      const updateGuideSelector = (root) => {
+        if (!root) return;
+        const checked = Array.from(root.querySelectorAll("[data-guide-option]:checked"));
+        const ids = checked.map((input) => input.value);
+        const labels = checked.map((input) => input.dataset.guideTitle).filter(Boolean);
+        const hidden = $('[data-field="guideInfo"]', root);
+        const summary = $("[data-guide-summary]", root);
+        if (hidden) hidden.value = ids.join(",");
+        if (summary) summary.innerHTML = labels.length > 0
+          ? labels.map((label) => '<span class="uno-guide-chip">' + escapeHtml(label) + '</span>').join("")
+          : '<span>선택된 가이드가 없습니다.</span>';
+      };
+      const filterGuideSelector = (root, keyword) => {
+        if (!root) return;
+        const normalized = String(keyword || "").trim().toLowerCase();
+        root.querySelectorAll("[data-guide-row]").forEach((row) => {
+          const text = String(row.dataset.guideSearch || "").toLowerCase();
+          row.classList.toggle("is-hidden", normalized !== "" && text.indexOf(normalized) === -1);
+        });
+      };
+      const buildGuideSelector = (selectedValue = "") => {
+        const options = state.data.guideOptions || [];
+        if (!options.length) {
+          return textareaField("가이드 정보", "guideInfo", selectedValue, "admGuideInfo 가이드 ID를 쉼표로 입력");
+        }
+        const selectedIds = new Set(guideIdsFromValue(selectedValue));
+        const selectedLabels = options.filter((guide) => selectedIds.has(String(guide.id))).map((guide) => guide.title);
+        return '<div class="uno-form-field full" data-guide-selector>' +
+          '<label>가이드 정보</label>' +
+          '<input type="hidden" data-field="guideInfo" value="' + escapeHtml(guideIdsFromValue(selectedValue).join(",")) + '">' +
+          '<div class="uno-guide-picker">' +
+          '<div class="uno-guide-selected" data-guide-summary>' + (selectedLabels.length ? selectedLabels.map((label) => '<span class="uno-guide-chip">' + escapeHtml(label) + '</span>').join("") : '<span>선택된 가이드가 없습니다.</span>') + '</div>' +
+          '<input class="uno-guide-search" type="search" data-guide-search placeholder="가이드 이름 검색">' +
+          '<div class="uno-guide-list">' +
+            options.map((guide) => {
+              const id = String(guide.id);
+              const title = guide.title || ("Guide #" + id);
+              return '<label class="uno-guide-option" data-guide-row data-guide-search="' + escapeHtml(title + " " + (guide.bodyText || "")) + '" title="' + escapeHtml(guide.bodyText || title) + '">' +
+                '<input type="checkbox" data-guide-option value="' + escapeHtml(id) + '" data-guide-title="' + escapeHtml(guide.title || ("Guide #" + id)) + '" ' + (selectedIds.has(id) ? 'checked' : '') + '> ' +
+                '<span>' + escapeHtml(title) + '</span>' +
+              '</label>';
+            }).join("") +
+          '</div>' +
+          '</div>' +
+          '<small style="display:block;margin-top:8px;color:var(--uno-muted);">bo_table=admGuideInfo의 가이드를 선택하면 기존 guide_info 필드에 ID로 저장됩니다.</small>' +
+        '</div>';
+      };
       const dateKey = (date) => date.getFullYear() + "-" + String(date.getMonth() + 1).padStart(2, "0") + "-" + String(date.getDate()).padStart(2, "0");
       const parseDateKey = (value) => { const [y, m, d] = String(value || "").split("-").map(Number); return new Date(y || 1970, (m || 1) - 1, d || 1); };
 
@@ -376,7 +433,6 @@ uno_renewal_admin_render_pagehead(
           field("오는 편 출발 시간", "returnDepartureTime", parsed.returnDepartureTime, "time") +
           field("오는 편 도착지", "returnArrivalPlace", parsed.returnArrivalPlace) +
           field("오는 편 도착 일정", "returnArrivalLabel", parsed.returnArrivalLabel, "text", "11일차 오후") +
-          textareaField("표시 메모", "boardingLabel", parsed.boardingLabel, "기존 일정 문구를 그대로 보여야 하면 입력하고, 비워두면 위 일정으로 자동 구성됩니다.") +
           '<div class="uno-form-field full"><div class="uno-check-row"><label><input type="checkbox" data-field="isVisible" ' + (visibleChecked ? 'checked' : '') + '> 프런트 노출</label><label><input type="checkbox" data-field="isMain" ' + (schedule.isMain ? 'checked' : '') + '> 대표 일정</label></div></div>' +
           '</div></article>';
       };
@@ -388,7 +444,7 @@ uno_renewal_admin_render_pagehead(
           '<div class="uno-schedule-list" data-semi-schedule-list>' + (schedules.length ? schedules.map(semiScheduleCard).join("") : semiScheduleCard({})) + '</div>';
       };
 
-      const semiPayload = (card) => ({ action: "saveSemiSchedule", id: card.dataset.id ? Number(card.dataset.id) : 0, startDate: readField(card, "startDate"), arriveDate: readField(card, "arriveDate"), outboundDeparturePlace: readField(card, "outboundDeparturePlace"), outboundDepartureTime: readField(card, "outboundDepartureTime"), outboundArrivalPlace: readField(card, "outboundArrivalPlace"), outboundArrivalLabel: readField(card, "outboundArrivalLabel"), returnDeparturePlace: readField(card, "returnDeparturePlace"), returnDepartureTime: readField(card, "returnDepartureTime"), returnArrivalPlace: readField(card, "returnArrivalPlace"), returnArrivalLabel: readField(card, "returnArrivalLabel"), boardingLabel: readField(card, "boardingLabel"), isVisible: readField(card, "isVisible"), isMain: readField(card, "isMain") });
+      const semiPayload = (card) => ({ action: "saveSemiSchedule", id: card.dataset.id ? Number(card.dataset.id) : 0, startDate: readField(card, "startDate"), arriveDate: readField(card, "arriveDate"), outboundDeparturePlace: readField(card, "outboundDeparturePlace"), outboundDepartureTime: readField(card, "outboundDepartureTime"), outboundArrivalPlace: readField(card, "outboundArrivalPlace"), outboundArrivalLabel: readField(card, "outboundArrivalLabel"), returnDeparturePlace: readField(card, "returnDeparturePlace"), returnDepartureTime: readField(card, "returnDepartureTime"), returnArrivalPlace: readField(card, "returnArrivalPlace"), returnArrivalLabel: readField(card, "returnArrivalLabel"), isVisible: readField(card, "isVisible"), isMain: readField(card, "isMain") });
 
       const priceField = (label, name, value = "") => field(label, name, String(value || ""), "number");
       const money = (value) => Number(String(value || "0").replace(/[^0-9-]/g, "")) || 0;
@@ -503,7 +559,7 @@ uno_renewal_admin_render_pagehead(
               '<div class="uno-form-field full uno-wide-textarea"><label>상세 본문 HTML</label><textarea data-field="content" placeholder="기존 상세 본문 HTML">' + escapeHtml(product.content || "") + '</textarea></div>' +
               textareaField("추천 상품", "recommendTour", extras.recommendTour || "", "상품 ID 또는 legacy ID를 줄 단위로 입력") +
               textareaField("이벤트 / 코스", "eventCourse", extras.eventCourse || "", "코스 설명 또는 연결 정보") +
-              textareaField("가이드 정보", "guideInfo", extras.guideInfo || "", "가이드 지정, 가이드 안내 문구 등") +
+              buildGuideSelector(extras.guideInfo || "") +
             '</div>' +
           '</div>' +
           '<p class="uno-section-note" style="margin-top:16px;">상세 이미지와 코스 이미지 업로드는 다음 이미지 관리 단계에서 분리합니다.</p>';
@@ -595,24 +651,25 @@ uno_renewal_admin_render_pagehead(
         const year = state.dailyMonth.getFullYear();
         const month = state.dailyMonth.getMonth();
         const firstDate = new Date(year, month, 1);
-        const start = new Date(year, month, 1 - firstDate.getDay());
+        const lastDate = new Date(year, month + 1, 0).getDate();
         const items = calendarItemMap();
         const weekdays = ["일", "월", "화", "수", "목", "금", "토"];
         const cells = [];
-        for (let offset = 0; offset < 42; offset += 1) {
-          const current = new Date(start);
-          current.setDate(start.getDate() + offset);
+        for (let blank = 0; blank < firstDate.getDay(); blank += 1) {
+          cells.push('<div class="uno-calendar-day is-empty" aria-hidden="true"></div>');
+        }
+        for (let day = 1; day <= lastDate; day += 1) {
+          const current = new Date(year, month, day);
           const key = dateKey(current);
           const item = items.get(key) || { date: key, status: "available", maxCount: 0, nowCount: 0 };
           const status = item.status || "available";
           const maxCount = Number(item.maxCount || 0);
           const nowCount = Number(item.nowCount || 0);
-          const remaining = maxCount > 0 ? Math.max(0, maxCount - nowCount) : "-";
-          cells.push('<div class="uno-calendar-day ' + (current.getMonth() !== month ? 'is-muted' : '') + '" data-daily-date="' + key + '" data-max-count="' + escapeHtml(maxCount) + '"><strong>' + current.getDate() + '</strong><span class="uno-calendar-status is-' + escapeHtml(status) + '">' + escapeHtml(dailyStatusLabel(status)) + '</span><div class="uno-calendar-count">정원 ' + escapeHtml(maxCount || "-") + '명 · 예약 ' + escapeHtml(nowCount) + '명 · 잔여 ' + escapeHtml(remaining) + '</div><button class="uno-calendar-small-button secondary" type="button" data-close-daily-date>예외 마감</button><button class="uno-calendar-small-button secondary" type="button" data-open-daily-date>예외 운영</button></div>');
+          cells.push('<div class="uno-calendar-day" data-daily-date="' + key + '" data-max-count="' + escapeHtml(maxCount) + '"><strong>' + current.getDate() + '</strong><span class="uno-calendar-status is-' + escapeHtml(status) + '">' + escapeHtml(dailyStatusLabel(status)) + '</span><div class="uno-calendar-count">정원 ' + escapeHtml(maxCount || "-") + '명 · 예약 ' + escapeHtml(nowCount) + '명</div><div class="uno-calendar-actions"><button class="uno-calendar-small-button secondary" type="button" data-close-daily-date>마감 처리</button></div></div>');
         }
         return '<div class="uno-calendar-toolbar"><button class="uno-admin-button secondary" type="button" data-daily-month-prev>이전 월</button><h3 class="uno-calendar-title">' + year + '년 ' + String(month + 1).padStart(2, "0") + '월</h3><button class="uno-admin-button secondary" type="button" data-daily-month-next>다음 월</button></div>' +
           buildDailyPatternPanel() +
-          '<p class="uno-section-note">아래 캘린더는 운영 규칙이 적용된 결과를 확인하는 화면입니다. 특정 날짜만 닫거나 다시 열어야 할 때만 예외 버튼을 사용합니다.</p>' +
+          '<p class="uno-section-note">아래 캘린더는 선택한 월의 운영 결과를 확인하는 화면입니다. 운영 요일과 기간은 위 규칙에서 관리하고, 특정 날짜를 닫아야 할 때만 마감 처리합니다.</p>' +
           '<div class="uno-calendar-grid">' + weekdays.map((day) => '<div class="uno-calendar-weekday">' + day + '</div>').join("") + cells.join("") + '</div>';
       };
 
@@ -701,14 +758,24 @@ uno_renewal_admin_render_pagehead(
         if (event.target.closest("[data-daily-month-prev]")) { ensureDailyMonth(); state.dailyMonth = new Date(state.dailyMonth.getFullYear(), state.dailyMonth.getMonth() - 1, 1); openModal("daily"); return; }
         if (event.target.closest("[data-daily-month-next]")) { ensureDailyMonth(); state.dailyMonth = new Date(state.dailyMonth.getFullYear(), state.dailyMonth.getMonth() + 1, 1); openModal("daily"); return; }
         const closeDaily = event.target.closest("[data-close-daily-date]");
-        if (closeDaily) { const cell = closeDaily.closest("[data-daily-date]"); try { closeDaily.disabled = true; setStatus("선택한 날짜를 예외 마감 처리하는 중입니다."); await apiRequest(dailyPayload(cell, "soldout")); setStatus("선택한 날짜가 마감 처리되었습니다.", "ok"); refreshCurrentModal(); } catch (error) { setStatus(error.message || "날짜를 마감 처리하지 못했습니다.", "warn"); } finally { closeDaily.disabled = false; } return; }
-        const openDaily = event.target.closest("[data-open-daily-date]");
-        if (openDaily) { const cell = openDaily.closest("[data-daily-date]"); try { openDaily.disabled = true; setStatus("선택한 날짜를 예외 운영 처리하는 중입니다."); await apiRequest(dailyPayload(cell, "available")); setStatus("선택한 날짜가 운영일로 처리되었습니다.", "ok"); refreshCurrentModal(); } catch (error) { setStatus(error.message || "날짜를 운영 처리하지 못했습니다.", "warn"); } finally { openDaily.disabled = false; } return; }
+        if (closeDaily) { const cell = closeDaily.closest("[data-daily-date]"); try { closeDaily.disabled = true; setStatus("선택한 날짜를 마감 처리하는 중입니다."); await apiRequest(dailyPayload(cell, "soldout")); setStatus("선택한 날짜가 마감 처리되었습니다.", "ok"); refreshCurrentModal(); } catch (error) { setStatus(error.message || "날짜를 마감 처리하지 못했습니다.", "warn"); } finally { closeDaily.disabled = false; } return; }
         const applyPattern = event.target.closest("[data-apply-daily-pattern]");
         if (applyPattern) { try { applyPattern.disabled = true; setStatus("반복 캘린더를 적용하는 중입니다."); await apiRequest(patternPayload()); setStatus("반복 캘린더가 적용되었습니다.", "ok"); refreshCurrentModal(); } catch (error) { setStatus(error.message || "반복 캘린더를 적용하지 못했습니다.", "warn"); } finally { applyPattern.disabled = false; } }
       });
 
+      document.addEventListener("input", (event) => {
+        const guideSearch = event.target.closest("[data-guide-search]");
+        if (!guideSearch) return;
+        filterGuideSelector(guideSearch.closest("[data-guide-selector]"), guideSearch.value);
+      });
+
       document.addEventListener("change", (event) => {
+        const guideOption = event.target.closest("[data-guide-option]");
+        if (guideOption) {
+          updateGuideSelector(guideOption.closest("[data-guide-selector]"));
+          return;
+        }
+
         const fileInput = event.target.closest("[data-thumbnail-file]");
         if (!fileInput || !fileInput.files || !fileInput.files[0]) return;
         const file = fileInput.files[0];

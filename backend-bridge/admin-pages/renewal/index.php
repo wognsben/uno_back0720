@@ -80,7 +80,7 @@ $todayCards = array(
 );
 
 $boardCards = array(
-    array('label' => '1:1문의', 'count' => uno_renewal_dashboard_board_count('cusTour', "wr_is_comment = '0' and wr_10 > 111"), 'href' => '/admin/board.php?bo_table=cusTour'),
+    array('label' => '1:1문의', 'count' => uno_renewal_dashboard_board_count('cusTour', "wr_is_comment = '0' and wr_10 > 111"), 'href' => '/admin/renewal/inquiries.php?board=cusTour'),
     array('label' => '묻고답하기', 'count' => uno_renewal_dashboard_board_count('qna', "wr_is_comment = '0' and SUBSTR(wr_datetime, 1, 10) = '{$nowYmd}'"), 'href' => '/admin/board.php?bo_table=qna'),
     array('label' => '여행후기', 'count' => uno_renewal_dashboard_board_count('write', "wr_is_comment = '0' and SUBSTR(wr_datetime, 1, 10) = '{$nowYmd}'"), 'href' => '/admin/board.php?bo_table=write'),
 );
@@ -145,21 +145,61 @@ foreach ($visitRows as $row) {
 }
 
 $topMenus = array(
-    array('label' => '예약관리', 'href' => '#reservation'),
-    array('label' => '회원관리', 'href' => '#members'),
-    array('label' => '상품관리', 'href' => '#products'),
-    array('label' => '투어 설정', 'href' => '#tour'),
-    array('label' => '사이트 설정', 'href' => '#site'),
-    array('label' => '기타', 'href' => '#system'),
+    array('label' => '예약관리', 'href' => '/admin/renewal/reservations.php'),
+    array('label' => '회원관리', 'href' => '/admin/renewal/members.php'),
+    array('label' => '상품관리', 'href' => '/admin/renewal/products.php'),
+    array('label' => '투어 설정', 'href' => '/admin/tourClose.php'),
+    array('label' => '사이트 설정', 'href' => '/admin/productDispIndex.php'),
+    array('label' => '접속 통계', 'href' => '/admin/renewal/visits.php'),
 );
 
 $moduleSections = array(
-    array('id' => 'reservation', 'title' => '예약관리', 'items' => array('세미패키지 예약관리', '데일리투어 예약관리', '예약 취소 / 환불 요청', '1:1 문의', 'KSNET 카드 결제 내역')),
-    array('id' => 'members', 'title' => '회원관리', 'items' => array('회원목록', '회원 상세', '예약 / 문의 이력')),
-    array('id' => 'products', 'title' => '상품관리', 'items' => array('상품 운영', '상품 네비게이션')),
-    array('id' => 'tour', 'title' => '투어 설정', 'items' => array('투어일 관리', '마감 / 마감 임박 / 예약 가능', '잔여 인원', '캘린더 표시 상태')),
-    array('id' => 'site', 'title' => '사이트 설정', 'items' => array('메인페이지 관리', '리뷰 / FAQ', '약관 / 주의사항', '근무시간 / 연락처', 'Footer / 취소 및 환불규정', 'About UNO / Contact')),
-    array('id' => 'system', 'title' => '기타', 'items' => array('접속자', '메일 발송 목록', '비즈톡 현황', 'API 상태 확인')),
+    array('id' => 'reservation', 'title' => '예약관리', 'items' => array(
+        array('label' => '예약 목록', 'href' => '/admin/renewal/reservations.php'),
+        array('label' => '세미패키지 예약관리', 'href' => '/admin/renewal/reservations.php?type=semi'),
+        array('label' => '데일리투어 예약관리', 'href' => '/admin/renewal/reservations.php?type=daily'),
+        array('label' => '예약 취소 / 환불 요청', 'href' => '/admin/renewal/reservations.php?status=91'),
+        array('label' => '관리자 1:1 문의', 'href' => '/admin/renewal/inquiries.php?board=cusTour'),
+        array('label' => 'KSNET 카드 결제 내역', 'href' => '/admin/renewal/payments.php'),
+    )),
+    array('id' => 'members', 'title' => '회원관리', 'items' => array(
+        array('label' => '회원 목록', 'href' => '/admin/renewal/members.php'),
+        array('label' => '회원 검색', 'href' => '/admin/renewal/members.php'),
+        array('label' => '가이드 회원', 'href' => '/admin/renewal/members.php?level=4'),
+        array('label' => 'B2B 회원', 'href' => '/admin/renewal/members.php?level=5'),
+        array('label' => 'B2B 매출 집계', 'href' => '/admin/b2b_account.php'),
+    )),
+    array('id' => 'products', 'title' => '상품관리', 'items' => array(
+        array('label' => '상품 운영', 'href' => '/admin/renewal/products.php'),
+        array('label' => '상품 네비게이션', 'href' => '/admin/renewal/product-navigation.php'),
+        array('label' => '상품 ID 매핑', 'href' => '/admin/renewal/product-mapping.php'),
+        array('label' => '상품 상세 FAQ', 'href' => '/admin/renewal/faqs.php'),
+        array('label' => '기존 상품 추가', 'href' => '/admin/write.php?bo_table=product'),
+    )),
+    array('id' => 'tour', 'title' => '투어 설정', 'items' => array(
+        array('label' => '예약 캘린더', 'href' => '/admin/regist_calendar.php'),
+        array('label' => '데일리투어 마감 / 인원', 'href' => '/admin/tourClose.php'),
+        array('label' => '요금 옵션', 'href' => '/admin/tourFee.php'),
+        array('label' => '가이드 배정', 'href' => '/admin/include_files/assignGuide.php'),
+        array('label' => '환율 / 티켓', 'href' => '/admin/tourExchange.php'),
+    )),
+    array('id' => 'site', 'title' => '사이트 설정', 'items' => array(
+        array('label' => '메인 / 추천 상품', 'href' => '/admin/productDispIndex.php'),
+        array('label' => '약관 / 개인정보', 'href' => '/admin/Config.php?gubun=privacy'),
+        array('label' => '취소 및 환불규정', 'href' => '/admin/Config.php?gubun=cancel'),
+        array('label' => 'Footer / 연락처', 'href' => '/admin/Config.php?gubun=foot'),
+        array('label' => '팝업 관리', 'href' => '/admin/newwinlist.php'),
+    )),
+    array('id' => 'system', 'title' => '기타', 'items' => array(
+        array('label' => '방문자 현황', 'href' => '/admin/renewal/visits.php'),
+        array('label' => '접속자 목록', 'href' => '/admin/renewal/visits.php?view=list'),
+        array('label' => '일별 접속 통계', 'href' => '/admin/renewal/visits.php?view=date'),
+        array('label' => '주간 접속 통계', 'href' => '/admin/renewal/visits.php?view=week'),
+        array('label' => '월간 접속 통계', 'href' => '/admin/renewal/visits.php?view=month'),
+        array('label' => '브라우저 통계', 'href' => '/admin/renewal/visits.php?view=browser'),
+        array('label' => '메일 발송 목록', 'href' => '/admin/emailHistory.php'),
+        array('label' => '비즈톡 현황', 'href' => '/admin/biztalk.php'),
+    )),
 );
 
 ?><!doctype html>
@@ -365,6 +405,19 @@ $moduleSections = array(
       font-size: 14px;
       line-height: 1.7;
       word-break: keep-all;
+    }
+
+    .section-link {
+      min-height: 40px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 14px;
+      border: 1px solid var(--ink);
+      color: var(--ink);
+      font-size: 13px;
+      font-weight: 900;
+      white-space: nowrap;
     }
 
     .panel {
@@ -632,6 +685,7 @@ $moduleSections = array(
       <div class="section-head">
         <h2>방문자 현황</h2>
         <p>Google Analytics 또는 외부 접속로그 분석 시스템과 데이터가 다를 수 있습니다.</p>
+        <a class="section-link" href="/admin/renewal/visits.php">방문자 현황 보기</a>
       </div>
       <div class="panel data-layout">
         <div class="bar-chart visit-chart" aria-label="최근 방문자 그래프">
@@ -677,18 +731,8 @@ $moduleSections = array(
         <?php foreach ($moduleSections as $section) { ?>
           <article class="module" id="<?php echo uno_renewal_admin_escape($section['id']); ?>">
             <h3><?php echo uno_renewal_admin_escape($section['title']); ?></h3>
-            <?php foreach ($section['items'] as $item) {
-                $href = '#';
-
-                if ($item === '상품 운영') {
-                    $href = '/admin/renewal/products.php';
-                } elseif ($item === '상품 네비게이션') {
-                    $href = '/admin/renewal/product-navigation.php';
-                } elseif ($item === '리뉴얼 상품 ID 매핑') {
-                    $href = '/admin/renewal/product-mapping.php';
-                }
-            ?>
-              <a href="<?php echo uno_renewal_admin_escape($href); ?>"><?php echo uno_renewal_admin_escape($item); ?></a>
+            <?php foreach ($section['items'] as $item) { ?>
+              <a href="<?php echo uno_renewal_admin_escape($item['href']); ?>"><?php echo uno_renewal_admin_escape($item['label']); ?></a>
             <?php } ?>
           </article>
         <?php } ?>

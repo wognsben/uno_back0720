@@ -61,6 +61,50 @@ function uno_api_reservation_editor_date($value)
     return substr((string) $value, 0, 16);
 }
 
+function uno_api_reservation_editor_payment($row)
+{
+    $cardPay = isset($row['card_pay']) ? trim((string) $row['card_pay']) : '';
+    $payment = array(
+        'method' => $cardPay !== '' ? 'card' : 'bank',
+        'methodLabel' => $cardPay !== '' ? '카드' : '은행',
+        'approvalNo' => $cardPay,
+        'ksnet' => null,
+        'canCancelCard' => false,
+    );
+
+    if ($cardPay === '') {
+        return $payment;
+    }
+
+    $safeCardPay = uno_api_reservation_editor_escape($cardPay);
+    $payRow = sql_fetch("select * from kspay_result where ApplNum = '{$safeCardPay}' order by id desc limit 1");
+    if (!$payRow || !is_array($payRow)) {
+        return $payment;
+    }
+
+    $cancelDate = isset($payRow['CancelDate']) ? trim((string) $payRow['CancelDate']) : '';
+    $payMethod = isset($payRow['PayMethod']) ? (string) $payRow['PayMethod'] : '신용카드';
+    $payment['methodLabel'] = $cancelDate !== '' ? '은행' : '카드';
+    $payment['canCancelCard'] = $cancelDate === '' && $payMethod !== '계좌이체';
+    $payment['ksnet'] = array(
+        'payMethod' => $payMethod,
+        'result' => isset($payRow['Result']) ? (string) $payRow['Result'] : '',
+        'resultCode' => isset($payRow['ResultCode']) ? (string) $payRow['ResultCode'] : '',
+        'orderNumber' => isset($payRow['OrderNumber']) ? (string) $payRow['OrderNumber'] : '',
+        'amount' => isset($payRow['TotPrice']) ? (string) $payRow['TotPrice'] : '',
+        'amountLabel' => uno_api_reservation_editor_money(isset($payRow['TotPrice']) ? $payRow['TotPrice'] : 0) . '원',
+        'approvedAt' => isset($payRow['AppDate']) ? (string) $payRow['AppDate'] : '',
+        'approvalNo' => isset($payRow['ApplNum']) ? (string) $payRow['ApplNum'] : $cardPay,
+        'appCode' => isset($payRow['AppCode']) ? (string) $payRow['AppCode'] : '',
+        'aquCode' => isset($payRow['AquCode']) ? (string) $payRow['AquCode'] : '',
+        'message1' => isset($payRow['Meassage1']) ? (string) $payRow['Meassage1'] : '',
+        'message2' => isset($payRow['Meassage2']) ? (string) $payRow['Meassage2'] : '',
+        'cancelDate' => $cancelDate,
+    );
+
+    return $payment;
+}
+
 function uno_api_reservation_editor_fetch($rid)
 {
     $rid = (int) $rid;
@@ -106,6 +150,7 @@ function uno_api_reservation_editor_fetch($rid)
             'extraPayment' => isset($row['total_fee3']) ? (string) $row['total_fee3'] : '0',
             'depositLabel' => uno_api_reservation_editor_money(isset($row['total_fee1']) ? $row['total_fee1'] : 0) . '원',
         ),
+        'payment' => uno_api_reservation_editor_payment($row),
         'memo' => array(
             'request' => isset($row['regMemo']) ? (string) $row['regMemo'] : '',
             'admin' => isset($row['adminMemo']) ? (string) $row['adminMemo'] : '',

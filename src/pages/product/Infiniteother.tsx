@@ -80,11 +80,7 @@ export const normalizeProductListRelatedProducts = (
 
   return products
     .filter((product) => product.id !== currentProductId)
-    .filter(
-      (product) =>
-        (getProductListItemType(product) ?? currentProductType) ===
-        currentProductType,
-    )
+    .filter((product) => getProductListItemType(product) === currentProductType)
     .map((product) => ({
       id: product.id,
       title: product.title,
