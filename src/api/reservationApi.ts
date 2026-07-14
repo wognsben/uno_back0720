@@ -214,6 +214,7 @@ export type ProductAvailabilityResponse = {
 
 export type ReservationOptionRequest = {
   feeId?: number | string;
+  legacyPackageScheduleId?: number | string;
   personCount: number;
 };
 
@@ -450,23 +451,38 @@ export type InquiryThreadResponse = {
   messages: InquiryMessage[];
 };
 
+const normalizeTourTime = (value?: string | null): string => {
+  if (!value) return "";
+
+  const match = value.match(/\b([01]\d|2[0-3]):[0-5]\d\b/);
+  return match?.[0] ?? "";
+};
+
 export const createReservationDraftRequest = (
   payload: ReservationStoragePayload,
   details: Partial<ReservationDraftRequest> = {},
-): ReservationDraftRequest => ({
-  productId: payload.productId,
-  legacyProductId: payload.legacyProductId,
-  legacyPackageScheduleId: payload.legacyPackageScheduleId,
-  tourDate: payload.selectedDateId,
-  tourTime: payload.selectedDateLabel,
-  items: [
-    {
-      feeId: payload.legacyFeeOptionId,
-      personCount: payload.personCount,
-    },
-  ],
-  ...details,
-});
+): ReservationDraftRequest => {
+  const feeId =
+    payload.productType === "semi"
+      ? payload.legacyPackageScheduleId ?? payload.legacyFeeOptionId
+      : payload.legacyFeeOptionId;
+
+  return {
+    productId: payload.productId,
+    legacyProductId: payload.legacyProductId,
+    legacyPackageScheduleId: payload.legacyPackageScheduleId,
+    tourDate: payload.selectedDateId,
+    tourTime: normalizeTourTime(payload.selectedDateLabel),
+    items: [
+      {
+        feeId,
+        legacyPackageScheduleId: payload.legacyPackageScheduleId,
+        personCount: payload.personCount,
+      },
+    ],
+    ...details,
+  };
+};
 
 export const getAuthSession = () =>
   unoApiData<AuthSessionResponse>("/auth/session.php");

@@ -2422,6 +2422,8 @@ export default function ProductDetail({
       remoteGuides.length > 0
         ? "이 상품은 아래 담당 가이드가 현장 안내를 진행합니다."
         : "";
+    const remoteDefaultFee = remoteProductDetail?.feeOptions?.find((item) => item.isDefault) ??
+      remoteProductDetail?.feeOptions?.[0];
     const remoteAvailabilityDates: AvailableDate[] = (remoteAvailability?.dates ?? []).map(
       (date) => {
         const schedule = remoteProductDetail?.packageSchedules?.find(
@@ -2429,13 +2431,11 @@ export default function ProductDetail({
             String(item.id) === String(date.legacyPackageScheduleId) ||
             item.startDate === date.date,
         );
-        const defaultFee = remoteProductDetail?.feeOptions?.find((item) => item.isDefault) ??
-          remoteProductDetail?.feeOptions?.[0];
         const parsedDate = parseDateId(date.date);
         const price =
           schedule?.totalPrice ||
           schedule?.deposit ||
-          defaultFee?.deposit ||
+          remoteDefaultFee?.deposit ||
           remoteBasePrice ||
           baseDetailData.basePrice;
         const capacity =
@@ -2446,6 +2446,8 @@ export default function ProductDetail({
 
         return {
           id: date.date,
+          legacyFeeOptionId: remoteDefaultFee?.id,
+          legacyPackageScheduleId: schedule?.id ?? date.legacyPackageScheduleId,
           label: date.date.replaceAll("-", "."),
           day: getWeekdayKo(parsedDate),
           seats: date.remainingSeats ?? capacity,
@@ -2496,6 +2498,7 @@ export default function ProductDetail({
         ...baseDetailData,
         id: productId || baseDetailData.id,
         legacyPackageScheduleId:
+          remoteDefaultFee?.id ??
           getLegacyPackageScheduleId(productId) ??
           baseDetailData.legacyPackageScheduleId,
         href: pathname || baseDetailData.href,
@@ -2510,6 +2513,7 @@ export default function ProductDetail({
           getLegacyProductId(productId) ??
           baseDetailData.legacyProductId,
         legacyFeeOptionId:
+          remoteDefaultFee?.id ??
           remoteProductDetail?.legacyFeeOptionId ??
           getLegacyFeeOptionId(productId) ??
           baseDetailData.legacyFeeOptionId,
@@ -2558,11 +2562,13 @@ export default function ProductDetail({
         getLegacyProductId(sourceProduct.id) ??
         baseDetailData.legacyProductId,
       legacyFeeOptionId:
+        remoteDefaultFee?.id ??
         remoteProductDetail?.legacyFeeOptionId ??
         sourceProduct.legacyFeeOptionId ??
         getLegacyFeeOptionId(sourceProduct.id) ??
         baseDetailData.legacyFeeOptionId,
       legacyPackageScheduleId:
+        remoteDefaultFee?.id ??
         sourceProduct.legacyPackageScheduleId ??
         getLegacyPackageScheduleId(sourceProduct.id) ??
         baseDetailData.legacyPackageScheduleId,

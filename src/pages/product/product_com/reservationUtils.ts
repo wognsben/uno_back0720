@@ -8,6 +8,8 @@ import { createElement } from "react";
 
 export type AvailableDate = {
   id: string;
+  legacyFeeOptionId?: number | string;
+  legacyPackageScheduleId?: number | string;
   label: string;
   day: string;
   seats: number;
@@ -143,6 +145,8 @@ export const createDailyCalendarDate = (
 
   return {
     id: dateId,
+    legacyFeeOptionId: referenceDate?.legacyFeeOptionId,
+    legacyPackageScheduleId: referenceDate?.legacyPackageScheduleId,
     label: dateId.replaceAll("-", "."),
     day: getWeekdayKo(date),
     seats: isSunday ? 0 : fallbackCapacity,

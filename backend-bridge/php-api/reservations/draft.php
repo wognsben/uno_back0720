@@ -86,6 +86,21 @@ function uno_api_draft_client_ip()
     return isset($_SERVER['REMOTE_ADDR']) ? (string) $_SERVER['REMOTE_ADDR'] : '';
 }
 
+function uno_api_draft_normalize_tour_time($value)
+{
+    $value = trim((string) $value);
+
+    if ($value === '') {
+        return '';
+    }
+
+    if (preg_match('/\b([01]\d|2[0-3]):[0-5]\d\b/', $value, $matches)) {
+        return $matches[0];
+    }
+
+    uno_api_error('INVALID_TOUR_TIME', '투어 시간이 올바르지 않습니다.', 400);
+}
+
 function uno_api_draft_fetch_daily_option($legacyProductId, $feeId)
 {
     $legacyProductId = (int) $legacyProductId;
@@ -166,6 +181,9 @@ function uno_api_draft_build_lines($payload, $mapping, $productType)
             $scheduleId = isset($item['feeId']) && $item['feeId']
                 ? $item['feeId']
                 : (isset($payload['legacyPackageScheduleId']) ? $payload['legacyPackageScheduleId'] : null);
+            if (isset($item['legacyPackageScheduleId']) && $item['legacyPackageScheduleId']) {
+                $scheduleId = $item['legacyPackageScheduleId'];
+            }
             if (!$scheduleId) {
                 uno_api_error('VALIDATION_ERROR', '출발 일정 ID가 필요합니다.', 400);
             }
@@ -205,8 +223,9 @@ function uno_api_draft_insert_row($payload, $mapping, $productType, $lines)
         : array();
     $legacyProductId = (int) $mapping['legacyProductId'];
     $tourDate = isset($payload['tourDate']) ? trim((string) $payload['tourDate']) : '';
-    $tourTime = isset($payload['tourTime']) ? trim((string) $payload['tourTime']) : '';
+    $tourTime = uno_api_draft_normalize_tour_time(isset($payload['tourTime']) ? $payload['tourTime'] : '');
     $memo = isset($payload['memo']) ? trim((string) $payload['memo']) : '';
+    $adminMemo = isset($payload['adminMemo']) ? trim((string) $payload['adminMemo']) : '';
     $roomInfo = isset($payload['roomInfo']) ? trim((string) $payload['roomInfo']) : '';
     $applicantName = isset($applicant['name']) && trim((string) $applicant['name']) !== '' ? trim((string) $applicant['name']) : $member['mb_name'];
     $applicantEmail = isset($applicant['email']) && trim((string) $applicant['email']) !== '' ? trim((string) $applicant['email']) : $member['mb_email'];
@@ -243,11 +262,15 @@ function uno_api_draft_insert_row($payload, $mapping, $productType, $lines)
         'total_fee4' => uno_api_draft_sum($lines, 'packageTotal'),
         'total_fee_air' => uno_api_draft_sum($lines, 'airfare'),
         'regMemo' => $memo,
+        'adminMemo' => $adminMemo,
+        'adminMemoCancel' => '',
         'roominfo' => $roomInfo,
         'status' => '1',
         'mb_ip' => uno_api_draft_client_ip(),
         'nation' => $productType,
         'isMobile' => 'N',
+        'memCancelDate' => 0,
+        'adminCancelDate' => 0,
         'del_time' => 0,
     );
 
