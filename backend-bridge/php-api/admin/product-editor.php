@@ -36,6 +36,18 @@ function uno_api_editor_money($value)
     return (int) preg_replace('/[^0-9-]/', '', (string) $value);
 }
 
+function uno_api_editor_money_or_text($value)
+{
+    $value = trim((string) $value);
+    if ($value === '') {
+        return '';
+    }
+
+    return preg_match('/^-?[0-9,]+$/', $value)
+        ? (string) uno_api_editor_money($value)
+        : $value;
+}
+
 function uno_api_editor_text($value)
 {
     return trim((string) $value);
@@ -287,7 +299,7 @@ function uno_api_editor_fetch_product($legacyProductId)
     $row = sql_fetch(
         "select wr_id, ca_name, wr_subject, wr_content, wr_reg_result,
                 is_passport, is_delivery, is_roominfo, wr_2, wr_5,
-                fee_org, wr_b2b_result, is_ticket, is_best_tour, carlendar_max_m,
+                fee_org, wr_4, wr_b2b_result, is_ticket, is_best_tour, carlendar_max_m,
                 reg_msg_top, reg_msg_bottom, reg_msg_event, reg_msg_middel,
                 voucher_msg, wr_can_rule, pop_content, guide_info, recommend_tour, wr_event_course
            from {$productTable}
@@ -348,6 +360,7 @@ function uno_api_editor_fetch_product($legacyProductId)
         ),
         'extras' => array(
             'originalFeeText' => isset($row['fee_org']) ? (string) $row['fee_org'] : '',
+            'priceDescription' => isset($row['wr_4']) ? (string) $row['wr_4'] : '',
             'b2bStatus' => isset($row['wr_b2b_result']) ? (string) $row['wr_b2b_result'] : '',
             'isTicket' => uno_api_reservation_bool(isset($row['is_ticket']) ? $row['is_ticket'] : ''),
             'isBestTour' => uno_api_reservation_bool(isset($row['is_best_tour']) ? $row['is_best_tour'] : ''),
@@ -364,6 +377,50 @@ function uno_api_editor_fetch_product($legacyProductId)
             'eventCourse' => isset($row['wr_event_course']) ? (string) $row['wr_event_course'] : '',
         ),
     );
+}
+
+function uno_api_editor_ticket_option_label($row)
+{
+    $candidates = array('ticket_subject', 'subject', 'title', 'name', 'wr_subject', 'fee_subject');
+    foreach ($candidates as $column) {
+        if (isset($row[$column]) && trim((string) $row[$column]) !== '') {
+            return (string) $row[$column];
+        }
+    }
+
+    $priceCandidates = array('fee', 'price', 'ticket_fee', 'amount');
+    foreach ($priceCandidates as $column) {
+        if (isset($row[$column]) && trim((string) $row[$column]) !== '') {
+            return 'Ticket #' . (isset($row['id']) ? (string) $row['id'] : '') . ' / ' . (string) $row[$column];
+        }
+    }
+
+    return 'Ticket #' . (isset($row['id']) ? (string) $row['id'] : '');
+}
+
+function uno_api_editor_fetch_ticket_fee_options()
+{
+    if (!function_exists('sql_query') || !function_exists('sql_fetch_array')) {
+        return array();
+    }
+
+    $result = sql_query("select * from tour_fee_ticket order by id asc");
+    $items = array(
+        array('id' => '', 'label' => '선택 안 함'),
+    );
+
+    while ($row = sql_fetch_array($result)) {
+        if (!isset($row['id']) || (string) $row['id'] === '') {
+            continue;
+        }
+
+        $items[] = array(
+            'id' => (string) $row['id'],
+            'label' => uno_api_editor_ticket_option_label($row),
+        );
+    }
+
+    return $items;
 }
 
 function uno_api_editor_fetch_semi_schedules($legacyProductId)
@@ -404,7 +461,7 @@ function uno_api_editor_fetch_daily_fee_options($legacyProductId)
 {
     $legacyProductId = (int) $legacyProductId;
     $result = sql_query(
-        "select id, fee_subject, fee1, fee2, fee3, is_first
+        "select id, fee_subject, fee1, fee2, fee3, is_first, fee_ticket_id
            from tour_fee
           where wr_id = '{$legacyProductId}'
           order by id asc"
@@ -416,9 +473,10 @@ function uno_api_editor_fetch_daily_fee_options($legacyProductId)
             'id' => isset($row['id']) ? (int) $row['id'] : 0,
             'label' => isset($row['fee_subject']) ? (string) $row['fee_subject'] : '',
             'deposit' => uno_api_editor_money(isset($row['fee1']) ? $row['fee1'] : 0),
-            'localPayment' => uno_api_editor_money(isset($row['fee2']) ? $row['fee2'] : 0),
-            'extraPayment' => uno_api_editor_money(isset($row['fee3']) ? $row['fee3'] : 0),
+            'localPayment' => isset($row['fee2']) ? (string) $row['fee2'] : '',
+            'extraPayment' => isset($row['fee3']) ? (string) $row['fee3'] : '',
             'isDefault' => uno_api_reservation_bool(isset($row['is_first']) ? $row['is_first'] : ''),
+            'ticketFeeId' => isset($row['fee_ticket_id']) ? (string) $row['fee_ticket_id'] : '',
         );
     }
 
@@ -527,6 +585,7 @@ function uno_api_editor_get_payload($legacyProductId)
     $data = array(
         'product' => $product,
         'guideOptions' => uno_api_editor_fetch_guide_options(),
+        'ticketFeeOptions' => uno_api_editor_fetch_ticket_fee_options(),
         'productOptions' => uno_api_editor_fetch_product_options($legacyProductId),
         'semiSchedules' => array(),
         'dailyFeeOptions' => array(),
@@ -558,6 +617,7 @@ function uno_api_editor_save_product($legacyProductId, $body)
     $requiresRoomInfo = !empty($body['requiresRoomInfo']) ? 'Y' : '';
     $extras = isset($body['extras']) && is_array($body['extras']) ? $body['extras'] : array();
     $originalFeeText = uno_api_editor_escape(isset($extras['originalFeeText']) ? $extras['originalFeeText'] : '');
+    $priceDescription = uno_api_editor_escape(isset($extras['priceDescription']) ? $extras['priceDescription'] : '');
     $b2bStatus = uno_api_editor_escape(isset($extras['b2bStatus']) ? $extras['b2bStatus'] : '');
     $isTicket = !empty($extras['isTicket']) ? 'Y' : '';
     $isBestTour = !empty($extras['isBestTour']) ? 'Y' : '';
@@ -589,6 +649,7 @@ function uno_api_editor_save_product($legacyProductId, $body)
                 is_delivery = '{$requiresDelivery}',
                 is_roominfo = '{$requiresRoomInfo}',
                 fee_org = '{$originalFeeText}',
+                wr_4 = '{$priceDescription}',
                 wr_b2b_result = '{$b2bStatus}',
                 is_ticket = '{$isTicket}',
                 is_best_tour = '{$isBestTour}',
@@ -613,10 +674,12 @@ function uno_api_editor_save_pricing_meta($legacyProductId, $body)
     $productTable = uno_api_reservation_table_product();
     $extras = isset($body['extras']) && is_array($body['extras']) ? $body['extras'] : array();
     $originalFeeText = uno_api_editor_escape(isset($extras['originalFeeText']) ? $extras['originalFeeText'] : '');
+    $priceDescription = uno_api_editor_escape(isset($extras['priceDescription']) ? $extras['priceDescription'] : '');
 
     sql_query(
         "update {$productTable}
-            set fee_org = '{$originalFeeText}'
+            set fee_org = '{$originalFeeText}',
+                wr_4 = '{$priceDescription}'
           where wr_id = '{$legacyProductId}'"
     );
 }
@@ -628,6 +691,7 @@ function uno_api_editor_save_audit_fields($legacyProductId, $body)
     $extras = isset($body['extras']) && is_array($body['extras']) ? $body['extras'] : array();
 
     $originalFeeText = uno_api_editor_escape(isset($extras['originalFeeText']) ? $extras['originalFeeText'] : '');
+    $priceDescription = uno_api_editor_escape(isset($extras['priceDescription']) ? $extras['priceDescription'] : '');
     $b2bStatus = uno_api_editor_escape(isset($extras['b2bStatus']) ? $extras['b2bStatus'] : '');
     $isTicket = !empty($extras['isTicket']) ? 'Y' : '';
     $isBestTour = !empty($extras['isBestTour']) ? 'Y' : '';
@@ -643,6 +707,7 @@ function uno_api_editor_save_audit_fields($legacyProductId, $body)
     sql_query(
         "update {$productTable}
             set fee_org = '{$originalFeeText}',
+                wr_4 = '{$priceDescription}',
                 wr_b2b_result = '{$b2bStatus}',
                 is_ticket = '{$isTicket}',
                 is_best_tour = '{$isBestTour}',
@@ -909,8 +974,9 @@ function uno_api_editor_save_daily_fee_option($legacyProductId, $body)
     $feeId = isset($body['id']) ? (int) $body['id'] : 0;
     $label = uno_api_editor_escape(isset($body['label']) ? $body['label'] : '');
     $deposit = uno_api_editor_money(isset($body['deposit']) ? $body['deposit'] : 0);
-    $localPayment = uno_api_editor_money(isset($body['localPayment']) ? $body['localPayment'] : 0);
-    $extraPayment = uno_api_editor_money(isset($body['extraPayment']) ? $body['extraPayment'] : 0);
+    $localPayment = uno_api_editor_escape(uno_api_editor_money_or_text(isset($body['localPayment']) ? $body['localPayment'] : ''));
+    $extraPayment = uno_api_editor_escape(uno_api_editor_money_or_text(isset($body['extraPayment']) ? $body['extraPayment'] : ''));
+    $ticketFeeId = uno_api_editor_escape(isset($body['ticketFeeId']) ? trim((string) $body['ticketFeeId']) : '');
     $isDefault = !empty($body['isDefault']) ? 'Y' : '';
 
     if ($label === '') {
@@ -928,6 +994,7 @@ function uno_api_editor_save_daily_fee_option($legacyProductId, $body)
                     fee1 = '{$deposit}',
                     fee2 = '{$localPayment}',
                     fee3 = '{$extraPayment}',
+                    fee_ticket_id = '{$ticketFeeId}',
                     is_first = '{$isDefault}'
               where id = '{$feeId}'
                 and wr_id = '{$legacyProductId}'"
@@ -942,6 +1009,7 @@ function uno_api_editor_save_daily_fee_option($legacyProductId, $body)
                 fee1 = '{$deposit}',
                 fee2 = '{$localPayment}',
                 fee3 = '{$extraPayment}',
+                fee_ticket_id = '{$ticketFeeId}',
                 is_first = '{$isDefault}'"
     );
 }

@@ -154,6 +154,8 @@ function uno_api_reservation_editor_fetch($rid)
         uno_api_error('NOT_FOUND', '예약 정보를 찾을 수 없습니다.', 404);
     }
 
+    $detail = uno_api_reservation_response_from_row($row);
+
     return array(
         'id' => (int) $row['id'],
         'createdAt' => uno_api_reservation_editor_date(isset($row['regDate']) ? $row['regDate'] : ''),
@@ -179,6 +181,7 @@ function uno_api_reservation_editor_fetch($rid)
             'extraPayment' => isset($row['total_fee3']) ? (string) $row['total_fee3'] : '0',
             'depositLabel' => uno_api_reservation_editor_money(isset($row['total_fee1']) ? $row['total_fee1'] : 0) . '원',
         ),
+        'options' => isset($detail['options']) ? $detail['options'] : array(),
         'payment' => uno_api_reservation_editor_payment($row),
         'memo' => array(
             'request' => isset($row['regMemo']) ? (string) $row['regMemo'] : '',

@@ -129,6 +129,76 @@ function uno_renewal_reservation_member_count($value)
     return $total;
 }
 
+function uno_renewal_reservation_pipe_values($value)
+{
+    $values = array();
+    foreach (explode('|', (string) $value) as $item) {
+        $item = trim((string) $item);
+        if ($item !== '') {
+            $values[] = $item;
+        }
+    }
+
+    return $values;
+}
+
+function uno_renewal_reservation_fee_label($productId, $feeId, $type)
+{
+    $productId = (int) $productId;
+    $feeId = (int) $feeId;
+
+    if ($feeId <= 0) {
+        return '신청구분';
+    }
+
+    if ($type === 'semi') {
+        $row = uno_renewal_reservation_fetch(
+            "select start_time
+               from v2_pkgTour
+              where pid = '{$productId}'
+                and id = '{$feeId}'"
+        );
+
+        return !empty($row['start_time']) ? (string) $row['start_time'] : '출발 일정';
+    }
+
+    $row = uno_renewal_reservation_fetch(
+        "select fee_subject
+           from tour_fee
+          where wr_id = '{$productId}'
+            and id = '{$feeId}'"
+    );
+
+    return !empty($row['fee_subject']) ? (string) $row['fee_subject'] : '신청구분';
+}
+
+function uno_renewal_reservation_option_lines($row)
+{
+    $type = uno_renewal_reservation_type_from_row_v2($row);
+    $productId = isset($row['pid']) ? (int) $row['pid'] : 0;
+    $feeIds = uno_renewal_reservation_pipe_values(isset($row['fee_id']) ? $row['fee_id'] : '');
+    $memberCounts = uno_renewal_reservation_pipe_values(isset($row['membCnt']) ? $row['membCnt'] : '');
+    $lines = array();
+
+    foreach ($feeIds as $index => $feeId) {
+        $count = isset($memberCounts[$index]) ? (int) $memberCounts[$index] : 0;
+        if ($count < 1) {
+            continue;
+        }
+
+        $lines[] = uno_renewal_reservation_fee_label($productId, $feeId, $type) . ' ' . $count . '명';
+    }
+
+    if (!count($lines)) {
+        $total = uno_renewal_reservation_member_count(isset($row['membCnt']) ? $row['membCnt'] : '');
+        if ($total > 0) {
+            $lines[] = '총 ' . $total . '명';
+        }
+    }
+
+    return $lines;
+}
+
 function uno_renewal_reservation_type_condition_v2($type, $alias = 'p')
 {
     if ($type === 'semi') {
@@ -341,7 +411,7 @@ $reservationGroups = array(
     'other' => array('label' => '기타 예약내역', 'rows' => array()),
 );
 $result = uno_renewal_reservation_query(
-    "select r.id, r.regDate, r.mb_id, r.mb_name, r.mb_email, r.mb_hp, r.tourDay, r.status, r.nation, r.total_fee1, r.total_fee2, r.card_pay,
+    "select r.id, r.regDate, r.mb_id, r.mb_name, r.mb_email, r.mb_hp, r.tourDay, r.status, r.nation, r.pid, r.fee_id, r.membCnt, r.total_fee1, r.total_fee2, r.card_pay,
             p.wr_subject, p.ca_name
        from tour_reg r
        left join g5_write_product p on r.pid = p.wr_id
@@ -616,6 +686,9 @@ uno_renewal_admin_render_pagehead(
                   <div class="reservation-title"><?php echo uno_renewal_admin_escape(isset($row['mb_name']) && $row['mb_name'] !== '' ? $row['mb_name'] : $row['mb_id']); ?></div>
                   <div class="reservation-sub"><?php echo uno_renewal_admin_escape(isset($row['mb_email']) ? $row['mb_email'] : ''); ?></div>
                   <div class="reservation-sub"><?php echo uno_renewal_admin_escape(isset($row['mb_hp']) ? $row['mb_hp'] : ''); ?></div>
+                  <?php foreach (uno_renewal_reservation_option_lines($row) as $optionLine) { ?>
+                    <div class="reservation-sub"><?php echo uno_renewal_admin_escape($optionLine); ?></div>
+                  <?php } ?>
                 </td>
                 <td>
                   <div>예약금 <?php echo number_format((int) str_replace(',', '', isset($row['total_fee1']) ? $row['total_fee1'] : 0)); ?>원</div>
@@ -765,6 +838,21 @@ uno_renewal_admin_render_pagehead(
         '</article>';
       };
 
+      const renderOptionCard = (data) => {
+        const options = Array.isArray(data.options) ? data.options : [];
+        const rows = options.length
+          ? options.map((option) => {
+              const label = option.label || "신청구분";
+              const count = option.personCount || 0;
+              const deposit = option.deposit ? Number(option.deposit).toLocaleString("ko-KR") + "원" : "-";
+              const localPayment = option.localPayment || option.extraPayment || "";
+              return detailRow(label, String(count) + "명 / 예약금 " + deposit + (localPayment ? " / 현지 " + localPayment : ""));
+            }).join("")
+          : detailRow("신청구분", "저장된 신청구분별 인원 정보 없음");
+
+        return '<article class="reservation-modal-card full"><h3>신청구분별 인원</h3>' + rows + '</article>';
+      };
+
       const renderReservation = (data) => {
         activeReservation = data;
         reservationTitle.textContent = "예약 #" + data.id;
@@ -790,6 +878,7 @@ uno_renewal_admin_render_pagehead(
               '<div class="reservation-form-field"><label>상태 변경</label><select data-reservation-field="status">' + statusOptions(data.status) + '</select></div>' +
             '</article>' +
             '<article class="reservation-modal-card"><h3>요청사항</h3><div style="white-space:pre-wrap;line-height:1.65;color:var(--uno-muted);">' + reservationEscape(data.memo?.request || "등록된 요청사항이 없습니다.") + '</div></article>' +
+            renderOptionCard(data) +
             renderPaymentCard(data) +
             '<article class="reservation-modal-card full"><h3>바우처 / 알림 발송</h3>' +
               '<div class="reservation-tool-actions">' +

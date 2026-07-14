@@ -432,3 +432,85 @@ npm run build
 - KSNET 결제/취소
 - 1:1 문의
 - 관리자 예약/회원/결제 화면
+
+## 2026-07-14 추가 확인 사항 - 상품 요금 구조
+
+다음 작업부터는 아래 문구로 시작하면 됩니다.
+
+```text
+현재까지 확정된 사항입니다.
+
+(기존 내용은 그대로 유지)
+
+[추가 확인 사항]
+
+1.
+fee_org = 정상가격
+
+2.
+fee_subject = 신청구분
+
+3.
+fee1 = 홈페이지 예약금
+```
+
+누적 업데이트 방식:
+
+- 이 문서는 기존 내용을 삭제하지 않고 아래쪽에 확정 사항을 계속 추가합니다.
+- 상품 상세페이지 프런트와 리뉴얼 관리자 백엔드의 요금 구조는 기존 운영 DB 기준을 우선합니다.
+- 새 작업을 시작할 때는 이 문서의 기존 예약/장바구니/마이페이지 흐름과 아래 요금 매핑을 함께 기준으로 봅니다.
+
+이번에 추가 확정된 DB 매핑:
+
+| DB 필드 | 의미 | 적용 위치 |
+| --- | --- | --- |
+| `g5_write_product.fee_org` | 정상가격 | 상품 전체 정상가격/전체 상품가 표시 |
+| `tour_fee.fee_subject` | 신청구분 | 요금 옵션명, 예약 인원 선택 구분 |
+| `tour_fee.fee1` | 홈페이지 예약금 | 프런트 예약금 표시 및 예약금 합계 계산 |
+
+주의:
+
+- `fee_org`는 정상가격이며 `wr_4` 가격 안내 문구와 섞지 않습니다.
+- `fee_subject`는 임의 가공하지 말고 운영 DB 값을 기준으로 표시합니다.
+- `fee1`은 사용자가 홈페이지에서 확인하고 예약 시 합산되는 예약금입니다.
+
+## 2026-07-14 구현 업데이트 - tour_fee 요금 매핑 반영
+
+이번 구현에서 리뉴얼 관리자와 상품 상세 프런트의 요금 구조를 기존 운영 DB 기준으로 보강했습니다.
+
+관리자 상품 편집:
+
+- `label`은 `tour_fee.fee_subject`에 저장합니다. UI 라벨은 신청구분으로 정리했습니다.
+- `deposit`은 `tour_fee.fee1`에 저장합니다. UI 라벨은 홈페이지 예약금으로 정리했습니다.
+- `localPayment`은 `tour_fee.fee2`에 저장합니다. 숫자뿐 아니라 `-` 같은 기존 문자열 값을 보존합니다.
+- `extraPayment`은 `tour_fee.fee3`에 저장합니다. 숫자 강제 변환을 하지 않고 기존 문자열 값을 보존합니다.
+- `isDefault`는 `tour_fee.is_first`에 저장합니다. UI 라벨은 대표요금으로 정리했습니다.
+- `ticketFeeId`는 `tour_fee.fee_ticket_id`에 저장합니다.
+- `originalFeeText`는 기존 호환 필드명은 유지하되 실제 저장 위치는 `g5_write_product.fee_org`입니다.
+
+상품 상세 API:
+
+- 데일리투어 `feeOptions`는 `tour_fee`의 전체 유효 옵션을 `id asc` 순서로 내려줍니다.
+- `feeOptions[].id`는 실제 `tour_fee.id`입니다.
+- `feeOptions[].subject` / `label`은 `fee_subject`입니다.
+- `feeOptions[].deposit`은 `fee1`입니다.
+- `feeOptions[].advanceLocalPayment`은 `fee2`입니다.
+- `feeOptions[].localPayment`은 `fee3`입니다.
+- `feeOptions[].ticketFeeId`는 `fee_ticket_id`입니다.
+- `feeOptions[].isPrimary` / `isDefault`는 `is_first === 'Y'` 기준입니다.
+- `originalPrice`는 `g5_write_product.fee_org`입니다.
+- `priceDescription`은 `g5_write_product.wr_4`입니다.
+
+프런트 예약/장바구니 payload:
+
+- 데일리투어는 신청구분별 인원을 선택할 수 있도록 `items: [{ feeId, personCount }]` 구조를 지원합니다.
+- `feeId`는 프런트 임의 옵션 ID가 아니라 실제 `tour_fee.id`입니다.
+- 선택 인원이 0명인 옵션은 payload에서 제외합니다.
+- 모든 신청구분 합계가 0명이면 장바구니/예약 진행 버튼을 비활성화합니다.
+- 세미패키지는 기존 `v2_pkgTour.id` 기반 단일 일정/인원 구조를 유지합니다.
+
+검증:
+
+- `php -l backend-bridge/php-api/admin/product-editor.php` 통과
+- `php -l backend-bridge/php-api/products/detail.php` 통과
+- `pnpm build` 통과

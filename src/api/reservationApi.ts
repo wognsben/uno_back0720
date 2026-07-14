@@ -65,10 +65,15 @@ export type ProductSummary = {
 export type ProductFeeOption = {
   id: number | string;
   label: string;
+  subject?: string;
   deposit: number;
-  localPayment?: number;
+  advanceLocalPayment?: number | string;
+  localPayment?: number | string;
+  extraPayment?: number | string;
   localPaymentCurrency?: "EUR" | "KRW" | "USD" | "JPY";
+  ticketFeeId?: number | string;
   isDefault?: boolean;
+  isPrimary?: boolean;
 };
 
 export type PackageScheduleOption = {
@@ -128,6 +133,8 @@ export type ProductTourOptions = {
 };
 
 export type ProductDetailResponse = ProductSummary & {
+  originalPrice?: number;
+  priceDescription?: string;
   reservationDefaults?: {
     requiresPassport?: boolean;
     requiresRoomInfo?: boolean;
@@ -462,6 +469,10 @@ export const createReservationDraftRequest = (
   payload: ReservationStoragePayload,
   details: Partial<ReservationDraftRequest> = {},
 ): ReservationDraftRequest => {
+  const payloadItems =
+    Array.isArray(payload.items) && payload.items.length > 0
+      ? payload.items
+      : null;
   const feeId =
     payload.productType === "semi"
       ? payload.legacyPackageScheduleId ?? payload.legacyFeeOptionId
@@ -473,13 +484,15 @@ export const createReservationDraftRequest = (
     legacyPackageScheduleId: payload.legacyPackageScheduleId,
     tourDate: payload.selectedDateId,
     tourTime: normalizeTourTime(payload.selectedDateLabel),
-    items: [
-      {
-        feeId,
-        legacyPackageScheduleId: payload.legacyPackageScheduleId,
-        personCount: payload.personCount,
-      },
-    ],
+    items:
+      payloadItems ??
+      [
+        {
+          feeId,
+          legacyPackageScheduleId: payload.legacyPackageScheduleId,
+          personCount: payload.personCount,
+        },
+      ],
     ...details,
   };
 };

@@ -13,6 +13,11 @@ require_once dirname(__DIR__) . '/_reservation_helpers.php';
 uno_api_require_method('GET');
 uno_api_require_login();
 
+$currentMemberId = uno_api_current_member_id();
+if ($currentMemberId === '') {
+    uno_api_error('LOGIN_REQUIRED', 'Login is required to view reservations.', 401);
+}
+
 function uno_api_my_reservations_fetch_rows($memberId)
 {
     if (!function_exists('sql_query')) {
@@ -81,7 +86,7 @@ function uno_api_my_reservations_item($row)
     );
 }
 
-$rows = uno_api_my_reservations_fetch_rows(uno_api_current_member_id());
+$rows = uno_api_my_reservations_fetch_rows($currentMemberId);
 $items = array();
 
 foreach ($rows as $row) {

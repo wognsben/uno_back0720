@@ -2518,6 +2518,9 @@ export default function ProductDetail({
           getLegacyFeeOptionId(productId) ??
           baseDetailData.legacyFeeOptionId,
         basePrice: remoteBasePrice ?? 0,
+        originalPrice: remoteProductDetail?.originalPrice,
+        priceDescription: remoteProductDetail?.priceDescription,
+        feeOptions: remoteProductDetail?.feeOptions ?? [],
         heroImage:
           remoteThumbnailUrl ||
           (isRemoteProductDetailLoading || !remoteProductDetail ? "" : baseDetailData.heroImage),
@@ -2585,6 +2588,9 @@ export default function ProductDetail({
         sourceProduct.price ??
         sourceBasePrice ??
         (isRemoteProductDetailLoading || !remoteProductDetail ? 0 : baseDetailData.basePrice),
+      originalPrice: remoteProductDetail?.originalPrice,
+      priceDescription: remoteProductDetail?.priceDescription,
+      feeOptions: remoteProductDetail?.feeOptions ?? [],
       heroImage:
         remoteThumbnailUrl ||
         (isRemoteProductDetailLoading || !remoteProductDetail ? "" : (
@@ -2767,10 +2773,16 @@ export default function ProductDetail({
 
               {DETAIL_DATA.basePrice > 0 ? (
                 <div className="pd-hero-price-summary" aria-label="?�품 ?�작가">
-                  <span>FROM</span>
+                  <span>예약금</span>
                   <strong>
                     <PriceText price={DETAIL_DATA.basePrice} currency={DETAIL_DATA.currency} />
                   </strong>
+                  {DETAIL_DATA.originalPrice ? (
+                    <small>
+                      정상가격 {Number(DETAIL_DATA.originalPrice).toLocaleString("ko-KR")}원
+                    </small>
+                  ) : null}
+                  {DETAIL_DATA.priceDescription ? <p>{DETAIL_DATA.priceDescription}</p> : null}
                 </div>
               ) : null}
 
@@ -2813,6 +2825,7 @@ export default function ProductDetail({
             href: DETAIL_DATA.href,
             currency: DETAIL_DATA.currency,
             basePrice: DETAIL_DATA.basePrice,
+            feeOptions: DETAIL_DATA.feeOptions,
             ticket: DETAIL_DATA.ticket,
           }}
           dates={availableDateSource}
@@ -2873,6 +2886,7 @@ export default function ProductDetail({
                     title: DETAIL_DATA.title,
                     currency: DETAIL_DATA.currency,
                     basePrice: DETAIL_DATA.basePrice,
+                    feeOptions: DETAIL_DATA.feeOptions,
                     duration: DETAIL_DATA.duration,
                     routeCode: DETAIL_DATA.routeCode,
                   }}

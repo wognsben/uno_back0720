@@ -406,7 +406,6 @@ export default function MyCart() {
             <div className="list-row" key={item.rid}>
               <p>
                 {item.tourDate || "-"}
-                <br />#{item.rid}
               </p>
               <div>
                 <strong>{item.title || "상품명 없음"}</strong>

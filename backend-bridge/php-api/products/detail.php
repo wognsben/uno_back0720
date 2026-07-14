@@ -301,10 +301,11 @@ function uno_api_fetch_daily_fee_options($legacyProductId)
 
     $legacyProductId = (int) $legacyProductId;
     $result = sql_query(
-        "select id, fee_subject, fee1, fee2, is_first
+        "select id, fee_subject, fee1, fee2, fee3, is_first, fee_ticket_id
            from tour_fee
           where wr_id = '{$legacyProductId}'
-          order by is_first desc, id asc"
+            and fee_subject <> ''
+          order by id asc"
     );
 
     $items = array();
@@ -312,10 +313,14 @@ function uno_api_fetch_daily_fee_options($legacyProductId)
         $items[] = array(
             'id' => (int) $row['id'],
             'label' => isset($row['fee_subject']) ? (string) $row['fee_subject'] : '',
+            'subject' => isset($row['fee_subject']) ? (string) $row['fee_subject'] : '',
             'deposit' => uno_api_money(isset($row['fee1']) ? $row['fee1'] : 0),
-            'localPayment' => uno_api_money(isset($row['fee2']) ? $row['fee2'] : 0),
+            'advanceLocalPayment' => isset($row['fee2']) ? (string) $row['fee2'] : '',
+            'localPayment' => isset($row['fee3']) ? (string) $row['fee3'] : '',
             'localPaymentCurrency' => 'EUR',
+            'ticketFeeId' => isset($row['fee_ticket_id']) ? (string) $row['fee_ticket_id'] : '',
             'isDefault' => !empty($row['is_first']),
+            'isPrimary' => !empty($row['is_first']),
         );
     }
 
@@ -438,7 +443,7 @@ if (!function_exists('sql_fetch')) {
 $legacyProductId = (int) $mapping['legacyProductId'];
 $productTable = uno_api_table_product();
 $product = sql_fetch(
-    "select wr_id, ca_name, wr_subject, wr_content, wr_reg_result, is_passport, is_delivery, is_roominfo, guide_info
+    "select wr_id, ca_name, wr_subject, wr_content, wr_reg_result, is_passport, is_delivery, is_roominfo, guide_info, fee_org, wr_4
        from {$productTable}
       where wr_id = '{$legacyProductId}'"
 );
@@ -469,7 +474,16 @@ if ($productType === 'semi') {
     $feeOptions = uno_api_fetch_daily_fee_options($legacyProductId);
 }
 
-$defaultFee = count($feeOptions) > 0 ? $feeOptions[0] : null;
+$defaultFee = null;
+foreach ($feeOptions as $feeOption) {
+    if (!empty($feeOption['isDefault']) || !empty($feeOption['isPrimary'])) {
+        $defaultFee = $feeOption;
+        break;
+    }
+}
+if (!$defaultFee && count($feeOptions) > 0) {
+    $defaultFee = $feeOptions[0];
+}
 $productImages = uno_api_fetch_product_images($legacyProductId);
 $thumbnailImage = uno_api_image_by_no($productImages, 0);
 $tourTopImages = uno_api_fetch_board_images('v2_tourTop', $legacyProductId);
@@ -496,9 +510,11 @@ $response = array(
     'heroImageUrl' => $heroImageUrl,
     'price' => $defaultFee ? array(
         'deposit' => $defaultFee['deposit'],
-        'localPayment' => isset($defaultFee['localPayment']) ? $defaultFee['localPayment'] : 0,
-        'localPaymentCurrency' => isset($defaultFee['localPaymentCurrency']) ? $defaultFee['localPaymentCurrency'] : 'KRW',
+            'localPayment' => isset($defaultFee['localPayment']) && is_numeric($defaultFee['localPayment']) ? (int) $defaultFee['localPayment'] : 0,
+            'localPaymentCurrency' => isset($defaultFee['localPaymentCurrency']) ? $defaultFee['localPaymentCurrency'] : 'KRW',
     ) : null,
+    'originalPrice' => isset($product['fee_org']) ? uno_api_money($product['fee_org']) : 0,
+    'priceDescription' => isset($product['wr_4']) ? (string) $product['wr_4'] : '',
     'requiresPassport' => uno_api_bool_field(isset($product['is_passport']) ? $product['is_passport'] : ''),
     'requiresRoomInfo' => uno_api_bool_field(isset($product['is_roominfo']) ? $product['is_roominfo'] : ''),
     'requiresDelivery' => uno_api_bool_field(isset($product['is_delivery']) ? $product['is_delivery'] : ''),

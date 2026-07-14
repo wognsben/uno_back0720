@@ -133,6 +133,30 @@ const RESERVATION_MODULE_STYLE = `
     font-weight: 560;
   }
 
+  .pd-book-fee-options {
+    display: grid;
+    gap: 10px;
+  }
+
+  .pd-book-fee-option {
+    display: grid;
+    gap: 8px;
+    padding: 12px 0;
+    border-top: 1px solid rgba(21, 21, 21, 0.12);
+  }
+
+  .pd-book-fee-option strong {
+    font-size: 13px;
+    line-height: 1.35;
+    word-break: keep-all;
+  }
+
+  .pd-book-fee-option small {
+    color: rgba(21, 21, 21, 0.58);
+    font-size: 11px;
+    line-height: 1.45;
+  }
+
   .pd-book-side-price {
     display: block;
     padding: 18px 0 0;
@@ -339,6 +363,7 @@ function ReservationModule({
   maxPeople,
 }: ReservationModuleProps) {
   const [people, setPeople] = useState(initialPeople);
+  const [feeCounts, setFeeCounts] = useState<Record<string, number>>({});
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
 
@@ -369,12 +394,26 @@ const availableSeats = activeDate?.seats ?? 8;
 
 const safeMaxPeople = maxPeople ?? Math.max(minPeople, availableSeats);
 const safePeople = Math.max(minPeople, Math.min(people, safeMaxPeople));
-const remainingSeats = Math.max(0, availableSeats - safePeople);
 
 const unitPrice = activeDate?.price ?? product.basePrice ?? 0;
-const totalPrice = unitPrice * safePeople;
+const dailyFeeOptions = product.productType === "daily" ? product.feeOptions ?? [] : [];
+const hasDailyFeeOptions = dailyFeeOptions.length > 0;
+const selectedFeeItems = dailyFeeOptions
+  .map((option) => ({
+    feeId: option.id,
+    personCount: feeCounts[String(option.id)] ?? 0,
+    deposit: option.deposit ?? 0,
+  }))
+  .filter((item) => item.personCount > 0);
+const selectedFeePeople = selectedFeeItems.reduce((sum, item) => sum + item.personCount, 0);
+const effectivePeople = hasDailyFeeOptions ? selectedFeePeople : safePeople;
+const remainingSeats = Math.max(0, availableSeats - effectivePeople);
+const totalPrice = hasDailyFeeOptions
+  ? selectedFeeItems.reduce((sum, item) => sum + item.deposit * item.personCount, 0)
+  : unitPrice * safePeople;
 const canDecrease = safePeople > minPeople;
 const canIncrease = safePeople < safeMaxPeople;
+const isDailySelectionEmpty = hasDailyFeeOptions && selectedFeePeople < 1;
 
   useEffect(() => {
     setPeople((value) => Math.max(minPeople, Math.min(value, safeMaxPeople)));
@@ -389,13 +428,19 @@ const canIncrease = safePeople < safeMaxPeople;
     createReservationPayload({
       product,
       selectedDate: activeDate,
-      personCount: safePeople,
+      personCount: effectivePeople,
       unitPrice,
       totalPrice,
+      items: hasDailyFeeOptions
+        ? selectedFeeItems.map((item) => ({
+            feeId: item.feeId,
+            personCount: item.personCount,
+          }))
+        : undefined,
     });
 
   const handleCart = async () => {
-    if (isReservationDisabled) return;
+    if (isReservationDisabled || isDailySelectionEmpty) return;
 
     if (!isReservationUserLoggedIn() && !(await ensureReservationUserLoggedIn())) {
       setIsLoginModalOpen(true);
@@ -415,7 +460,7 @@ const canIncrease = safePeople < safeMaxPeople;
   };
 
   const handleReserve = async () => {
-    if (isReservationDisabled) return;
+    if (isReservationDisabled || isDailySelectionEmpty) return;
 
     if (!isReservationUserLoggedIn() && !(await ensureReservationUserLoggedIn())) {
       setIsLoginModalOpen(true);
@@ -488,9 +533,55 @@ const canIncrease = safePeople < safeMaxPeople;
           <aside className="pd-book-side" aria-label="예약 정보">
             <div className="pd-book-side-count">
               <span>People</span>
-              <strong>{safePeople}명</strong>
+              <strong>{effectivePeople}명</strong>
             </div>
 
+            {hasDailyFeeOptions ? (
+              <div className="pd-book-fee-options">
+                {dailyFeeOptions.map((option) => {
+                  const optionId = String(option.id);
+                  const count = feeCounts[optionId] ?? 0;
+                  return (
+                    <div className="pd-book-fee-option" key={optionId}>
+                      <strong>{option.subject || option.label}</strong>
+                      <small>
+                        예약금 {(option.deposit ?? 0).toLocaleString("ko-KR")}원
+                        {option.localPayment ? ` · 현지 ${option.localPayment}` : ""}
+                      </small>
+                      <div className="pd-book-people-control" aria-label={`${option.label} 인원 선택`}>
+                        <button
+                          type="button"
+                          disabled={count <= 0}
+                          onClick={() =>
+                            setFeeCounts((current) => ({
+                              ...current,
+                              [optionId]: Math.max(0, count - 1),
+                            }))
+                          }
+                          aria-label={`${option.label} 인원 감소`}
+                        >
+                          -
+                        </button>
+                        <span>{count}</span>
+                        <button
+                          type="button"
+                          disabled={selectedFeePeople >= safeMaxPeople}
+                          onClick={() =>
+                            setFeeCounts((current) => ({
+                              ...current,
+                              [optionId]: count + 1,
+                            }))
+                          }
+                          aria-label={`${option.label} 인원 증가`}
+                        >
+                          +
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
             <div className="pd-book-people-control" aria-label="예약 인원 선택">
               <button
                 type="button"
@@ -510,6 +601,7 @@ const canIncrease = safePeople < safeMaxPeople;
                 +
               </button>
             </div>
+            )}
 
             <div className="pd-book-side-price">
   <span>Total Price</span>
@@ -528,7 +620,7 @@ const canIncrease = safePeople < safeMaxPeople;
               <button
                 type="button"
                 className="pd-book-action is-secondary"
-                disabled={isReservationDisabled}
+                disabled={isReservationDisabled || isDailySelectionEmpty}
                 onClick={handleCart}
               >
                 장바구니 담기
@@ -536,7 +628,7 @@ const canIncrease = safePeople < safeMaxPeople;
               <button
                 type="button"
                 className={`pd-book-action is-primary ${statusClassName}`}
-                disabled={isReservationDisabled}
+                disabled={isReservationDisabled || isDailySelectionEmpty}
                 onClick={handleReserve}
               >
                 예약하기

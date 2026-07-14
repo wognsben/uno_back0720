@@ -4,6 +4,7 @@
 // ReservationModule과 Booking_side가 각자 저장 로직을 갖지 않도록 중복과 상태 충돌을 막는 파일이다.
 
 import type { AvailableDate } from "./reservationUtils";
+import type { ProductFeeOption } from "../../../api/reservationApi";
 import type { BoardingPassFlightSegment } from "./BoardingPass";
 import {
   isLocalAuthSessionActive,
@@ -30,6 +31,7 @@ export type ReservationProductContext = {
   href: string;
   currency?: string;
   basePrice?: number;
+  feeOptions?: ProductFeeOption[];
   ticket?: {
     outbound?: BoardingPassFlightSegment;
     inbound?: BoardingPassFlightSegment;
@@ -41,6 +43,11 @@ export type ReservationStoragePayload = {
   legacyProductId?: number | string;
   legacyFeeOptionId?: number | string;
   legacyPackageScheduleId?: number | string;
+  items?: Array<{
+    feeId?: number | string;
+    legacyPackageScheduleId?: number | string;
+    personCount: number;
+  }>;
   productType: ReservationProductKind;
   title: string;
   href: string;
@@ -86,6 +93,7 @@ export type CreateReservationPayloadOptions = {
   personCount: number;
   unitPrice: number;
   totalPrice: number;
+  items?: ReservationStoragePayload["items"];
 };
 
 export const createReservationPayload = ({
@@ -94,6 +102,7 @@ export const createReservationPayload = ({
   personCount,
   unitPrice,
   totalPrice,
+  items,
 }: CreateReservationPayloadOptions): ReservationStoragePayload => {
   const seatsBeforeSelection = selectedDate?.seats ?? 0;
 
@@ -103,6 +112,7 @@ export const createReservationPayload = ({
     legacyFeeOptionId: selectedDate?.legacyFeeOptionId ?? product.legacyFeeOptionId,
     legacyPackageScheduleId:
       selectedDate?.legacyPackageScheduleId ?? product.legacyPackageScheduleId,
+    items,
     productType: product.productType,
     title: product.title,
     href: product.href,

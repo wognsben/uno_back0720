@@ -447,17 +447,25 @@ uno_renewal_admin_render_pagehead(
       const semiPayload = (card) => ({ action: "saveSemiSchedule", id: card.dataset.id ? Number(card.dataset.id) : 0, startDate: readField(card, "startDate"), arriveDate: readField(card, "arriveDate"), outboundDeparturePlace: readField(card, "outboundDeparturePlace"), outboundDepartureTime: readField(card, "outboundDepartureTime"), outboundArrivalPlace: readField(card, "outboundArrivalPlace"), outboundArrivalLabel: readField(card, "outboundArrivalLabel"), returnDeparturePlace: readField(card, "returnDeparturePlace"), returnDepartureTime: readField(card, "returnDepartureTime"), returnArrivalPlace: readField(card, "returnArrivalPlace"), returnArrivalLabel: readField(card, "returnArrivalLabel"), isVisible: readField(card, "isVisible"), isMain: readField(card, "isMain") });
 
       const priceField = (label, name, value = "") => field(label, name, String(value || ""), "number");
+      const textPriceField = (label, name, value = "", placeholder = "") => field(label, name, String(value || ""), "text", placeholder);
+      const ticketFeeSelect = (selected = "") => selectField(
+        "티켓 요금(필요시)",
+        "ticketFeeId",
+        (state.data.ticketFeeOptions || [{ id: "", label: "선택 안 함" }]).map((item) => [String(item.id ?? ""), item.label || ("Ticket #" + item.id)]),
+        String(selected || "")
+      );
       const money = (value) => Number(String(value || "0").replace(/[^0-9-]/g, "")) || 0;
 
       const dailyFeeCard = (option = {}) => '<article class="uno-price-row" data-daily-fee-card data-id="' + escapeHtml(option.id || "") + '">' +
         '<div class="uno-schedule-head"><h3 class="uno-schedule-title">' + escapeHtml(option.id ? "요금 옵션 #" + option.id : "새 요금 옵션") + '</h3><div class="uno-admin-actions">' +
         '<button class="uno-admin-button secondary" type="button" data-delete-daily-fee ' + (!option.id ? 'disabled' : '') + '>삭제</button><button class="uno-admin-button" type="button" data-save-daily-fee>저장</button></div></div>' +
         '<div class="uno-form-grid">' +
-        field("옵션명", "label", option.label || "", "text", "예: 만 6세 이상 ~ 성인") +
-        priceField("예약금", "deposit", option.deposit || 0) +
-        priceField("현지 지불금", "localPayment", option.localPayment || 0) +
-        priceField("추가금", "extraPayment", option.extraPayment || 0) +
-        '<div class="uno-form-field full"><div class="uno-check-row"><label><input type="checkbox" data-field="isDefault" ' + (option.isDefault ? 'checked' : '') + '> 기본 옵션</label></div></div>' +
+        field("신청구분", "label", option.label || "", "text", "예: 성인") +
+        priceField("홈페이지 예약금", "deposit", option.deposit || 0) +
+        textPriceField("사전 예약 후 현장 지불", "localPayment", option.localPayment || "", "0 또는 -") +
+        textPriceField("현지 지불", "extraPayment", option.extraPayment || "", "0 또는 -") +
+        ticketFeeSelect(option.ticketFeeId || "") +
+        '<div class="uno-form-field full"><div class="uno-check-row"><label><input type="checkbox" data-field="isDefault" ' + (option.isDefault ? 'checked' : '') + '> 대표요금</label></div></div>' +
         '</div></article>';
 
       const semiPriceCard = (schedule = {}) => '<article class="uno-price-row" data-semi-price-card data-id="' + escapeHtml(schedule.id || "") + '">' +
@@ -480,7 +488,10 @@ uno_renewal_admin_render_pagehead(
 
         return '<p class="uno-section-note">예약과 직접 연결되는 값입니다. 데일리투어는 옵션 단위로, 세미패키지는 일정 단위로 가격을 관리합니다.</p>' +
           '<div class="uno-price-row" data-pricing-meta><div class="uno-schedule-head"><h3 class="uno-schedule-title">프런트 가격 문구</h3><button class="uno-admin-button" type="button" data-save-pricing-meta>저장</button></div>' +
-          '<div class="uno-form-grid">' + textareaField("정상가격 / 표시 문구", "originalFeeText", extras.originalFeeText || "", "예: 정상가 2,400,000원 / 예약금 400,000원") + '</div></div>' +
+          '<div class="uno-form-grid">' +
+            textareaField("정상가격 / 전체 상품가", "originalFeeText", extras.originalFeeText || "", "예: 6000000") +
+            textareaField("가격 안내 문구", "priceDescription", extras.priceDescription || "", "예: 투어 요금 600만원은 예약 비용과 요금을 포함한 금액입니다.") +
+          '</div></div>' +
           '<div class="uno-price-list" style="margin-top:14px;">' + rows + '</div>';
       };
 
@@ -585,7 +596,8 @@ uno_renewal_admin_render_pagehead(
           '<div class="uno-price-row" data-audit-editor>' +
             '<div class="uno-schedule-head"><h3 class="uno-schedule-title">누락 검토 / 표시 설정</h3><button class="uno-admin-button" type="button" data-save-audit>누락 검토 저장</button></div>' +
             '<div class="uno-form-grid">' +
-              textareaField("정상가격 / 표시 문구", "originalFeeText", extras.originalFeeText || "", "예: 정상가 120,000원 / 이벤트가 90,000원") +
+              textareaField("정상가격 / 전체 상품가", "originalFeeText", extras.originalFeeText || "", "예: 6000000") +
+              textareaField("가격 안내 문구", "priceDescription", extras.priceDescription || "", "예: 투어 요금 600만원은 예약 비용과 요금을 포함한 금액입니다.") +
               field("B2B 상태", "b2bStatus", extras.b2bStatus || "", "text", "B2B 또는 제휴 판매 상태 메모") +
               field("캘린더 표시 개월", "calendarMonths", extras.calendarMonths || 2, "number", "예: 2") +
               '<div class="uno-form-field full"><label>상품 플래그</label><div class="uno-check-row">' +
@@ -610,6 +622,7 @@ uno_renewal_admin_render_pagehead(
           action: "saveAuditFields",
           extras: {
             originalFeeText: readField(box, "originalFeeText"),
+            priceDescription: readField(box, "priceDescription"),
             b2bStatus: readField(box, "b2bStatus"),
             isTicket: readField(box, "isTicket"),
             isBestTour: readField(box, "isBestTour"),
@@ -625,7 +638,7 @@ uno_renewal_admin_render_pagehead(
         };
       };
 
-      const dailyFeePayload = (card) => ({ action: "saveDailyFeeOption", id: card.dataset.id ? Number(card.dataset.id) : 0, label: readField(card, "label"), deposit: money(readField(card, "deposit")), localPayment: money(readField(card, "localPayment")), extraPayment: money(readField(card, "extraPayment")), isDefault: readField(card, "isDefault") });
+      const dailyFeePayload = (card) => ({ action: "saveDailyFeeOption", id: card.dataset.id ? Number(card.dataset.id) : 0, label: readField(card, "label"), deposit: money(readField(card, "deposit")), localPayment: readField(card, "localPayment"), extraPayment: readField(card, "extraPayment"), ticketFeeId: readField(card, "ticketFeeId"), isDefault: readField(card, "isDefault") });
       const semiPricePayload = (card) => {
         const schedule = (state.data.semiSchedules || []).find((item) => Number(item.id) === Number(card.dataset.id)) || {};
         return { action: "saveSemiSchedule", id: Number(card.dataset.id), startDate: schedule.startDate, arriveDate: schedule.arriveDate || schedule.startDate, boardingLabel: schedule.air || "", deposit: money(readField(card, "deposit")), localPayment: money(readField(card, "localPayment")), extraPayment: money(readField(card, "extraPayment")), totalPrice: money(readField(card, "totalPrice")), isVisible: !!schedule.isVisible, isMain: !!schedule.isMain };
@@ -744,7 +757,7 @@ uno_renewal_admin_render_pagehead(
         const saveAudit = event.target.closest("[data-save-audit]");
         if (saveAudit) { try { saveAudit.disabled = true; setStatus("누락 검토 항목을 저장하는 중입니다."); await apiRequest(auditPayload()); setStatus("누락 검토 항목이 저장되었습니다.", "ok"); refreshCurrentModal(); } catch (error) { setStatus(error.message || "누락 검토 항목을 저장하지 못했습니다.", "warn"); } finally { saveAudit.disabled = false; } return; }
         const savePricingMeta = event.target.closest("[data-save-pricing-meta]");
-        if (savePricingMeta) { const box = savePricingMeta.closest("[data-pricing-meta]"); try { savePricingMeta.disabled = true; setStatus("가격 문구를 저장하는 중입니다."); await apiRequest({ action: "savePricingMeta", extras: { originalFeeText: readField(box, "originalFeeText") } }); setStatus("가격 문구가 저장되었습니다.", "ok"); refreshCurrentModal(); } catch (error) { setStatus(error.message || "가격 문구를 저장하지 못했습니다.", "warn"); } finally { savePricingMeta.disabled = false; } return; }
+        if (savePricingMeta) { const box = savePricingMeta.closest("[data-pricing-meta]"); try { savePricingMeta.disabled = true; setStatus("가격 정보를 저장하는 중입니다."); await apiRequest({ action: "savePricingMeta", extras: { originalFeeText: readField(box, "originalFeeText"), priceDescription: readField(box, "priceDescription") } }); setStatus("가격 정보가 저장되었습니다.", "ok"); refreshCurrentModal(); } catch (error) { setStatus(error.message || "가격 정보를 저장하지 못했습니다.", "warn"); } finally { savePricingMeta.disabled = false; } return; }
         const saveDailyFee = event.target.closest("[data-save-daily-fee]");
         if (saveDailyFee) { const card = saveDailyFee.closest("[data-daily-fee-card]"); try { saveDailyFee.disabled = true; setStatus("요금 옵션을 저장하는 중입니다."); await apiRequest(dailyFeePayload(card)); setStatus("요금 옵션이 저장되었습니다.", "ok"); refreshCurrentModal(); } catch (error) { setStatus(error.message || "요금 옵션을 저장하지 못했습니다.", "warn"); } finally { saveDailyFee.disabled = false; } return; }
         const deleteDailyFee = event.target.closest("[data-delete-daily-fee]");
