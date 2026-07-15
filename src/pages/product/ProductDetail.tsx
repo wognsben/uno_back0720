@@ -2432,12 +2432,7 @@ export default function ProductDetail({
             item.startDate === date.date,
         );
         const parsedDate = parseDateId(date.date);
-        const price =
-          schedule?.totalPrice ||
-          schedule?.deposit ||
-          remoteDefaultFee?.deposit ||
-          remoteBasePrice ||
-          baseDetailData.basePrice;
+        const price = schedule?.totalPrice ?? schedule?.deposit ?? 0;
         const capacity =
           schedule?.seat ||
           date.remainingSeats ||
@@ -2453,6 +2448,13 @@ export default function ProductDetail({
           seats: date.remainingSeats ?? capacity,
           capacity,
           price,
+          deposit: schedule?.deposit,
+          intermediatePayment: schedule?.intermediatePayment ?? schedule?.middlePayment,
+          middlePayment: schedule?.middlePayment ?? schedule?.intermediatePayment,
+          balance: schedule?.balance ?? schedule?.finalPayment,
+          finalPayment: schedule?.finalPayment ?? schedule?.balance,
+          airfare: schedule?.airfare,
+          totalPrice: schedule?.totalPrice,
           status: getAvailabilityDisplayLabel(date.status),
           guide: "UNO GUIDE",
         };
@@ -2498,7 +2500,7 @@ export default function ProductDetail({
         ...baseDetailData,
         id: productId || baseDetailData.id,
         legacyPackageScheduleId:
-          remoteDefaultFee?.id ??
+          remoteProductDetail?.packageSchedules?.find((item) => item.isDefault)?.id ??
           getLegacyPackageScheduleId(productId) ??
           baseDetailData.legacyPackageScheduleId,
         href: pathname || baseDetailData.href,
@@ -2571,7 +2573,7 @@ export default function ProductDetail({
         getLegacyFeeOptionId(sourceProduct.id) ??
         baseDetailData.legacyFeeOptionId,
       legacyPackageScheduleId:
-        remoteDefaultFee?.id ??
+        remoteProductDetail?.packageSchedules?.find((item) => item.isDefault)?.id ??
         sourceProduct.legacyPackageScheduleId ??
         getLegacyPackageScheduleId(sourceProduct.id) ??
         baseDetailData.legacyPackageScheduleId,

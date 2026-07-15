@@ -83,7 +83,9 @@ export type PackageScheduleOption = {
   endDate?: string;
   deposit: number;
   middlePayment?: number;
+  intermediatePayment?: number;
   finalPayment?: number;
+  balance?: number;
   airfare?: number;
   totalPrice?: number;
   seat?: number;

@@ -3,6 +3,7 @@
 // 장바구니 저장, 예약 진행 저장, sessionStorage key, 내부 SPA 이동 상태를 한곳에서 관리한다.
 // ReservationModule과 Booking_side가 각자 저장 로직을 갖지 않도록 중복과 상태 충돌을 막는 파일이다.
 
+import { useCallback, useEffect, useMemo, useSyncExternalStore } from "react";
 import type { AvailableDate } from "./reservationUtils";
 import type { ProductFeeOption } from "../../../api/reservationApi";
 import type { BoardingPassFlightSegment } from "./BoardingPass";
@@ -94,6 +95,125 @@ export type CreateReservationPayloadOptions = {
   unitPrice: number;
   totalPrice: number;
   items?: ReservationStoragePayload["items"];
+};
+
+export type ReservationSelectionState = {
+  selectedDateId: string;
+  peopleCount: number;
+  feeCounts: Record<string, number>;
+  isCartAdded: boolean;
+};
+
+const reservationSelectionStore = new Map<string, ReservationSelectionState>();
+const reservationSelectionListeners = new Set<() => void>();
+
+const DEFAULT_RESERVATION_SELECTION: ReservationSelectionState = {
+  selectedDateId: "",
+  peopleCount: 1,
+  feeCounts: {},
+  isCartAdded: false,
+};
+
+const emitReservationSelectionChange = () => {
+  reservationSelectionListeners.forEach((listener) => listener());
+};
+
+export const getReservationSelectionSnapshot = (productId: string) =>
+  reservationSelectionStore.get(productId) ?? DEFAULT_RESERVATION_SELECTION;
+
+export const updateReservationSelection = (
+  productId: string,
+  updater:
+    | Partial<ReservationSelectionState>
+    | ((current: ReservationSelectionState) => Partial<ReservationSelectionState>),
+) => {
+  const current = getReservationSelectionSnapshot(productId);
+  const patch = typeof updater === "function" ? updater(current) : updater;
+  const next = { ...current, ...patch };
+
+  if (
+    next.selectedDateId === current.selectedDateId &&
+    next.peopleCount === current.peopleCount &&
+    next.isCartAdded === current.isCartAdded &&
+    next.feeCounts === current.feeCounts
+  ) {
+    return;
+  }
+
+  reservationSelectionStore.set(productId, next);
+  emitReservationSelectionChange();
+};
+
+export const useReservationSelection = (
+  productId: string,
+  initialSelectedDateId = "",
+) => {
+  const state = useSyncExternalStore(
+    (listener) => {
+      reservationSelectionListeners.add(listener);
+      return () => reservationSelectionListeners.delete(listener);
+    },
+    () => getReservationSelectionSnapshot(productId),
+    () => getReservationSelectionSnapshot(productId),
+  );
+
+  useEffect(() => {
+    if (!state.selectedDateId && initialSelectedDateId) {
+      updateReservationSelection(productId, { selectedDateId: initialSelectedDateId });
+    }
+  }, [initialSelectedDateId, productId, state.selectedDateId]);
+
+  const setSelectedDateId = useCallback(
+    (selectedDateId: string) =>
+      updateReservationSelection(productId, {
+        selectedDateId,
+        peopleCount: 1,
+        isCartAdded: false,
+      }),
+    [productId],
+  );
+  const setPeopleCount = useCallback(
+    (nextPeopleCount: number | ((current: number) => number)) =>
+      updateReservationSelection(productId, (current) => ({
+        peopleCount:
+          typeof nextPeopleCount === "function"
+            ? nextPeopleCount(current.peopleCount)
+            : nextPeopleCount,
+        isCartAdded: false,
+      })),
+    [productId],
+  );
+  const setFeeCounts = useCallback(
+    (
+      nextFeeCounts:
+        | Record<string, number>
+        | ((current: Record<string, number>) => Record<string, number>),
+    ) =>
+      updateReservationSelection(productId, (current) => ({
+        feeCounts:
+          typeof nextFeeCounts === "function"
+            ? nextFeeCounts(current.feeCounts)
+            : nextFeeCounts,
+        isCartAdded: false,
+      })),
+    [productId],
+  );
+  const setIsCartAdded = useCallback(
+    (isCartAdded: boolean) =>
+      updateReservationSelection(productId, { isCartAdded }),
+    [productId],
+  );
+
+  return useMemo(
+    () => ({
+      ...state,
+      setSelectedDateId,
+      setPeopleCount,
+      setFeeCounts,
+      setIsCartAdded,
+    }),
+    [state, setSelectedDateId, setPeopleCount, setFeeCounts, setIsCartAdded],
+  );
 };
 
 export const createReservationPayload = ({

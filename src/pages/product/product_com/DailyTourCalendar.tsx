@@ -4,12 +4,10 @@
 // 날짜 계산과 예약 가능 여부 판정은 reservationUtils.ts의 공통 함수를 사용한다.
 // 선택된 날짜 id는 상위 예약 모듈(resmodule.tsx)로 전달한다.
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   type AvailableDate,
-  PriceText,
   formatAvailablePeople,
-  formatPriceValue,
   getAvailabilityClassName,
   getAvailabilityDisplayLabel,
   getAvailabilityStatus,
@@ -19,6 +17,21 @@ import {
   isDateBookable,
   getDateIdFromDate,
 } from "./reservationUtils";
+
+function getMonthStartFromDateId(dateId: string) {
+  const match = /^(\d{4})-(\d{2})-\d{2}$/.exec(dateId);
+  if (!match) return null;
+
+  return new Date(Number(match[1]), Number(match[2]) - 1, 1);
+}
+
+function isBeforeMonth(date: Date, minimumMonth: Date) {
+  return (
+    date.getFullYear() < minimumMonth.getFullYear() ||
+    (date.getFullYear() === minimumMonth.getFullYear() &&
+      date.getMonth() < minimumMonth.getMonth())
+  );
+}
 
 const DAILY_TOUR_CALENDAR_STYLE = `
   .pd-calendar-card {
@@ -208,7 +221,6 @@ const DAILY_TOUR_CALENDAR_STYLE = `
     flex-shrink: 0;
   }
 
-  .pd-calendar-day-price,
   .pd-calendar-day-label {
     display: block;
     font-family: var(--font-en);
@@ -219,17 +231,8 @@ const DAILY_TOUR_CALENDAR_STYLE = `
     color: #151515;
   }
 
-  .pd-calendar-day-price .pd-price-text,
-  .pd-calendar-day-price .pd-price-symbol,
-  .pd-calendar-day-price .pd-price-number {
-    font-size: inherit;
-    line-height: inherit;
-    letter-spacing: inherit;
-    font-weight: inherit;
-    color: inherit;
-  }
-
-  .pd-calendar-day.is-soldout .pd-calendar-day-price,
+  .pd-calendar-day.is-soldout .pd-calendar-day-label,
+  .pd-calendar-day.is-past .pd-calendar-day-label,
   .pd-calendar-day.is-soldout .pd-calendar-day-label {
     color: rgba(255, 255, 255, 0.86);
   }
@@ -378,11 +381,8 @@ const DAILY_TOUR_CALENDAR_STYLE = `
     font-size: 16px;
   }
 
-  .pd-book-calendar-panel .pd-calendar-day-price,
   .pd-book-calendar-panel .pd-calendar-day-label,
-  .pd-reservation-drawer-calendar .pd-calendar-day-price,
   .pd-reservation-drawer-calendar .pd-calendar-day-label,
-  .pd-body-booking-calendar .pd-calendar-day-price,
   .pd-body-booking-calendar .pd-calendar-day-label {
     font-size: 11px;
     font-weight: 800;
@@ -409,12 +409,40 @@ function DailyTourCalendar({
   onSelectDate: (dateId: string) => void;
 }) {
   const today = getTodayStart();
+  const currentMonthStart = new Date(today.getFullYear(), today.getMonth(), 1);
   const [visibleMonth, setVisibleMonth] = useState(() => {
-    return new Date(today.getFullYear(), today.getMonth(), 1);
+    const selectedMonth = getMonthStartFromDateId(selectedDateId);
+    return selectedMonth && !isBeforeMonth(selectedMonth, currentMonthStart)
+      ? selectedMonth
+      : currentMonthStart;
   });
 
   const year = visibleMonth.getFullYear();
   const monthIndex = visibleMonth.getMonth();
+  const isPreviousMonthDisabled =
+    visibleMonth.getFullYear() === currentMonthStart.getFullYear() &&
+    visibleMonth.getMonth() === currentMonthStart.getMonth();
+
+  useEffect(() => {
+    const parsedSelectedMonth = getMonthStartFromDateId(selectedDateId);
+    if (!parsedSelectedMonth) return;
+
+    const selectedMonth = isBeforeMonth(parsedSelectedMonth, currentMonthStart)
+      ? currentMonthStart
+      : parsedSelectedMonth;
+
+    setVisibleMonth((current) => {
+      if (
+        current.getFullYear() === selectedMonth.getFullYear() &&
+        current.getMonth() === selectedMonth.getMonth()
+      ) {
+        return current;
+      }
+
+      return selectedMonth;
+    });
+  }, [selectedDateId]);
+
   const firstDay = new Date(year, monthIndex, 1);
   const lastDay = new Date(year, monthIndex + 1, 0);
   const calendarCells = Array.from({
@@ -456,9 +484,20 @@ function DailyTourCalendar({
           <div className="pd-calendar-controls">
             <button
               type="button"
+              disabled={isPreviousMonthDisabled}
               onClick={() =>
                 setVisibleMonth(
-                  (date) => new Date(date.getFullYear(), date.getMonth() - 1, 1),
+                  (date) => {
+                    const previousMonth = new Date(
+                      date.getFullYear(),
+                      date.getMonth() - 1,
+                      1,
+                    );
+
+                    return isBeforeMonth(previousMonth, currentMonthStart)
+                      ? currentMonthStart
+                      : previousMonth;
+                  },
                 )
               }
               aria-label="이전 달"
@@ -515,7 +554,14 @@ function DailyTourCalendar({
             const statusLabel = cell.isPast
               ? "지난 날짜"
               : getAvailabilityDisplayLabel(status);
-            const priceLabel = formatPriceValue(cell.option.price);
+            const cellLabel = cell.isPast
+              ? "지난"
+              : isClosed
+                ? "마감"
+                : status === "soon"
+                  ? "마감 임박"
+                  : "예약 가능";
+            const priceLabel = "";
             const peopleLabel = formatAvailablePeople(cell.option.seats);
 
             return (
@@ -535,9 +581,9 @@ function DailyTourCalendar({
                   <span className="pd-calendar-day-status" aria-hidden="true" />
                 </span>
 
-                {!cell.isPast && !isClosed ? (
-                  <span className="pd-calendar-day-price">
-                    <PriceText price={cell.option.price} />
+                {true ? (
+                  <span className="pd-calendar-day-label">
+                    {cellLabel}
                   </span>
                 ) : (
                   <span className="pd-calendar-day-label">

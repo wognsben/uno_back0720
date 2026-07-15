@@ -27,6 +27,7 @@ import {
   navigateInternal,
   navigateToLoginForReservation,
   savePendingReservation,
+  useReservationSelection,
 } from "./reservationStore";
 
 const RESERVATION_MODULE_STYLE = `
@@ -362,19 +363,21 @@ function ReservationModule({
   minPeople = 1,
   maxPeople,
 }: ReservationModuleProps) {
-  const [people, setPeople] = useState(initialPeople);
-  const [feeCounts, setFeeCounts] = useState<Record<string, number>>({});
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
 
-const [dailySelectedDateId, setDailySelectedDateId] = useState(() =>
-  selectedDateId || getInitialDailyDateId(dates),
-);
+const initialSelectedDateId = selectedDateId || getInitialDailyDateId(dates);
+const {
+  selectedDateId: sharedSelectedDateId,
+  peopleCount,
+  feeCounts,
+  setSelectedDateId,
+  setPeopleCount,
+  setFeeCounts,
+} = useReservationSelection(product.id, initialSelectedDateId);
 
 const activeDateId =
-  product.productType === "daily"
-    ? dailySelectedDateId
-    : selectedDateId || (dates[0]?.id ?? "");
+  sharedSelectedDateId || selectedDateId || (dates[0]?.id ?? "");
   const activeDate = useMemo(
     () => dates.find((date) => date.id === activeDateId) ?? dates[0],
     [activeDateId, dates],
@@ -393,9 +396,12 @@ const isReservationDisabled = !activeDate || status === "soldout";
 const availableSeats = activeDate?.seats ?? 8;
 
 const safeMaxPeople = maxPeople ?? Math.max(minPeople, availableSeats);
-const safePeople = Math.max(minPeople, Math.min(people, safeMaxPeople));
+const safePeople = Math.max(minPeople, Math.min(peopleCount || initialPeople, safeMaxPeople));
 
-const unitPrice = activeDate?.price ?? product.basePrice ?? 0;
+const isSemiPackage = product.productType === "semi";
+const hasSemiSchedulePrice =
+  !isSemiPackage || (activeDate?.deposit ?? 0) > 0 || (activeDate?.totalPrice ?? activeDate?.price ?? 0) > 0;
+const unitPrice = isSemiPackage ? activeDate?.deposit ?? activeDate?.price ?? 0 : activeDate?.price ?? product.basePrice ?? 0;
 const dailyFeeOptions = product.productType === "daily" ? product.feeOptions ?? [] : [];
 const hasDailyFeeOptions = dailyFeeOptions.length > 0;
 const selectedFeeItems = dailyFeeOptions
@@ -411,13 +417,21 @@ const remainingSeats = Math.max(0, availableSeats - effectivePeople);
 const totalPrice = hasDailyFeeOptions
   ? selectedFeeItems.reduce((sum, item) => sum + item.deposit * item.personCount, 0)
   : unitPrice * safePeople;
+const packageTotal = isSemiPackage ? (activeDate?.totalPrice ?? activeDate?.price ?? 0) * safePeople : totalPrice;
 const canDecrease = safePeople > minPeople;
 const canIncrease = safePeople < safeMaxPeople;
 const isDailySelectionEmpty = hasDailyFeeOptions && selectedFeePeople < 1;
+const isSemiPriceMissing = isSemiPackage && !hasSemiSchedulePrice;
 
   useEffect(() => {
-    setPeople((value) => Math.max(minPeople, Math.min(value, safeMaxPeople)));
-  }, [minPeople, safeMaxPeople]);
+    setPeopleCount((value) => Math.max(minPeople, Math.min(value, safeMaxPeople)));
+  }, [minPeople, safeMaxPeople, setPeopleCount]);
+
+  useEffect(() => {
+    if (import.meta.env.DEV && isSemiPriceMissing) {
+      console.warn("[reservation] Missing schedule price", activeDate);
+    }
+  }, [activeDate, isSemiPriceMissing]);
 
   useEffect(() => {
     if (typeof document === "undefined") return;
@@ -440,7 +454,7 @@ const isDailySelectionEmpty = hasDailyFeeOptions && selectedFeePeople < 1;
     });
 
   const handleCart = async () => {
-    if (isReservationDisabled || isDailySelectionEmpty) return;
+    if (isReservationDisabled || isDailySelectionEmpty || isSemiPriceMissing) return;
 
     if (!isReservationUserLoggedIn() && !(await ensureReservationUserLoggedIn())) {
       setIsLoginModalOpen(true);
@@ -460,7 +474,7 @@ const isDailySelectionEmpty = hasDailyFeeOptions && selectedFeePeople < 1;
   };
 
   const handleReserve = async () => {
-    if (isReservationDisabled || isDailySelectionEmpty) return;
+    if (isReservationDisabled || isDailySelectionEmpty || isSemiPriceMissing) return;
 
     if (!isReservationUserLoggedIn() && !(await ensureReservationUserLoggedIn())) {
       setIsLoginModalOpen(true);
@@ -519,7 +533,7 @@ const isDailySelectionEmpty = hasDailyFeeOptions && selectedFeePeople < 1;
       <DailyTourCalendar
         dates={dates}
         selectedDateId={activeDateId}
-        onSelectDate={setDailySelectedDateId}
+        onSelectDate={setSelectedDateId}
       />
     </div>
   ) : (
@@ -586,7 +600,7 @@ const isDailySelectionEmpty = hasDailyFeeOptions && selectedFeePeople < 1;
               <button
                 type="button"
                 disabled={!canDecrease}
-                onClick={() => setPeople((value) => Math.max(minPeople, value - 1))}
+                onClick={() => setPeopleCount((value) => Math.max(minPeople, value - 1))}
                 aria-label="인원 감소"
               >
                 −
@@ -595,7 +609,7 @@ const isDailySelectionEmpty = hasDailyFeeOptions && selectedFeePeople < 1;
               <button
                 type="button"
                 disabled={!canIncrease}
-                onClick={() => setPeople((value) => Math.min(safeMaxPeople, value + 1))}
+                onClick={() => setPeopleCount((value) => Math.min(safeMaxPeople, value + 1))}
                 aria-label="인원 증가"
               >
                 +
@@ -604,7 +618,7 @@ const isDailySelectionEmpty = hasDailyFeeOptions && selectedFeePeople < 1;
             )}
 
             <div className="pd-book-side-price">
-  <span>Total Price</span>
+  <span>{isSemiPackage ? "Reservation Deposit" : "Total Deposit"}</span>
 
   <strong className="pd-book-price">
     <span className="pd-book-price-symbol">₩</span>
@@ -612,6 +626,14 @@ const isDailySelectionEmpty = hasDailyFeeOptions && selectedFeePeople < 1;
       {totalPrice.toLocaleString("ko-KR")}
     </span>
   </strong>
+  {isSemiPackage ? (
+    <p>
+      총 상품금액 {packageTotal.toLocaleString("ko-KR")}원
+      {activeDate?.intermediatePayment ? ` · 중도금 ${activeDate.intermediatePayment.toLocaleString("ko-KR")}원` : ""}
+      {activeDate?.balance ? ` · 잔금 ${activeDate.balance.toLocaleString("ko-KR")}원` : ""}
+      {activeDate?.airfare ? ` · 항공요금 ${activeDate.airfare.toLocaleString("ko-KR")}원` : ""}
+    </p>
+  ) : null}
 </div>
 
             <p>{formatAvailablePeople(remainingSeats)}</p>
@@ -620,7 +642,7 @@ const isDailySelectionEmpty = hasDailyFeeOptions && selectedFeePeople < 1;
               <button
                 type="button"
                 className="pd-book-action is-secondary"
-                disabled={isReservationDisabled || isDailySelectionEmpty}
+                disabled={isReservationDisabled || isDailySelectionEmpty || isSemiPriceMissing}
                 onClick={handleCart}
               >
                 장바구니 담기
@@ -628,7 +650,7 @@ const isDailySelectionEmpty = hasDailyFeeOptions && selectedFeePeople < 1;
               <button
                 type="button"
                 className={`pd-book-action is-primary ${statusClassName}`}
-                disabled={isReservationDisabled || isDailySelectionEmpty}
+                disabled={isReservationDisabled || isDailySelectionEmpty || isSemiPriceMissing}
                 onClick={handleReserve}
               >
                 예약하기

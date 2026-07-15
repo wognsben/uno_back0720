@@ -72,3 +72,55 @@
 - 구현 전에는 "화면 파일인지", "저장 처리 파일인지", "공통 라이브러리인지", "운영에서 실제 쓰는 파일인지"를 분리한다.
 - 리뉴얼은 React/API 구조를 유지하되, DB 결과와 운영 흐름은 기존 우노트래블과 같아야 한다.
 - 특히 회원, 예약, 결제, 문의는 새 테이블이나 새 인증 체계를 만들면 안 된다. 기존 Gnuboard 세션과 기존 운영 테이블을 기준으로 맞춘다.
+ 
+=============================
+Confirmed DB Contracts
+=============================
+
+tour_fee
+--------------------------------
+fee_subject     신청구분
+fee1            홈페이지 예약금
+fee2            사전 예약 후 현장 지불
+fee3            현지 지불
+fee_ticket_id   티켓요금
+is_first        대표요금
+fee4~fee7       B2B 요금(현재 미사용)
+
+g5_write_product
+--------------------------------
+fee_org         정상가격
+wr_4            가격 안내 문구
+
+tour_reg
+--------------------------------
+fee_id          신청구분 ID 또는 세미패키지 일정 ID(pipe)
+membCnt         신청구분별/일정별 인원(pipe)
+total_fee1      예약금 합계
+total_fee2      중도금 또는 현장 지불 합계
+total_fee3      잔금 또는 현지 지불 합계
+total_fee4      세미패키지 총 상품금액 합계
+total_fee_air   세미패키지 항공요금 합계
+
+v2_pkgTour
+--------------------------------
+id              세미패키지 출발 일정 ID
+pid             g5_write_product.wr_id
+start_time      출발일
+arrive_time     도착일
+fee_1           예약금
+fee_2           중도금
+fee_3           잔금
+fee_air         항공요금
+price           총 상품금액
+seat            예약 가능 인원
+status          일정 상태
+is_main         대표 일정
+is_view         노출 여부
+del_time        삭제 여부
+
+2026-07-15 확인:
+
+- 상품 상세 API `backend-bridge/php-api/products/detail.php`는 세미패키지 일정 가격을 `v2_pkgTour.fee_1`, `fee_2`, `fee_3`, `fee_air`, `price`에서 읽는다.
+- API 응답 매핑은 `fee_1 -> deposit`, `fee_2 -> middlePayment/intermediatePayment`, `fee_3 -> finalPayment/balance`, `fee_air -> airfare`, `price -> totalPrice`이다.
+- 프런트 예약 payload에서 데일리투어 `items[].feeId`는 `tour_fee.id`, 세미패키지 `legacyPackageScheduleId`와 fallback `items[].feeId`는 `v2_pkgTour.id`를 사용한다.

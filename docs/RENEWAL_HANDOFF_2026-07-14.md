@@ -514,3 +514,30 @@ fee1 = 홈페이지 예약금
 - `php -l backend-bridge/php-api/admin/product-editor.php` 통과
 - `php -l backend-bridge/php-api/products/detail.php` 통과
 - `pnpm build` 통과
+ 
+## 2026-07-15 이번 작업에서 새롭게 확인된 사실
+
+- 세미패키지 상품 상세의 `2,890,000`은 프런트 정적 데이터 `SEMI_DETAIL_DATA.basePrice`/`availableDates[].price`에도 존재하지만, 운영 API 기준 실제 총 상품금액은 `v2_pkgTour.price -> packageSchedules[].totalPrice -> AvailableDate.totalPrice/price` 흐름으로 내려와야 한다.
+- `backend-bridge/php-api/products/detail.php`의 세미패키지 일정 조회는 `v2_pkgTour`에서 `fee_1`, `fee_2`, `fee_3`, `fee_air`, `price`를 읽는다.
+- 세미패키지 일정 가격 의미는 `fee_1=예약금`, `fee_2=중도금`, `fee_3=잔금`, `fee_air=항공요금`, `price=총 상품금액`으로 확인했다.
+- 기존 프런트 매핑은 세미패키지 일정 가격이 누락되거나 일정 매칭이 실패하면 `remoteDefaultFee.deposit`, `remoteBasePrice`, `baseDetailData.basePrice`로 fallback할 수 있었다. 이 구조는 일정별 가격 오류를 숨길 수 있어 세미패키지 일정 가격 계산에서는 제거했다.
+- `ReservationModule`과 `Booking_side`는 각각 별도 `useState`로 날짜/인원/feeCounts/cartAdded를 관리하고 있어, 한쪽에서 바꾼 신청구분별 인원 선택이 다른 쪽에 즉시 반영되지 않는 구조였다.
+- 공통 선택 상태는 `useReservationSelection(productId)`로 통합했다. 관리 값은 `selectedDateId`, `peopleCount`, `feeCounts`, `isCartAdded`이다.
+- 데일리투어 payload의 `items[].feeId`는 실제 `tour_fee.id`이고, 세미패키지 `legacyPackageScheduleId`와 예약 draft fallback `items[].feeId`는 실제 `v2_pkgTour.id`이다.
+
+### 2026-07-15 수정 이력
+
+- `src/pages/product/product_com/reservationUtils.ts`: `AvailableDate`에 세미패키지 일정별 가격 필드(`deposit`, `intermediatePayment`, `balance`, `airfare`, `totalPrice`)를 추가했다.
+- `src/pages/product/product_com/reservationStore.ts`: `useReservationSelection(productId)` 공통 store를 추가해 본문 예약 모듈과 하단 예약바의 선택 상태를 단일 source of truth로 통합했다.
+- `src/pages/product/ProductDetail.tsx`: 세미패키지 일정 매핑에서 `v2_pkgTour` 일정별 가격을 보존하고, 일정 가격 누락 시 상품 공통 가격으로 fallback하지 않도록 수정했다.
+- `src/pages/product/product_com/ReservationModule.tsx`: 데일리 다중 신청구분 수량과 세미패키지 일정/인원 선택을 공통 store에 연결하고, 세미패키지 표시 금액을 예약금과 총 상품금액으로 구분했다.
+- `src/pages/product/product_com/Booking_side.tsx`: 본문과 같은 공통 store를 사용하도록 수정하고, 데일리 다중 feeOptions 합계와 세미패키지 일정별 예약금/총액을 각각 분리 계산하도록 정리했다.
+- `backend-bridge/php-api/products/detail.php`: 세미패키지 일정 응답에 `intermediatePayment`, `balance` alias를 추가해 API 필드 의미를 명확히 했다.
+- `src/api/reservationApi.ts`: `PackageScheduleOption` 타입에 `intermediatePayment`, `balance`를 추가했다.
+
+### 다음 작업 / 운영 확인 필요
+
+- 운영 DB에서 같은 상품의 여러 `v2_pkgTour` 일정이 실제로 서로 다른 `fee_1/fee_2/fee_3/fee_air/price`를 갖는지 직접 확인해야 한다.
+- 운영 상품 상세 API 응답의 `packageSchedules[]`와 화면 `availableDates[]`가 같은 `v2_pkgTour.id`로 매칭되는지 확인해야 한다.
+- 운영 화면에서 데일리투어 신청구분 2개 선택 시 본문 예약 모듈과 하단 예약바가 모두 같은 총 인원/총 예약금을 표시하는지 확인해야 한다.
+- 세미패키지 일정 변경 시 예약금, 중도금, 잔금, 항공요금, 총 상품금액, `legacyPackageScheduleId`가 모두 선택 일정 기준으로 바뀌는지 확인해야 한다.

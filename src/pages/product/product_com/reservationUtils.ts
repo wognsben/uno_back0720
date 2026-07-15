@@ -15,6 +15,13 @@ export type AvailableDate = {
   seats: number;
   capacity: number;
   price: number;
+  deposit?: number;
+  intermediatePayment?: number;
+  middlePayment?: number;
+  balance?: number;
+  finalPayment?: number;
+  airfare?: number;
+  totalPrice?: number;
   status: string;
   guide: string;
 };
