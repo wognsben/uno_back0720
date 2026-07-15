@@ -122,13 +122,7 @@ export const createLegacyTourRegDraftRow = ({
   createdAt,
 }: LegacyReservationDraftInput): LegacyTourRegDraftRow => {
   const pid = legacyProductId ?? "";
-  const feeItems =
-    productType === "semi" && legacyPackageScheduleId
-      ? items.map((item) => ({
-          ...item,
-          feeId: item.feeId ?? legacyPackageScheduleId,
-        }))
-      : items;
+  const feeItems = items;
 
   return {
     regDate: createdAt ?? Math.floor(Date.now() / 1000),

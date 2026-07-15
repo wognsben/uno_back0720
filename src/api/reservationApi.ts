@@ -475,10 +475,7 @@ export const createReservationDraftRequest = (
     Array.isArray(payload.items) && payload.items.length > 0
       ? payload.items
       : null;
-  const feeId =
-    payload.productType === "semi"
-      ? payload.legacyPackageScheduleId ?? payload.legacyFeeOptionId
-      : payload.legacyFeeOptionId;
+  const feeId = payload.legacyFeeOptionId;
 
   return {
     productId: payload.productId,

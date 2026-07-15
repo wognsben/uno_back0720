@@ -523,7 +523,8 @@ fee1 = 홈페이지 예약금
 - 기존 프런트 매핑은 세미패키지 일정 가격이 누락되거나 일정 매칭이 실패하면 `remoteDefaultFee.deposit`, `remoteBasePrice`, `baseDetailData.basePrice`로 fallback할 수 있었다. 이 구조는 일정별 가격 오류를 숨길 수 있어 세미패키지 일정 가격 계산에서는 제거했다.
 - `ReservationModule`과 `Booking_side`는 각각 별도 `useState`로 날짜/인원/feeCounts/cartAdded를 관리하고 있어, 한쪽에서 바꾼 신청구분별 인원 선택이 다른 쪽에 즉시 반영되지 않는 구조였다.
 - 공통 선택 상태는 `useReservationSelection(productId)`로 통합했다. 관리 값은 `selectedDateId`, `peopleCount`, `feeCounts`, `isCartAdded`이다.
-- 데일리투어 payload의 `items[].feeId`는 실제 `tour_fee.id`이고, 세미패키지 `legacyPackageScheduleId`와 예약 draft fallback `items[].feeId`는 실제 `v2_pkgTour.id`이다.
+- 예약 payload의 `items[].feeId`는 실제 `tour_fee.id`이다.
+- 세미패키지 일정 ID는 `items[].legacyPackageScheduleId`와 최상위 `legacyPackageScheduleId`에 실제 `v2_pkgTour.id`로 분리해 전달한다.
 
 ### 2026-07-15 수정 이력
 

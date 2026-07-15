@@ -123,4 +123,6 @@ del_time        삭제 여부
 
 - 상품 상세 API `backend-bridge/php-api/products/detail.php`는 세미패키지 일정 가격을 `v2_pkgTour.fee_1`, `fee_2`, `fee_3`, `fee_air`, `price`에서 읽는다.
 - API 응답 매핑은 `fee_1 -> deposit`, `fee_2 -> middlePayment/intermediatePayment`, `fee_3 -> finalPayment/balance`, `fee_air -> airfare`, `price -> totalPrice`이다.
-- 프런트 예약 payload에서 데일리투어 `items[].feeId`는 `tour_fee.id`, 세미패키지 `legacyPackageScheduleId`와 fallback `items[].feeId`는 `v2_pkgTour.id`를 사용한다.
+- 프런트 예약 payload에서 `items[].feeId`는 `tour_fee.id`를 사용한다.
+- 세미패키지 `legacyPackageScheduleId`와 `items[].legacyPackageScheduleId`는 `v2_pkgTour.id`를 사용한다.
+- 세미 일정 ID를 `items[].feeId`로 대체하지 않는다.
