@@ -109,6 +109,7 @@ const formatBoardingPassDate = (value?: string | null) => {
 
 type ApiBoardingPassSegment =
   NonNullable<NonNullable<ProductDetailResponse["packageSchedules"]>[number]["boardingPass"]>["outbound"];
+type ApiPackageSchedule = NonNullable<ProductDetailResponse["packageSchedules"]>[number];
 
 const createBoardingPassSegment = (
   label: string,
@@ -136,15 +137,9 @@ const createBoardingPassSegment = (
 
 const getSemiBoardingPassTicket = (
   productType: ProductKind,
-  packageSchedules?: ProductDetailResponse["packageSchedules"],
+  selectedSchedule?: ApiPackageSchedule | null,
 ) => {
   if (productType !== "semi") return null;
-
-  const selectedSchedule = packageSchedules?.find((schedule) => {
-    const boardingPass = schedule.boardingPass;
-    return Boolean(boardingPass?.outbound || boardingPass?.inbound);
-  });
-
   if (!selectedSchedule?.boardingPass) return null;
 
   const startDateLabel = formatBoardingPassDate(selectedSchedule.startDate);
@@ -165,6 +160,46 @@ const getSemiBoardingPassTicket = (
       endDateLabel,
     ),
   };
+};
+
+const getFirstValidSemiBoardingPassSchedule = (
+  productType: ProductKind,
+  packageSchedules?: ProductDetailResponse["packageSchedules"],
+) => {
+  if (productType !== "semi") return null;
+  return packageSchedules?.find((schedule) => {
+    const boardingPass = schedule.boardingPass;
+    return Boolean(boardingPass?.outbound || boardingPass?.inbound);
+  }) ?? null;
+};
+
+const formatScheduleDateRange = (value?: string | null) => normalizeDateKey(value).replaceAll("-", ".");
+
+const getSemiBoardingPassNextSchedules = (
+  productType: ProductKind,
+  packageSchedules: ProductDetailResponse["packageSchedules"] | undefined,
+  selectedSchedule: ApiPackageSchedule | null,
+) => {
+  if (productType !== "semi" || !selectedSchedule) return [];
+  const selectedId = String(selectedSchedule.id);
+
+  return (packageSchedules ?? [])
+    .filter((schedule) => String(schedule.id) !== selectedId)
+    .slice()
+    .sort((a, b) => normalizeDateKey(a.startDate).localeCompare(normalizeDateKey(b.startDate)))
+    .map((schedule) => {
+      const outbound = schedule.boardingPass?.outbound;
+      const from = outbound?.fromCity?.trim() || outbound?.fromCode?.trim() || "";
+      const to = outbound?.toCity?.trim() || outbound?.toCode?.trim() || "";
+
+      return {
+        id: schedule.id,
+        startDate: formatScheduleDateRange(schedule.startDate),
+        endDate: formatScheduleDateRange(schedule.endDate || schedule.startDate),
+        route: [from, to].filter(Boolean).join(" → "),
+        departTime: outbound?.departTime?.trim() || "",
+      };
+    });
 };
 
 /*
@@ -2572,10 +2607,22 @@ export default function ProductDetail({
       remoteProductDetail?.title ?? currentListProduct?.title ?? "";
     const resolvedProductType =
       remoteProductDetail?.productType ?? productListType ?? baseDetailData.productType;
-    const remoteSemiBoardingPassTicket = getSemiBoardingPassTicket(
+    const remoteSemiSelectedSchedule = getFirstValidSemiBoardingPassSchedule(
       resolvedProductType,
       remoteProductDetail?.packageSchedules,
     );
+    const remoteSemiBoardingPassTicket = getSemiBoardingPassTicket(
+      resolvedProductType,
+      remoteSemiSelectedSchedule,
+    );
+    const remoteSemiNextSchedules = getSemiBoardingPassNextSchedules(
+      resolvedProductType,
+      remoteProductDetail?.packageSchedules,
+      remoteSemiSelectedSchedule,
+    );
+    const remoteSemiScheduleCount = resolvedProductType === "semi"
+      ? remoteProductDetail?.packageSchedules?.length
+      : undefined;
 
     if (!sourceProduct || productId === baseDetailData.id) {
       return {
@@ -2602,6 +2649,8 @@ export default function ProductDetail({
           getLegacyFeeOptionId(productId) ??
           baseDetailData.legacyFeeOptionId,
         ticket: remoteSemiBoardingPassTicket ?? baseDetailData.ticket,
+        semiPackageScheduleCount: remoteSemiScheduleCount,
+        semiNextSchedules: remoteSemiNextSchedules,
         basePrice: remoteBasePrice ?? 0,
         originalPrice: remoteProductDetail?.originalPrice,
         priceDescription: remoteProductDetail?.priceDescription,
@@ -2676,6 +2725,8 @@ export default function ProductDetail({
       priceDescription: remoteProductDetail?.priceDescription,
       feeOptions: remoteProductDetail?.feeOptions ?? [],
       ticket: remoteSemiBoardingPassTicket ?? baseDetailData.ticket,
+      semiPackageScheduleCount: remoteSemiScheduleCount,
+      semiNextSchedules: remoteSemiNextSchedules,
       heroImage:
         remoteThumbnailUrl ||
         (isRemoteProductDetailLoading || !remoteProductDetail ? "" : (
@@ -2912,6 +2963,8 @@ export default function ProductDetail({
             basePrice: DETAIL_DATA.basePrice,
             feeOptions: DETAIL_DATA.feeOptions,
             ticket: DETAIL_DATA.ticket,
+            semiPackageScheduleCount: DETAIL_DATA.semiPackageScheduleCount,
+            semiNextSchedules: DETAIL_DATA.semiNextSchedules,
           }}
           dates={availableDateSource}
         />

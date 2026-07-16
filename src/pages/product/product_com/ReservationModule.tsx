@@ -67,6 +67,66 @@ const RESERVATION_MODULE_STYLE = `
     overflow: visible;
   }
 
+  .pd-book-ready {
+    min-height: 430px;
+    display: grid;
+    place-items: center;
+    border: 1px solid rgba(21, 21, 21, 0.16);
+    background: #ffffff;
+    font-family: var(--font-ko);
+    font-size: 18px;
+    font-weight: 760;
+    color: rgba(21, 21, 21, 0.62);
+  }
+
+  .pd-book-next-tours {
+    margin-top: 14px;
+    border-top: 1px solid rgba(21, 21, 21, 0.12);
+    padding-top: 14px;
+  }
+
+  .pd-book-next-toggle {
+    width: 100%;
+    min-height: 42px;
+    border: 1px solid rgba(21, 21, 21, 0.18);
+    background: #ffffff;
+    color: #151515;
+    font-family: var(--font-ko);
+    font-size: 14px;
+    font-weight: 760;
+    cursor: pointer;
+  }
+
+  .pd-book-next-list {
+    display: grid;
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  .pd-book-next-item {
+    display: grid;
+    gap: 5px;
+    border: 1px solid rgba(21, 21, 21, 0.14);
+    padding: 12px 14px;
+    background: #fafaf8;
+    color: #151515;
+  }
+
+  .pd-book-next-item strong {
+    font-family: var(--font-en), var(--font-ko);
+    font-size: 15px;
+    line-height: 1.2;
+    font-weight: 760;
+  }
+
+  .pd-book-next-item span,
+  .pd-book-next-item small {
+    font-family: var(--font-ko);
+    font-size: 13px;
+    line-height: 1.35;
+    color: rgba(21, 21, 21, 0.68);
+  }
+
   .pd-book-side {
   display: flex;
   flex-direction: column;
@@ -347,8 +407,21 @@ export function ReservationModuleStyles() {
   return <style>{RESERVATION_MODULE_STYLE}</style>;
 }
 
+type SemiNextSchedule = {
+  id: number | string;
+  startDate: string;
+  endDate: string;
+  route: string;
+  departTime: string;
+};
+
+type ReservationModuleProductContext = ReservationProductContext & {
+  semiPackageScheduleCount?: number;
+  semiNextSchedules?: SemiNextSchedule[];
+};
+
 export type ReservationModuleProps = {
-  product: ReservationProductContext;
+  product: ReservationModuleProductContext;
   dates: AvailableDate[];
   selectedDateId?: string;
   initialPeople?: number;
@@ -365,6 +438,7 @@ function ReservationModule({
   maxPeople,
 }: ReservationModuleProps) {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isNextToursOpen, setIsNextToursOpen] = useState(false);
   const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
 
 const initialSelectedDateId = selectedDateId || getInitialDailyDateId(dates);
@@ -542,10 +616,42 @@ const statusLabel = status === "soldout" ? "예약 마감" : getAvailabilityDisp
     </div>
   ) : (
     <>
-      <BookingBoardingPass
-        outbound={product.ticket?.outbound}
-        inbound={product.ticket?.inbound}
-      />
+      {product.semiPackageScheduleCount === 0 ? (
+        <div className="pd-book-ready">준비중</div>
+      ) : (
+        <BookingBoardingPass
+          outbound={product.ticket?.outbound}
+          inbound={product.ticket?.inbound}
+        />
+      )}
+      {product.semiPackageScheduleCount !== undefined &&
+      product.semiPackageScheduleCount >= 2 &&
+      product.semiNextSchedules &&
+      product.semiNextSchedules.length > 0 ? (
+        <div className="pd-book-next-tours">
+          <button
+            type="button"
+            className="pd-book-next-toggle"
+            onClick={() => setIsNextToursOpen((current) => !current)}
+            aria-expanded={isNextToursOpen}
+          >
+            다음 가능 투어 보기
+          </button>
+          {isNextToursOpen ? (
+            <div className="pd-book-next-list">
+              {product.semiNextSchedules.map((schedule) => (
+                <div className="pd-book-next-item" key={String(schedule.id)}>
+                  <strong>
+                    {schedule.startDate} ~ {schedule.endDate}
+                  </strong>
+                  <span>{schedule.route || "이동 일정 준비중"}</span>
+                  {schedule.departTime ? <small>{schedule.departTime} 출발</small> : null}
+                </div>
+              ))}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
       <p>개별 항공권은 포함되지 않습니다.</p>
     </>
   )}
