@@ -91,6 +91,24 @@ export type PackageScheduleOption = {
   seat?: number;
   status?: string;
   isDefault?: boolean;
+  boardingPass?: {
+    outbound?: {
+      fromCode?: string;
+      fromCity?: string;
+      toCode?: string;
+      toCity?: string;
+      departTime?: string;
+      arriveTime?: string;
+    };
+    inbound?: {
+      fromCode?: string;
+      fromCity?: string;
+      toCode?: string;
+      toCity?: string;
+      departTime?: string;
+      arriveTime?: string;
+    };
+  };
 };
 
 export type ProductFaqItem = {

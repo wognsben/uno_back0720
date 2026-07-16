@@ -74,6 +74,11 @@ uno_renewal_admin_render_pagehead(
       .uno-schedule-state { display: grid; grid-template-columns: repeat(auto-fit, minmax(148px, 1fr)); gap: 8px; margin: -4px 0 14px; }
       .uno-schedule-state__item { min-height: 38px; display: flex; align-items: center; gap: 8px; border: 1px solid var(--uno-line); background: #fafaf8; padding: 8px 10px; color: var(--uno-ink); font-size: 13px; font-weight: 900; line-height: 1.3; }
       .uno-schedule-state__item input { width: 16px; height: 16px; flex: 0 0 auto; }
+      .uno-schedule-toolbar { display: flex; align-items: center; gap: 14px; justify-content: space-between; margin-bottom: 14px; }
+      .uno-schedule-toolbar__left { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+      .uno-schedule-bulk { display: inline-flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 800; color: var(--uno-ink); }
+      .uno-schedule-bulk input { width: 16px !important; height: 16px; min-height: 16px; }
+      .uno-schedule-selected-count { font-size: 12px; font-weight: 800; color: var(--uno-muted); }
       .uno-schedule-card.is-selected { border-color: rgba(0, 59, 122, .45); box-shadow: 0 0 0 2px rgba(0, 59, 122, .12); }
       .uno-schedule-card .uno-boarding-pass { position: relative; grid-column: 1 / -1; display: grid; grid-template-columns: 92px minmax(0, 1fr); width: 100%; min-height: 430px; border: 1px solid rgba(21, 21, 21, 0.16); border-radius: 0; background: #fff; color: #151515; overflow: hidden; box-sizing: border-box; }
       .uno-schedule-select { position: absolute; left: 14px; top: 14px; z-index: 4; display: inline-grid; place-items: center; width: 22px; height: 22px; border: 1px solid rgba(21, 21, 21, .28); background: #fff; cursor: pointer; }
@@ -528,7 +533,13 @@ uno_renewal_admin_render_pagehead(
       const buildSemiScheduleEditor = () => {
         const schedules = (state.data.semiSchedules || []).slice().sort((a, b) => Number(!!b.isMain) - Number(!!a.isMain));
         return '<p class="uno-section-note">좌석, 항공권 코드, 추가금 같은 항공권 판매 항목은 여기서 다루지 않습니다. 프런트 보딩패스에 필요한 일정만 관리합니다.</p>' +
-          '<div class="uno-admin-actions" style="justify-content:flex-start;margin-bottom:14px;"><button class="uno-admin-button" type="button" data-add-semi-schedule>일정 추가</button></div>' +
+          '<div class="uno-schedule-toolbar">' +
+            '<div class="uno-schedule-toolbar__left">' +
+              '<button class="uno-admin-button" type="button" data-add-semi-schedule>일정 추가</button>' +
+              '<label class="uno-schedule-bulk"><input type="checkbox" data-select-all-semi-schedules> 전체 선택</label>' +
+              '<span class="uno-schedule-selected-count" data-semi-selected-count>선택 0개</span>' +
+            '</div>' +
+          '</div>' +
           '<div class="uno-schedule-list" data-semi-schedule-list>' + (schedules.length ? schedules.map(semiScheduleCard).join("") : '<p class="uno-section-note">등록된 세미패키지 일정이 없습니다. 일정 추가 버튼을 눌러 새 일정을 입력해 주세요.</p>') + '</div>';
       };
 
@@ -815,7 +826,7 @@ uno_renewal_admin_render_pagehead(
       };
 
       const refreshCurrentModal = () => { renderProduct(); if (state.activeModal) openModal(state.activeModal); };
-      const openModal = (key) => { const section = window.productHubSections && window.productHubSections[key]; if (!section) return; state.activeModal = key; modalTitleEl.textContent = section.title; modalEyebrowEl.textContent = section.eyebrow; modalBodyEl.innerHTML = key === "semi" ? buildSemiScheduleEditor() : key === "daily" ? buildDailyCalendarEditor() : section.body; if (key === "detail") { modalBodyEl.insertAdjacentHTML("beforeend", '<p class="uno-section-note" style="margin-top:16px;">상세페이지 바디 투어설명은 tourCourse.php의 v2_tourInfo 파일입니다. v2_course는 PRODUCT DOCUMENT 투어코스입니다.</p>' + mediaAudit(state.data.product || {}, "body")); } modalEl.classList.add("is-open"); modalEl.setAttribute("aria-hidden", "false"); };
+      const openModal = (key) => { const section = window.productHubSections && window.productHubSections[key]; if (!section) return; state.activeModal = key; modalTitleEl.textContent = section.title; modalEyebrowEl.textContent = section.eyebrow; modalBodyEl.innerHTML = key === "semi" ? buildSemiScheduleEditor() : key === "daily" ? buildDailyCalendarEditor() : section.body; if (key === "detail") { modalBodyEl.insertAdjacentHTML("beforeend", '<p class="uno-section-note" style="margin-top:16px;">상세페이지 바디 투어설명은 tourCourse.php의 v2_tourInfo 파일입니다. v2_course는 PRODUCT DOCUMENT 투어코스입니다.</p>' + mediaAudit(state.data.product || {}, "body")); } if (key === "semi") updateSemiScheduleSelectionState(); modalEl.classList.add("is-open"); modalEl.setAttribute("aria-hidden", "false"); };
       const closeModal = () => { modalEl.classList.remove("is-open"); modalEl.setAttribute("aria-hidden", "true"); };
 
       const uploadThumbnail = async (file) => {
@@ -833,11 +844,55 @@ uno_renewal_admin_render_pagehead(
         state.data = json.data;
       };
 
+      const getSelectedSemiScheduleCards = () => Array.from(modalBodyEl.querySelectorAll("[data-select-semi-schedule]:checked"))
+        .map((checkbox) => checkbox.closest("[data-semi-schedule-card]"))
+        .filter(Boolean);
+
+      const isBulkSelectableSemiSchedule = (card) => {
+        if (!card || !card.dataset.id) return false;
+        if (card.dataset.isMain === "1") return false;
+        const deleteButton = card.querySelector("[data-delete-semi-schedule]");
+        return !deleteButton || !deleteButton.disabled;
+      };
+
+      const updateSemiScheduleSelectionState = () => {
+        const cards = Array.from(modalBodyEl.querySelectorAll("[data-semi-schedule-card]"));
+        const selectedCards = getSelectedSemiScheduleCards();
+        cards.forEach((card) => {
+          const checkbox = card.querySelector("[data-select-semi-schedule]");
+          card.classList.toggle("is-selected", !!(checkbox && checkbox.checked));
+        });
+        const selectableCards = cards.filter(isBulkSelectableSemiSchedule);
+        const selectAll = $("[data-select-all-semi-schedules]", modalBodyEl);
+        if (selectAll) {
+          selectAll.checked = selectableCards.length > 0 && selectableCards.every((card) => {
+            const checkbox = card.querySelector("[data-select-semi-schedule]");
+            return checkbox && checkbox.checked;
+          });
+          selectAll.indeterminate = selectedCards.length > 0 && !selectAll.checked;
+        }
+        const count = $("[data-semi-selected-count]", modalBodyEl);
+        if (count) count.textContent = "선택 " + selectedCards.length + "개";
+      };
+
       document.addEventListener("click", async (event) => {
         const openButton = event.target.closest("[data-open-modal]");
         if (openButton) { openModal(openButton.dataset.openModal); return; }
         if (event.target.closest("[data-close-modal]") || event.target === modalEl) { closeModal(); return; }
-        if (event.target.closest("[data-add-semi-schedule]")) { const list = $("[data-semi-schedule-list]", modalBodyEl); list.innerHTML = list.querySelector("[data-semi-schedule-card]") ? list.innerHTML : ""; list.insertAdjacentHTML("afterbegin", semiScheduleCard({})); return; }
+        if (event.target.closest("[data-add-semi-schedule]")) {
+          const list = $("[data-semi-schedule-list]", modalBodyEl);
+          const pendingCard = list.querySelector("[data-semi-schedule-card]:not([data-id]), [data-semi-schedule-card][data-id='']");
+          if (pendingCard) {
+            pendingCard.scrollIntoView({ behavior: "smooth", block: "center" });
+            pendingCard.classList.add("is-selected");
+            showModalNotice("입력 중인 새 일정이 있습니다. 먼저 저장하거나 입력 취소해 주세요.", "warn");
+            return;
+          }
+          list.innerHTML = list.querySelector("[data-semi-schedule-card]") ? list.innerHTML : "";
+          list.insertAdjacentHTML("afterbegin", semiScheduleCard({}));
+          updateSemiScheduleSelectionState();
+          return;
+        }
         const saveBasic = event.target.closest("[data-save-basic]");
         if (saveBasic) { try { saveBasic.disabled = true; setStatus("기본 정보를 저장하는 중입니다."); await apiRequest(basicPayload()); setStatus("기본 정보가 저장되었습니다.", "ok"); refreshCurrentModal(); } catch (error) { setStatus(error.message || "기본 정보를 저장하지 못했습니다.", "warn"); } finally { saveBasic.disabled = false; } return; }
         const uploadButton = event.target.closest("[data-upload-thumbnail]");
@@ -860,27 +915,41 @@ uno_renewal_admin_render_pagehead(
         if (saveSemi) { const card = saveSemi.closest("[data-semi-schedule-card]"); try { saveSemi.disabled = true; setStatus("세미패키지 일정을 저장하는 중입니다."); await apiRequest(semiPayload(card)); setStatus("세미패키지 일정이 저장되었습니다.", "ok"); refreshCurrentModal(); showModalNotice("저장했습니다."); } catch (error) { setStatus(error.message || "일정을 저장하지 못했습니다.", "warn"); showModalNotice(error.message || "일정을 저장하지 못했습니다.", "warn"); } finally { saveSemi.disabled = false; } return; }
         const deleteSemi = event.target.closest("[data-delete-semi-schedule]");
         if (deleteSemi) {
-          const selectedCard = modalBodyEl.querySelector("[data-select-semi-schedule]:checked")?.closest("[data-semi-schedule-card]");
-          const card = selectedCard || deleteSemi.closest("[data-semi-schedule-card]");
-          const id = card && card.dataset.id ? Number(card.dataset.id) : 0;
-          if (!id) {
-            const hasInput = Array.from(card.querySelectorAll("[data-field]")).some((input) => input.type !== "checkbox" && String(input.value || "").trim() !== "");
+          const selectedCards = getSelectedSemiScheduleCards();
+          const targetCards = selectedCards.length ? selectedCards : [deleteSemi.closest("[data-semi-schedule-card]")].filter(Boolean);
+          const unsavedCards = targetCards.filter((card) => !card.dataset.id);
+          const savedCards = targetCards.filter((card) => !!card.dataset.id);
+          const blockedCards = savedCards.filter((card) => card.dataset.isMain === "1" || (card.querySelector("[data-delete-semi-schedule]") && card.querySelector("[data-delete-semi-schedule]").disabled));
+          const deletableCards = savedCards.filter((card) => !blockedCards.includes(card));
+
+          if (blockedCards.length) {
+            showModalNotice("대표 일정 또는 예약이 있는 일정은 삭제할 수 없습니다.", "warn");
+            return;
+          }
+
+          if (unsavedCards.length && !deletableCards.length) {
+            const hasInput = unsavedCards.some((card) => Array.from(card.querySelectorAll("[data-field]")).some((input) => input.type !== "checkbox" && String(input.value || "").trim() !== ""));
             if (hasInput && !window.confirm("입력 중인 내용이 있습니다. 취소할까요?")) return;
-            card.remove();
+            unsavedCards.forEach((card) => card.remove());
+            updateSemiScheduleSelectionState();
             showModalNotice("입력을 취소했습니다.");
             return;
           }
-          if (card.dataset.isMain === "1") {
-            showModalNotice("대표 일정은 삭제할 수 없습니다.", "warn");
-            return;
-          }
-          if (!window.confirm("선택한 일정 #" + id + "을 삭제할까요?")) return;
-          if (card.dataset.hasContent === "1" && !window.confirm("이 일정에는 입력된 내용이 있습니다. 정말 삭제할까요?")) return;
+
+          if (!deletableCards.length) return;
+
+          const ids = deletableCards.map((card) => Number(card.dataset.id));
+          if (!window.confirm("선택한 " + ids.length + "개 일정을 삭제할까요?")) return;
+          if (deletableCards.some((card) => card.dataset.hasContent === "1") && !window.confirm("선택한 일정에 입력된 내용이 있습니다. 정말 삭제할까요?")) return;
           try {
             deleteSemi.disabled = true;
             setStatus("세미패키지 일정을 삭제하는 중입니다.");
-            await apiRequest({ action: "deleteSemiSchedule", id });
-            card.remove();
+            for (const id of ids) {
+              await apiRequest({ action: "deleteSemiSchedule", id });
+            }
+            unsavedCards.forEach((card) => card.remove());
+            deletableCards.forEach((card) => card.remove());
+            updateSemiScheduleSelectionState();
             setStatus("세미패키지 일정이 삭제되었습니다.", "ok");
             showModalNotice("삭제했습니다.");
           } catch (error) {
@@ -925,15 +994,19 @@ uno_renewal_admin_render_pagehead(
       });
 
       document.addEventListener("change", (event) => {
-        const selectedSemi = event.target.closest("[data-select-semi-schedule]");
-        if (selectedSemi) {
-          const selectedCard = selectedSemi.closest("[data-semi-schedule-card]");
+        const selectAllSemi = event.target.closest("[data-select-all-semi-schedules]");
+        if (selectAllSemi) {
           modalBodyEl.querySelectorAll("[data-semi-schedule-card]").forEach((card) => {
             const checkbox = card.querySelector("[data-select-semi-schedule]");
-            const isCurrent = card === selectedCard && selectedSemi.checked;
-            card.classList.toggle("is-selected", isCurrent);
-            if (checkbox && checkbox !== selectedSemi) checkbox.checked = false;
+            if (checkbox && isBulkSelectableSemiSchedule(card)) checkbox.checked = selectAllSemi.checked;
           });
+          updateSemiScheduleSelectionState();
+          return;
+        }
+
+        const selectedSemi = event.target.closest("[data-select-semi-schedule]");
+        if (selectedSemi) {
+          updateSemiScheduleSelectionState();
           return;
         }
 

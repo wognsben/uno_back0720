@@ -31,6 +31,7 @@ import {
 } from "../../api/reservationApi";
 import { saveRecentlyViewedProduct } from "../../utils/recentlyViewed";
 import ReservationModule from "./product_com/ReservationModule";
+import type { BoardingPassFlightSegment } from "./product_com/BoardingPass";
 import BookingSide from "./product_com/Booking_side";
 import InfiniteOther, {
   getProductListItemType,
@@ -96,6 +97,74 @@ const normalizeDateKey = (value?: string | null) => {
   const match = String(value ?? "").match(/(\d{4})[-.\/](\d{1,2})[-.\/](\d{1,2})/);
   if (!match) return "";
   return `${match[1]}-${match[2].padStart(2, "0")}-${match[3].padStart(2, "0")}`;
+};
+
+const formatBoardingPassDate = (value?: string | null) => {
+  const dateKey = normalizeDateKey(value);
+  if (!dateKey) return "";
+
+  const date = parseDateId(dateKey);
+  return `${date.getMonth() + 1}월 ${date.getDate()}일 (${getWeekdayKo(date)})`;
+};
+
+type ApiBoardingPassSegment =
+  NonNullable<NonNullable<ProductDetailResponse["packageSchedules"]>[number]["boardingPass"]>["outbound"];
+
+const createBoardingPassSegment = (
+  label: string,
+  segment: ApiBoardingPassSegment,
+  departDate: string,
+  arriveDate: string,
+): BoardingPassFlightSegment => {
+  const fromCode = segment?.fromCode?.trim() || segment?.fromCity?.trim() || "";
+  const fromCity = segment?.fromCity?.trim() || segment?.fromCode?.trim() || "";
+  const toCode = segment?.toCode?.trim() || segment?.toCity?.trim() || "";
+  const toCity = segment?.toCity?.trim() || segment?.toCode?.trim() || "";
+
+  return {
+    label,
+    fromCode,
+    fromCity,
+    toCode,
+    toCity,
+    departTime: segment?.departTime?.trim() || "",
+    departDate,
+    arriveTime: segment?.arriveTime?.trim() || "",
+    arriveDate,
+  };
+};
+
+const getSemiBoardingPassTicket = (
+  productType: ProductKind,
+  packageSchedules?: ProductDetailResponse["packageSchedules"],
+) => {
+  if (productType !== "semi") return null;
+
+  const selectedSchedule = packageSchedules?.find((schedule) => {
+    const boardingPass = schedule.boardingPass;
+    return Boolean(boardingPass?.outbound || boardingPass?.inbound);
+  });
+
+  if (!selectedSchedule?.boardingPass) return null;
+
+  const startDateLabel = formatBoardingPassDate(selectedSchedule.startDate);
+  const endDateLabel = formatBoardingPassDate(selectedSchedule.endDate || selectedSchedule.startDate);
+
+  return {
+    status: selectedSchedule.status || "출발 예정",
+    outbound: createBoardingPassSegment(
+      "OUTBOUND · 가는 편",
+      selectedSchedule.boardingPass.outbound,
+      startDateLabel,
+      startDateLabel,
+    ),
+    inbound: createBoardingPassSegment(
+      "INBOUND · 오는 편",
+      selectedSchedule.boardingPass.inbound,
+      endDateLabel,
+      endDateLabel,
+    ),
+  };
 };
 
 /*
@@ -2501,6 +2570,12 @@ export default function ProductDetail({
     const sourceProduct = currentListProduct;
     const remoteOrListTitle =
       remoteProductDetail?.title ?? currentListProduct?.title ?? "";
+    const resolvedProductType =
+      remoteProductDetail?.productType ?? productListType ?? baseDetailData.productType;
+    const remoteSemiBoardingPassTicket = getSemiBoardingPassTicket(
+      resolvedProductType,
+      remoteProductDetail?.packageSchedules,
+    );
 
     if (!sourceProduct || productId === baseDetailData.id) {
       return {
@@ -2511,7 +2586,7 @@ export default function ProductDetail({
           getLegacyPackageScheduleId(productId) ??
           baseDetailData.legacyPackageScheduleId,
         href: pathname || baseDetailData.href,
-        productType: remoteProductDetail?.productType ?? baseDetailData.productType,
+        productType: resolvedProductType,
         title: remoteOrListTitle,
         titleEn: "",
         eyebrow: "",
@@ -2526,6 +2601,7 @@ export default function ProductDetail({
           remoteProductDetail?.legacyFeeOptionId ??
           getLegacyFeeOptionId(productId) ??
           baseDetailData.legacyFeeOptionId,
+        ticket: remoteSemiBoardingPassTicket ?? baseDetailData.ticket,
         basePrice: remoteBasePrice ?? 0,
         originalPrice: remoteProductDetail?.originalPrice,
         priceDescription: remoteProductDetail?.priceDescription,
@@ -2585,8 +2661,7 @@ export default function ProductDetail({
         getLegacyPackageScheduleId(sourceProduct.id) ??
         baseDetailData.legacyPackageScheduleId,
       href: sourceProduct.href ?? pathname ?? baseDetailData.href,
-      productType:
-        remoteProductDetail?.productType ?? productListType ?? baseDetailData.productType,
+      productType: resolvedProductType,
       eyebrow: sourceProduct.eyebrow ?? sourceRegion ?? baseDetailData.eyebrow,
       title: remoteProductDetail?.title ?? sourceProduct.title,
       titleEn: "",
@@ -2600,6 +2675,7 @@ export default function ProductDetail({
       originalPrice: remoteProductDetail?.originalPrice,
       priceDescription: remoteProductDetail?.priceDescription,
       feeOptions: remoteProductDetail?.feeOptions ?? [],
+      ticket: remoteSemiBoardingPassTicket ?? baseDetailData.ticket,
       heroImage:
         remoteThumbnailUrl ||
         (isRemoteProductDetailLoading || !remoteProductDetail ? "" : (
