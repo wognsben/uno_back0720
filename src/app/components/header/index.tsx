@@ -1228,7 +1228,7 @@ function RecentlyViewedPanel({
                 </div>
                 <div
                   style={{
-                    fontFamily: "var(--font-kr, var(--font-en))",
+                    fontFamily: "var(--font-ko)",
                     fontSize: 14,
                     fontWeight: 700,
                     lineHeight: 1.28,

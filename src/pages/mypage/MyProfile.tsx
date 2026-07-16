@@ -229,7 +229,7 @@ const STYLE = `
 
   .mypage-heading h2 {
     margin: 18px 0 16px;
-    font-family: "Times New Roman", ${FONT_EN};
+    font-family: ${FONT_EN};
     font-size: 88px;
     font-weight: 400;
     line-height: .82;

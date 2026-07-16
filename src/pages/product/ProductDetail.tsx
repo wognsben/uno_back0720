@@ -1540,113 +1540,6 @@ const STYLE = `
     will-change: transform, opacity;
   }
 
-  .pd-notice-modal-backdrop {
-    position: fixed;
-    inset: 0;
-    z-index: 130;
-    background:
-      radial-gradient(circle at 50% 12%, rgba(252, 200, 0, 0.14) 0%, rgba(252, 200, 0, 0) 34%),
-      rgba(7, 9, 12, 0.42);
-    backdrop-filter: blur(18px) saturate(1.18);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 28px;
-    box-sizing: border-box;
-  }
-
-  .pd-notice-modal {
-    width: min(620px, calc(100% - 48px));
-    border: 1px solid rgba(255, 255, 255, 0.72);
-    border-radius: 34px;
-    background:
-      linear-gradient(180deg, rgba(255,255,255,0.96) 0%, rgba(244,245,241,0.92) 100%);
-    box-shadow:
-      0 44px 130px rgba(0, 0, 0, 0.24),
-      inset 0 1px 0 rgba(255, 255, 255, 0.95);
-    padding: 0;
-    box-sizing: border-box;
-    overflow: hidden;
-  }
-
-  .pd-notice-modal-titlebar {
-    height: 54px;
-    padding: 0 20px;
-    box-sizing: border-box;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    border-bottom: 1px solid rgba(21, 21, 21, 0.08);
-    background: rgba(255,255,255,0.42);
-  }
-
-  .pd-notice-modal-dots {
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-  }
-
-  .pd-notice-modal-dots span {
-    width: 10px;
-    height: 10px;
-    border-radius: 999px;
-    background: rgba(21, 21, 21, 0.18);
-  }
-
-  .pd-notice-modal-label {
-    font-family: var(--font-en);
-    font-size: 11px;
-    line-height: 1;
-    letter-spacing: 0.16em;
-    color: rgba(21,21,21,0.42);
-  }
-
-  .pd-notice-modal-content {
-    padding: 38px 38px 34px;
-    box-sizing: border-box;
-  }
-
-  .pd-notice-modal-title {
-    margin: 0;
-    font-family: var(--font-ko);
-    font-size: 34px;
-    line-height: 1.1;
-    letter-spacing: -0.06em;
-    color: #151515;
-  }
-
-  .pd-notice-modal-body {
-    margin: 24px 0 0;
-    padding: 24px;
-    border: 1px solid rgba(21,21,21,0.08);
-    border-radius: 24px;
-    background: rgba(255,255,255,0.56);
-    font-family: var(--font-ko);
-    font-size: 16px;
-    line-height: 1.76;
-    letter-spacing: -0.04em;
-    color: rgba(21, 21, 21, 0.68);
-    word-break: keep-all;
-  }
-
-  .pd-notice-modal-confirm {
-    appearance: none;
-    border: 0;
-    border-radius: 999px;
-    background: #fcc800;
-    width: 100%;
-    height: 58px;
-    margin-top: 28px;
-    cursor: pointer;
-    font-family: var(--font-ko);
-    font-size: 16px;
-    line-height: 1;
-    letter-spacing: -0.035em;
-    color: #151515;
-    font-weight: 800;
-    box-shadow: 0 20px 52px rgba(252, 200, 0, 0.28);
-  }
-
   /* Product Detail Premium Editorial Body Renewal */
   .pd-body-section {
     width: 1700px;
@@ -2782,7 +2675,6 @@ export default function ProductDetail({
     ?�제 백엔???�동 ??review list / review summary / review rating ?�이?��? ?�결?�다.
   */
   const [isReviewSurfaceOpen, setIsReviewSurfaceOpen] = useState(false);
-  const [activeNotice, setActiveNotice] = useState<DetailNotice | null>(null);
   const isDailyTour = DETAIL_DATA.productType === "daily";
   const [heroRotationIndex, setHeroRotationIndex] = useState(0);
   const heroRotationImages = useMemo(() => {
@@ -2975,7 +2867,6 @@ export default function ProductDetail({
           selectedGuide={DETAIL_DATA.selectedGuide}
           isDailyTour={isDailyTour}
           onOpenReview={() => setIsReviewSurfaceOpen(true)}
-          onOpenNotice={setActiveNotice}
         />
 
         {/* Detail Body Image Area */}
@@ -3097,44 +2988,6 @@ export default function ProductDetail({
         />
       </div>
       </section>
-
-
-
-      {activeNotice && (
-        <div
-          className="pd-notice-modal-backdrop"
-          role="presentation"
-          onClick={() => setActiveNotice(null)}
-        >
-          <aside
-            className="pd-notice-modal"
-            role="dialog"
-            aria-modal="true"
-            aria-label={activeNotice.title}
-            onClick={(event) => event.stopPropagation()}
-          >
-            <div className="pd-notice-modal-titlebar" aria-hidden="true">
-              <span className="pd-notice-modal-dots">
-                <span />
-                <span />
-                <span />
-              </span>
-              <span className="pd-notice-modal-label">UNOTRAVEL NOTICE</span>
-            </div>
-            <div className="pd-notice-modal-content">
-              <h2 className="pd-notice-modal-title">{activeNotice.title}</h2>
-              <p className="pd-notice-modal-body">{activeNotice.body}</p>
-              <button
-                type="button"
-                className="pd-notice-modal-confirm"
-                onClick={() => setActiveNotice(null)}
-              >
-                ?�인
-              </button>
-            </div>
-          </aside>
-        </div>
-      )}
 
       {isReviewSurfaceOpen && (
         <div

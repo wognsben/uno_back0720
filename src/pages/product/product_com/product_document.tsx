@@ -77,7 +77,6 @@ type ProductDocumentProps = {
   selectedGuide: string;
   isDailyTour: boolean;
   onOpenReview: () => void;
-  onOpenNotice: (notice: DetailNotice) => void;
 };
 
 const PRODUCT_DOCUMENT_TABS: Array<{
@@ -224,20 +223,20 @@ const STYLE = `
   }
 
   .pd-product-document-content {
-    width: 1600px;
-    margin: 0 50px 84px;
+    width: min(1600px, calc(100vw - 100px));
+    margin: 0 auto 84px;
     padding: 38px 0 54px;
     border-top: 1px solid rgba(21, 21, 21, 0.14);
     border-bottom: 1px solid rgba(21, 21, 21, 0.14);
     display: grid;
-    grid-template-columns: 260px minmax(0, 1fr);
-    gap: 42px;
+    grid-template-columns: 220px minmax(0, 1fr);
+    gap: 34px;
     box-sizing: border-box;
   }
 
   .pd-product-document-content-left {
-    border-right: 1px solid rgba(21, 21, 21, 0.1);
-    padding-right: 28px;
+    border-right: 1px solid rgba(21, 21, 21, 0.08);
+    padding-right: 24px;
   }
 
   .pd-document-content-index {
@@ -260,6 +259,9 @@ const STYLE = `
 
   .pd-product-document-content-main {
     min-width: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-content: start;
   }
 
   .pd-document-image-groups {
@@ -316,7 +318,7 @@ const STYLE = `
   .pd-body-paragraph,
   .pd-document-review > p {
     margin: 0;
-    max-width: 760px;
+    max-width: none;
     font-family: var(--font-ko);
     font-size: 17px;
     line-height: 1.78;
@@ -330,6 +332,7 @@ const STYLE = `
     display: grid;
     gap: 12px;
     margin-top: 24px;
+    width: 100%;
   }
 
   .pd-document-review-item {
@@ -365,9 +368,9 @@ const STYLE = `
 
   .pd-document-course-item {
     display: grid;
-    grid-template-columns: 86px 120px minmax(0, 1fr);
-    gap: 20px;
-    padding: 18px 0;
+    grid-template-columns: 86px minmax(0, 1fr);
+    gap: 18px 22px;
+    padding: 20px 0;
     border-top: 1px solid rgba(21, 21, 21, 0.1);
   }
 
@@ -375,6 +378,10 @@ const STYLE = `
     display: flex;
     flex-direction: column;
     gap: 8px;
+  }
+
+  .pd-document-course-number {
+    align-self: start;
   }
 
   .pd-document-course-copy strong {
@@ -401,7 +408,7 @@ const STYLE = `
   }
 
   .pd-body-mini-meta {
-    display: inline-grid;
+    display: grid;
     gap: 10px;
     margin-top: 24px;
     padding: 20px 22px;
@@ -503,12 +510,13 @@ const STYLE = `
     gap: 0;
     margin-top: 24px;
     border-top: 1px solid rgba(21, 21, 21, 0.12);
+    width: 100%;
   }
 
   .pd-body-document-row {
     display: grid;
     grid-template-columns: 54px minmax(0, 1fr);
-    gap: 22px;
+    gap: 18px;
     padding: 18px 0;
     border-bottom: 1px solid rgba(21, 21, 21, 0.12);
   }
@@ -553,20 +561,18 @@ const STYLE = `
     margin-top: 24px;
   }
 
-  .pd-body-notice-buttons button {
-    appearance: none;
+  .pd-body-notice-card {
     border: 1px solid rgba(21, 21, 21, 0.12);
     background: #ffffff;
     padding: 18px 20px;
-    cursor: pointer;
     text-align: left;
   }
 
   .pd-meeting-panel {
     display: grid;
-    grid-template-columns: 420px minmax(0, 1fr);
-    gap: 26px;
-    min-height: 360px;
+    grid-template-columns: minmax(280px, 0.38fr) minmax(0, 1fr);
+    gap: 0;
+    min-height: 0;
     background: #ffffff;
     border: 1px solid rgba(21, 21, 21, 0.12);
     box-shadow: none;
@@ -653,6 +659,46 @@ const STYLE = `
     border: 0;
     filter: none;
   }
+
+  @media (max-width: 1024px) {
+    .pd-product-document-content {
+      width: calc(100vw - 40px);
+      grid-template-columns: 1fr;
+      gap: 24px;
+      margin-bottom: 64px;
+      padding: 30px 0 42px;
+    }
+
+    .pd-product-document-content-left {
+      border-right: 0;
+      border-bottom: 1px solid rgba(21, 21, 21, 0.08);
+      padding: 0 0 22px;
+    }
+
+    .pd-document-content-index {
+      font-size: 54px;
+    }
+
+    .pd-document-content-kicker {
+      margin-top: 12px;
+    }
+
+    .pd-document-course-item,
+    .pd-body-document-row,
+    .pd-body-notice-buttons,
+    .pd-meeting-panel {
+      grid-template-columns: 1fr;
+    }
+
+    .pd-document-course-meta {
+      flex-direction: row;
+      flex-wrap: wrap;
+    }
+
+    .pd-meeting-map-frame {
+      min-height: 300px;
+    }
+  }
 `;
 
 function MeetingPointBlock({ meetingPoint }: { meetingPoint: MeetingPoint }) {
@@ -705,7 +751,6 @@ function ProductDocument({
   detailData,
   selectedGuide,
   onOpenReview,
-  onOpenNotice,
 }: ProductDocumentProps) {
   const [activeTab, setActiveTab] = useState<ProductDetailTab | null>(null);
   const [isDocumentOpen, setIsDocumentOpen] = useState(false);
@@ -895,10 +940,10 @@ function ProductDocument({
               <p className="pd-body-paragraph">{detailData.reservationNotice}</p>
               <div className="pd-body-notice-buttons">
                 {noticeButtons.map((notice) => (
-                  <button key={notice.title} type="button" onClick={() => onOpenNotice(notice)}>
+                  <article key={notice.title} className="pd-body-notice-card">
                     <span>{notice.title}</span>
-                    <small>VIEW</small>
-                  </button>
+                    <small>{notice.body}</small>
+                  </article>
                 ))}
               </div>
             </div>
