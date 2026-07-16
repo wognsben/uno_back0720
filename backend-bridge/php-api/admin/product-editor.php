@@ -805,6 +805,7 @@ function uno_api_editor_save_pricing_meta($legacyProductId, $body)
     $legacyProductId = (int) $legacyProductId;
     $productTable = uno_api_reservation_table_product();
     $extras = isset($body['extras']) && is_array($body['extras']) ? $body['extras'] : array();
+    $deposit = array_key_exists('deposit', $extras) ? uno_api_editor_money($extras['deposit']) : null;
     $originalFeeText = uno_api_editor_escape(isset($extras['originalFeeText']) ? $extras['originalFeeText'] : '');
     $priceDescription = uno_api_editor_escape(isset($extras['priceDescription']) ? $extras['priceDescription'] : '');
 
@@ -814,6 +815,46 @@ function uno_api_editor_save_pricing_meta($legacyProductId, $body)
                 wr_4 = '{$priceDescription}'
           where wr_id = '{$legacyProductId}'"
     );
+
+    if ($deposit !== null) {
+        $defaultFee = sql_fetch(
+            "select id
+               from tour_fee
+              where wr_id = '{$legacyProductId}'
+                and (is_first = 'Y' or is_first = '1')
+              order by id asc
+              limit 1"
+        );
+        if (!$defaultFee || empty($defaultFee['id'])) {
+            $defaultFee = sql_fetch(
+                "select id
+                   from tour_fee
+                  where wr_id = '{$legacyProductId}'
+                  order by id asc
+                  limit 1"
+            );
+        }
+
+        if ($defaultFee && !empty($defaultFee['id'])) {
+            $feeId = (int) $defaultFee['id'];
+            sql_query(
+                "update tour_fee
+                    set fee1 = '{$deposit}'
+                  where id = '{$feeId}'
+                    and wr_id = '{$legacyProductId}'"
+            );
+        } else {
+            sql_query(
+                "insert into tour_fee
+                    set wr_id = '{$legacyProductId}',
+                        fee_subject = '홈페이지 예약금',
+                        fee1 = '{$deposit}',
+                        fee2 = '0',
+                        fee3 = '0',
+                        is_first = 'Y'"
+            );
+        }
+    }
 }
 
 function uno_api_editor_save_audit_fields($legacyProductId, $body)
@@ -892,14 +933,12 @@ function uno_api_editor_save_detail_content($legacyProductId, $body)
     $productTable = uno_api_reservation_table_product();
     $content = uno_api_editor_escape(isset($body['content']) ? $body['content'] : '');
     $extras = isset($body['extras']) && is_array($body['extras']) ? $body['extras'] : array();
-    $guideInfo = uno_api_editor_escape(isset($extras['guideInfo']) ? $extras['guideInfo'] : '');
     $recommendTour = uno_api_editor_escape(isset($extras['recommendTour']) ? $extras['recommendTour'] : '');
     $eventCourse = uno_api_editor_escape(isset($extras['eventCourse']) ? $extras['eventCourse'] : '');
 
     sql_query(
         "update {$productTable}
             set wr_content = '{$content}',
-                guide_info = '{$guideInfo}',
                 recommend_tour = '{$recommendTour}',
                 wr_event_course = '{$eventCourse}'
           where wr_id = '{$legacyProductId}'"
@@ -1091,6 +1130,9 @@ function uno_api_editor_save_product_options($legacyProductId, $body)
 {
     $legacyProductId = (int) $legacyProductId;
     $options = isset($body['productOptions']) && is_array($body['productOptions']) ? $body['productOptions'] : $body;
+    $extras = isset($body['extras']) && is_array($body['extras']) ? $body['extras'] : array();
+    $guideInfo = array_key_exists('guideInfo', $extras) ? uno_api_editor_escape($extras['guideInfo']) : null;
+    $priceDescription = array_key_exists('priceDescription', $extras) ? uno_api_editor_escape($extras['priceDescription']) : null;
     $meeting = uno_api_editor_escape(isset($options['meeting']) ? $options['meeting'] : '');
     $meetingTime = uno_api_editor_escape(isset($options['meetingTime']) ? $options['meetingTime'] : '');
     $tourDay = uno_api_editor_escape(isset($options['tourDay']) ? $options['tourDay'] : '');
@@ -1103,6 +1145,16 @@ function uno_api_editor_save_product_options($legacyProductId, $body)
     $preparation = uno_api_editor_escape(isset($options['preparation']) ? $options['preparation'] : '');
     $cancelRules = uno_api_editor_escape(isset($options['cancelRules']) ? $options['cancelRules'] : '');
     $exists = sql_fetch("select id from v2_product_options where pid = '{$legacyProductId}' limit 1");
+
+    if ($guideInfo !== null) {
+        $productTable = uno_api_reservation_table_product();
+        sql_query("update {$productTable} set guide_info = '{$guideInfo}' where wr_id = '{$legacyProductId}'");
+    }
+
+    if ($priceDescription !== null) {
+        $productTable = isset($productTable) ? $productTable : uno_api_reservation_table_product();
+        sql_query("update {$productTable} set wr_4 = '{$priceDescription}' where wr_id = '{$legacyProductId}'");
+    }
 
     if ($exists && isset($exists['id'])) {
         sql_query(

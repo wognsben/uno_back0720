@@ -196,7 +196,7 @@ uno_renewal_admin_render_pagehead(
       <div class="uno-hub-grid is-operational">
         <article class="uno-admin-card uno-hub-card" data-semi-card><div><span class="uno-card-kicker">Semi Schedule</span><h3>세미패키지 일정</h3><p>항공권 판매 항목이 아니라, 보딩패스 UI에 표시할 출발/도착 일정만 관리합니다.</p></div><button class="uno-admin-button secondary" type="button" data-open-modal="semi">수정</button></article>
         <article class="uno-admin-card uno-hub-card" data-daily-card><div><span class="uno-card-kicker">Daily Calendar</span><h3>데일리투어 캘린더</h3><p>월 단위 캘린더에서 가능, 임박, 마감, 정원과 예약 인원을 관리합니다.</p></div><button class="uno-admin-button secondary" type="button" data-open-modal="daily">수정</button></article>
-        <article class="uno-admin-card uno-hub-card"><div><span class="uno-card-kicker">Operation Notes</span><h3>운영 안내</h3><p>만남장소, 포함사항, 준비물, 취소 규정은 별도 편집 흐름으로 관리합니다.</p></div><button class="uno-admin-button secondary" type="button" data-open-modal="operation">수정</button></article>
+        <article class="uno-admin-card uno-hub-card"><div><span class="uno-card-kicker">Operation Notes</span><h3>운영 안내 및 설명</h3><p>가이드 정보, 만남장소, 포함사항, 준비물, 취소 규정을 한곳에서 관리합니다.</p></div><button class="uno-admin-button secondary" type="button" data-open-modal="operation">수정</button></article>
         <article class="uno-admin-card uno-hub-card"><div><span class="uno-card-kicker">Front Status</span><h3>프런트 노출 상태</h3><p>프런트 노출, 준비중, 숨김 상태는 상품 운영 목록에서 빠르게 조정합니다.</p></div><a class="uno-admin-button secondary" href="/admin/renewal/products.php">이동</a></article>
       </div>
     </section>
@@ -585,6 +585,23 @@ uno_renewal_admin_render_pagehead(
         const product = state.data.product || {};
         const extras = product.extras || {};
         const isDaily = product.productType === "daily";
+        const representativeFeeOptions = isDaily ? (state.data.dailyFeeOptions || []) : (state.data.feeOptions || []);
+        const representativeDeposit = (representativeFeeOptions.find((item) => item.isDefault || item.isPrimary) || representativeFeeOptions[0] || {}).deposit || 0;
+        const frontPricingRows = isDaily
+          ? (state.data.dailyFeeOptions || []).map(dailyFeeCard).join("") + dailyFeeCard({})
+          : (state.data.semiSchedules || []).map(semiPriceCard).join("") || '<p class="uno-section-note">\uB4F1\uB85D\uB41C \uC138\uBBF8\uD328\uD0A4\uC9C0 \uC77C\uC815\uC774 \uC5C6\uC2B5\uB2C8\uB2E4. \uBA3C\uC800 \uC77C\uC815\uC744 \uCD94\uAC00\uD574 \uC8FC\uC138\uC694.</p>';
+        const frontCalculationRows = isDaily
+          ? '<div class="uno-price-list" style="margin-top:14px;">' + frontPricingRows + '</div>'
+          : '';
+
+        return '<p class="uno-section-note">\uC0C1\uD488 \uC0C1\uB2E8\uC5D0 \uB178\uCD9C\uB418\uB294 \uAC00\uACA9 \uC815\uBCF4\uB97C \uAD00\uB9AC\uD569\uB2C8\uB2E4. \uC138\uBBF8\uD328\uD0A4\uC9C0\uB294 \uC608\uC57D\uAE08, \uCD1D\uC561, \uAC00\uACA9 \uC548\uB0B4 \uBB38\uAD6C\uB9CC \uC218\uC815\uD558\uBA74 \uB429\uB2C8\uB2E4.</p>' +
+          '<div class="uno-price-row" data-pricing-meta><div class="uno-schedule-head"><h3 class="uno-schedule-title">\uD504\uB7F0\uD2B8 \uAC00\uACA9 \uBB38\uAD6C</h3><button class="uno-admin-button" type="button" data-save-pricing-meta>\uC800\uC7A5</button></div>' +
+          '<div class="uno-form-grid">' +
+            priceField("\uD648\uD398\uC774\uC9C0 \uC608\uC57D\uAE08", "deposit", representativeDeposit) +
+            textareaField("\uC804\uCCB4\uAC00\uACA9 / \uC815\uC0C1\uAC00\uACA9", "originalFeeText", extras.originalFeeText || "", "\uC608: 6000000") +
+            textareaField("\uAC00\uACA9 \uC548\uB0B4 \uBB38\uAD6C", "priceDescription", extras.priceDescription || "", "\uC608: \uD22C\uC5B4 \uC694\uAE08 600\uB9CC\uC6D0\uC740 \uC608\uC57D \uBE44\uC6A9\uACFC \uC794\uAE08\uC744 \uD569\uD55C \uAE08\uC561\uC785\uB2C8\uB2E4.") +
+          '</div></div>' +
+          frontCalculationRows;
         const rows = isDaily
           ? (state.data.dailyFeeOptions || []).map(dailyFeeCard).join("") + dailyFeeCard({})
           : (state.data.semiSchedules || []).map(semiPriceCard).join("") || '<p class="uno-section-note">등록된 세미패키지 일정이 없습니다. 먼저 세미패키지 일정 모달에서 일정을 추가해 주세요.</p>';
@@ -623,21 +640,25 @@ uno_renewal_admin_render_pagehead(
       };
 
       const buildOperationEditor = () => {
+        const product = state.data.product || {};
+        const extras = product.extras || {};
         const options = state.data.productOptions || {};
-        return '<p class="uno-section-note">기존 팝업에 흩어져 있던 운영 안내를 한 화면에서 관리합니다. HTML 코드는 숨기고, 줄바꿈 중심의 문장으로 편집합니다.</p>' +
+        return '<p class="uno-section-note">프런트의 운영 안내 및 설명 영역에 연결되는 정보를 한 화면에서 관리합니다. PRODUCT DOCUMENT의 탭 정보가 이 영역을 기준으로 표시됩니다.</p>' +
           '<div class="uno-price-row" data-operation-editor>' +
-            '<div class="uno-schedule-head"><h3 class="uno-schedule-title">운영 안내</h3><button class="uno-admin-button" type="button" data-save-operation>운영 안내 저장</button></div>' +
+            '<div class="uno-schedule-head"><h3 class="uno-schedule-title">운영 안내 및 설명</h3><button class="uno-admin-button" type="button" data-save-operation>운영 안내 및 설명 저장</button></div>' +
             '<div class="uno-form-grid">' +
+              buildGuideSelector(extras.guideInfo || "") +
               textareaField("만남장소", "meeting", linesFromHtml(options.meeting), "예: 06시 20분까지 호텔 갈레스 앞") +
               textareaField("만남시간", "meetingTime", linesFromHtml(options.meetingTime), "예: 06:20까지") +
+              textareaField("지도 / 위치", "map", options.map || "", "구글 지도 iframe 또는 지도 URL") +
               textareaField("투어 요일", "tourDay", linesFromHtml(options.tourDay), "예: 매일 출발 / 월,수,금 진행") +
               textareaField("투어 시간", "tourTime", linesFromHtml(options.tourTime), "예: 06:20 ~ 22:00") +
+              textareaField("투어 요금 설명", "priceDescription", extras.priceDescription || "", "예: 투어 요금 600만원은 예약 비용과 잔금을 합한 금액입니다.") +
               textareaField("포함사항", "includes", linesFromHtml(options.includes), "한 줄에 하나씩 입력") +
               textareaField("불포함사항", "excludes", linesFromHtml(options.excludes), "한 줄에 하나씩 입력") +
               textareaField("예약 전 안내", "beforeNotice", linesFromHtml(options.beforeNotice), "예약 전 반드시 확인해야 하는 내용") +
               textareaField("준비물", "preparation", linesFromHtml(options.preparation), "한 줄에 하나씩 입력") +
               textareaField("취소 규정", "cancelRules", linesFromHtml(options.cancelRules), "상품별 취소/환불 규정") +
-              textareaField("지도 / 위치", "map", options.map || "", "구글 지도 iframe 또는 지도 URL") +
               textareaField("유튜브", "youtube", options.youtube || "", "유튜브 iframe 또는 URL") +
             '</div>' +
           '</div>';
@@ -660,20 +681,23 @@ uno_renewal_admin_render_pagehead(
             map: readField(box, "map"),
             youtube: readField(box, "youtube"),
           },
+          extras: {
+            guideInfo: readField(box, "guideInfo"),
+            priceDescription: readField(box, "priceDescription"),
+          },
         };
       };
 
       const buildDetailEditor = () => {
         const product = state.data.product || {};
         const extras = product.extras || {};
-        return '<p class="uno-section-note">상세 본문은 기존 프런트 출력과 연결되어 있어 HTML을 보존합니다. 코스, 추천 상품, 가이드 정보는 별도 필드로 분리해 관리합니다.</p>' +
+        return '<p class="uno-section-note">상세 본문은 기존 프런트 출력과 연결되어 있어 HTML을 보존합니다. 코스와 추천 상품처럼 무거운 상세 콘텐츠를 관리합니다.</p>' +
           '<div class="uno-price-row" data-detail-editor>' +
             '<div class="uno-schedule-head"><h3 class="uno-schedule-title">상세 내용 / 코스</h3><button class="uno-admin-button" type="button" data-save-detail>상세 내용 저장</button></div>' +
             '<div class="uno-form-grid">' +
               '<div class="uno-form-field full uno-wide-textarea"><label>상세 본문 HTML</label><textarea data-field="content" placeholder="기존 상세 본문 HTML">' + escapeHtml(product.content || "") + '</textarea></div>' +
               textareaField("추천 상품", "recommendTour", extras.recommendTour || "", "상품 ID 또는 legacy ID를 줄 단위로 입력") +
               textareaField("이벤트 / 코스", "eventCourse", extras.eventCourse || "", "코스 설명 또는 연결 정보") +
-              buildGuideSelector(extras.guideInfo || "") +
             '</div>' +
           '</div>' +
           '<p class="uno-section-note" style="margin-top:16px;">상세 이미지와 코스 이미지 업로드는 다음 이미지 관리 단계에서 분리합니다.</p>';
@@ -687,7 +711,6 @@ uno_renewal_admin_render_pagehead(
           extras: {
             recommendTour: readField(box, "recommendTour"),
             eventCourse: readField(box, "eventCourse"),
-            guideInfo: readField(box, "guideInfo"),
           },
         };
       };
@@ -820,7 +843,7 @@ uno_renewal_admin_render_pagehead(
           detail: { title: "상세 내용 / 코스", eyebrow: "Detail", body: buildDetailEditor() },
           semi: { title: "세미패키지 일정", eyebrow: "Boarding Pass Schedule", body: buildSemiScheduleEditor() },
           daily: { title: "데일리투어 캘린더", eyebrow: "Monthly Calendar", body: buildDailyCalendarEditor() },
-          operation: { title: "운영 안내", eyebrow: "Operation Notes", body: buildOperationEditor() },
+          operation: { title: "운영 안내 및 설명", eyebrow: "Operation Notes", body: buildOperationEditor() },
           audit: { title: "누락 검토", eyebrow: "Legacy Field Audit", body: buildAuditEditor() },
         };
       };
@@ -898,13 +921,13 @@ uno_renewal_admin_render_pagehead(
         const uploadButton = event.target.closest("[data-upload-thumbnail]");
         if (uploadButton) { const fileInput = $("[data-thumbnail-file]", modalBodyEl); const file = fileInput && fileInput.files ? fileInput.files[0] : null; if (!file) { setStatus("업로드할 썸네일 이미지를 선택해 주세요.", "warn"); return; } try { uploadButton.disabled = true; setStatus("썸네일을 저장하는 중입니다."); await uploadThumbnail(file); setStatus("썸네일이 저장되었습니다.", "ok"); refreshCurrentModal(); } catch (error) { setStatus(error.message || "썸네일을 저장하지 못했습니다.", "warn"); } finally { uploadButton.disabled = false; } return; }
         const saveOperation = event.target.closest("[data-save-operation]");
-        if (saveOperation) { try { saveOperation.disabled = true; setStatus("운영 안내를 저장하는 중입니다."); await apiRequest(operationPayload()); setStatus("운영 안내가 저장되었습니다.", "ok"); refreshCurrentModal(); } catch (error) { setStatus(error.message || "운영 안내를 저장하지 못했습니다.", "warn"); } finally { saveOperation.disabled = false; } return; }
+        if (saveOperation) { try { saveOperation.disabled = true; setStatus("운영 안내 및 설명을 저장하는 중입니다."); await apiRequest(operationPayload()); setStatus("운영 안내 및 설명이 저장되었습니다.", "ok"); refreshCurrentModal(); } catch (error) { setStatus(error.message || "운영 안내 및 설명을 저장하지 못했습니다.", "warn"); } finally { saveOperation.disabled = false; } return; }
         const saveDetail = event.target.closest("[data-save-detail]");
         if (saveDetail) { try { saveDetail.disabled = true; setStatus("상세 내용을 저장하는 중입니다."); await apiRequest(detailPayload()); setStatus("상세 내용이 저장되었습니다.", "ok"); refreshCurrentModal(); } catch (error) { setStatus(error.message || "상세 내용을 저장하지 못했습니다.", "warn"); } finally { saveDetail.disabled = false; } return; }
         const saveAudit = event.target.closest("[data-save-audit]");
         if (saveAudit) { try { saveAudit.disabled = true; setStatus("누락 검토 항목을 저장하는 중입니다."); await apiRequest(auditPayload()); setStatus("누락 검토 항목이 저장되었습니다.", "ok"); refreshCurrentModal(); } catch (error) { setStatus(error.message || "누락 검토 항목을 저장하지 못했습니다.", "warn"); } finally { saveAudit.disabled = false; } return; }
         const savePricingMeta = event.target.closest("[data-save-pricing-meta]");
-        if (savePricingMeta) { const box = savePricingMeta.closest("[data-pricing-meta]"); try { savePricingMeta.disabled = true; setStatus("가격 정보를 저장하는 중입니다."); await apiRequest({ action: "savePricingMeta", extras: { originalFeeText: readField(box, "originalFeeText"), priceDescription: readField(box, "priceDescription") } }); setStatus("가격 정보가 저장되었습니다.", "ok"); refreshCurrentModal(); } catch (error) { setStatus(error.message || "가격 정보를 저장하지 못했습니다.", "warn"); } finally { savePricingMeta.disabled = false; } return; }
+        if (savePricingMeta) { const box = savePricingMeta.closest("[data-pricing-meta]"); try { savePricingMeta.disabled = true; setStatus("가격 정보를 저장하는 중입니다."); await apiRequest({ action: "savePricingMeta", extras: { deposit: money(readField(box, "deposit")), originalFeeText: readField(box, "originalFeeText"), priceDescription: readField(box, "priceDescription") } }); setStatus("가격 정보가 저장되었습니다.", "ok"); refreshCurrentModal(); } catch (error) { setStatus(error.message || "가격 정보를 저장하지 못했습니다.", "warn"); } finally { savePricingMeta.disabled = false; } return; }
         const saveDailyFee = event.target.closest("[data-save-daily-fee]");
         if (saveDailyFee) { const card = saveDailyFee.closest("[data-daily-fee-card]"); try { saveDailyFee.disabled = true; setStatus("요금 옵션을 저장하는 중입니다."); await apiRequest(dailyFeePayload(card)); setStatus("요금 옵션이 저장되었습니다.", "ok"); refreshCurrentModal(); } catch (error) { setStatus(error.message || "요금 옵션을 저장하지 못했습니다.", "warn"); } finally { saveDailyFee.disabled = false; } return; }
         const deleteDailyFee = event.target.closest("[data-delete-daily-fee]");

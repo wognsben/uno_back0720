@@ -946,7 +946,7 @@ const STYLE = `
     max-width: 610px;
     font-family: var(--font-ko);
     font-size: 76px;
-    line-height: 0.96;
+    line-height: 1.04;
     letter-spacing: -0.072em;
     font-weight: 560;
     color: #111111;
@@ -1356,6 +1356,45 @@ const STYLE = `
     font-size: 1em;
     line-height: 1;
     font-weight: inherit;
+  }
+
+  .pd-hero-price-summary {
+    margin-top: 22px;
+    display: grid;
+    gap: 8px;
+    font-family: var(--font-ko);
+    font-size: 16px;
+    line-height: 1.35;
+    letter-spacing: -0.035em;
+    color: #151515;
+  }
+
+  .pd-hero-price-line {
+    display: flex;
+    align-items: baseline;
+    gap: 7px;
+    flex-wrap: wrap;
+  }
+
+  .pd-hero-price-line > span {
+    color: rgba(21, 21, 21, 0.72);
+  }
+
+  .pd-hero-price-line strong {
+    font-weight: 800;
+  }
+
+  .pd-hero-price-summary small {
+    display: block;
+    font-size: inherit;
+    line-height: inherit;
+    font-weight: 800;
+    color: #151515;
+  }
+
+  .pd-hero-price-summary p {
+    margin: 2px 0 0;
+    white-space: pre-line;
   }
 
 
@@ -2216,7 +2255,8 @@ function legacyHtmlToText(value?: string) {
     .replace(/&amp;/gi, "&")
     .replace(/&lt;/gi, "<")
     .replace(/&gt;/gi, ">")
-    .replace(/\s+/g, " ")
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
     .trim();
 }
 
@@ -2417,6 +2457,7 @@ export default function ProductDetail({
     const remoteBeforeNotice = legacyHtmlToText(remoteTourOptions?.beforeNotice);
     const remotePreparation = legacyHtmlToText(remoteTourOptions?.preparation);
     const remoteCancelRules = legacyHtmlToText(remoteTourOptions?.cancelRules);
+    const remotePriceDescription = legacyHtmlToText(remoteProductDetail?.priceDescription);
     const remoteGuides = (remoteProductDetail?.guides ?? []).filter(
       (guide) => guide.name || guide.bodyText,
     );
@@ -2476,6 +2517,9 @@ export default function ProductDetail({
         baseDetailData.guide,
       guides: remoteGuides,
       selectedGuide: remoteGuideLabel || "UNO GUIDE",
+      tourDay: remoteTourDay,
+      tourTime: remoteTourTime,
+      priceDescription: remotePriceDescription || remoteProductDetail?.priceDescription,
       included: remoteIncluded || baseDetailData.included,
       excluded: remoteExcluded || baseDetailData.excluded,
       reservationNotice:
@@ -2801,10 +2845,12 @@ export default function ProductDetail({
 
               {DETAIL_DATA.basePrice > 0 ? (
                 <div className="pd-hero-price-summary" aria-label="?�품 ?�작가">
-                  <span>예약금</span>
-                  <strong>
+                  <div className="pd-hero-price-line">
+                    <span>예약금</span>
+                    <strong>
                     <PriceText price={DETAIL_DATA.basePrice} currency={DETAIL_DATA.currency} />
-                  </strong>
+                    </strong>
+                  </div>
                   {DETAIL_DATA.originalPrice ? (
                     <small>
                       정상가격 {Number(DETAIL_DATA.originalPrice).toLocaleString("ko-KR")}원

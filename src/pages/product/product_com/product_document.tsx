@@ -3,6 +3,7 @@
 export type ProductDetailTab =
   | "review"
   | "guide"
+  | "tourInfo"
   | "included"
   | "excluded"
   | "notice"
@@ -63,6 +64,9 @@ export type ProductDocumentData = {
   excluded: string;
   review: string;
   reviews: ReviewItem[];
+  tourDay?: string;
+  tourTime?: string;
+  priceDescription?: string;
   reservationNotice: string;
   scheduleIntro: string;
   scheduleDays: DetailScheduleDay[];
@@ -86,47 +90,10 @@ const PRODUCT_DOCUMENT_TABS: Array<{
 }> = [
   { key: "guide", label: "가이드 정보", index: "01" },
   { key: "review", label: "리뷰", index: "02" },
-  { key: "meeting", label: "미팅 장소", index: "03" },
-  { key: "notice", label: "예약 안내", index: "04" },
-  { key: "included", label: "포함/불포함", index: "05" },
-];
-
-const INCLUDED_ITEMS = [
-  {
-    title: "전문 가이드 해설",
-    desc: "상품별 일정과 현장 동선에 맞춰 주요 포인트를 안내합니다.",
-  },
-  {
-    title: "현장 일정 관리",
-    desc: "출발 시간, 이동 순서, 현장 상황을 기준으로 일정을 관리합니다.",
-  },
-  {
-    title: "주요 구간 동선 안내",
-    desc: "복잡한 이동 구간은 사전 안내와 현장 브리핑을 제공합니다.",
-  },
-  {
-    title: "예약 조건 확인",
-    desc: "출발일, 잔여석, 포함 조건, 최종 금액은 예약 확정 시 다시 확인합니다.",
-  },
-];
-
-const EXCLUDED_ITEMS = [
-  {
-    title: "항공권",
-    desc: "상품 조건에 따라 별도 구매 또는 별도 안내될 수 있습니다.",
-  },
-  {
-    title: "개인 경비",
-    desc: "자유 일정과 개인 취향에 따라 발생하는 비용은 포함되지 않습니다.",
-  },
-  {
-    title: "여행자 보험",
-    desc: "개별 가입을 권장하며, 예약 시 필요하면 별도 안내합니다.",
-  },
-  {
-    title: "자유 일정 비용",
-    desc: "개인 입장료, 교통비, 선택 체험 비용은 현장 상황에 따라 별도입니다.",
-  },
+  { key: "tourInfo", label: "투어 정보", index: "03" },
+  { key: "meeting", label: "미팅 장소", index: "04" },
+  { key: "notice", label: "예약 안내", index: "05" },
+  { key: "included", label: "포함/불포함", index: "06" },
 ];
 
 const STYLE = `
@@ -149,13 +116,13 @@ const STYLE = `
     padding: 0;
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: center;
     font-family: var(--font-en);
     font-size: 18px;
     line-height: 1;
     letter-spacing: 0.16em;
     color: #151515;
-    text-align: left;
+    text-align: center;
   }
 
   .pd-product-document-label strong {
@@ -187,11 +154,11 @@ const STYLE = `
     cursor: pointer;
     display: flex;
     flex-direction: column;
-    align-items: flex-start;
+    align-items: center;
     justify-content: space-between;
     padding: 20px 22px;
     color: rgba(21, 21, 21, 0.44);
-    text-align: left;
+    text-align: center;
   }
 
   .pd-product-document-item:last-child {
@@ -324,6 +291,7 @@ const STYLE = `
     line-height: 1.78;
     letter-spacing: -0.04em;
     color: rgba(21, 21, 21, 0.68);
+    white-space: pre-wrap;
     word-break: keep-all;
   }
 
@@ -407,6 +375,38 @@ const STYLE = `
     margin-top: 34px;
   }
 
+  .pd-document-info-stack {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .pd-document-info-stack.is-tour-info {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .pd-document-info-card {
+    min-width: 0;
+    border: 1px solid rgba(21, 21, 21, 0.12);
+    background: #ffffff;
+    padding: 24px 24px 28px;
+  }
+
+  .pd-document-info-card h3 {
+    margin: 0 0 16px;
+    font-family: var(--font-ko);
+    font-size: 20px;
+    line-height: 1.35;
+    letter-spacing: -0.045em;
+    color: #151515;
+  }
+
+  .pd-document-info-card .pd-body-paragraph {
+    font-size: 16px;
+    line-height: 1.82;
+    color: rgba(21, 21, 21, 0.72);
+  }
+
   .pd-body-mini-meta {
     display: grid;
     gap: 10px;
@@ -416,7 +416,7 @@ const STYLE = `
   }
 
   .pd-body-mini-meta span,
-  .pd-body-notice-buttons small {
+  .pd-body-notice-buttons span {
     display: block;
     font-family: var(--font-en);
     font-size: 11px;
@@ -427,13 +427,14 @@ const STYLE = `
   }
 
   .pd-body-mini-meta strong,
-  .pd-body-notice-buttons span {
+  .pd-body-notice-buttons small {
     display: block;
     font-family: var(--font-ko);
     font-size: 16px;
-    line-height: 1.35;
+    line-height: 1.72;
     letter-spacing: -0.04em;
     color: #151515;
+    white-space: pre-wrap;
     word-break: keep-all;
   }
 
@@ -564,7 +565,7 @@ const STYLE = `
   .pd-body-notice-card {
     border: 1px solid rgba(21, 21, 21, 0.12);
     background: #ffffff;
-    padding: 18px 20px;
+    padding: 22px 24px;
     text-align: left;
   }
 
@@ -685,6 +686,8 @@ const STYLE = `
 
     .pd-document-course-item,
     .pd-body-document-row,
+    .pd-document-info-stack,
+    .pd-document-info-stack.is-tour-info,
     .pd-body-notice-buttons,
     .pd-meeting-panel {
       grid-template-columns: 1fr;
@@ -776,20 +779,29 @@ function ProductDocument({
 
     if (activeTab === "meeting") {
       return {
-        kicker: "03 · 미팅 장소",
+        kicker: "04 · 미팅 장소",
         text: detailData.meetingPoint.address,
+      };
+    }
+
+    if (activeTab === "tourInfo") {
+      return {
+        kicker: "03 · 투어 정보",
+        text: [detailData.tourDay, detailData.tourTime, detailData.priceDescription]
+          .filter(Boolean)
+          .join("\n"),
       };
     }
 
     if (activeTab === "notice") {
       return {
-        kicker: "04 · 예약 안내",
+        kicker: "05 · 예약 안내",
         text: detailData.reservationNotice,
       };
     }
 
     return {
-      kicker: "05 · 포함/불포함",
+      kicker: "06 · 포함/불포함",
       text: `${detailData.included}\n${detailData.excluded}`,
     };
   }, [activeTab, detailData]);
@@ -807,7 +819,7 @@ function ProductDocument({
 
       <section className="pd-product-document-strip" aria-label="상품 상세 문서 내비게이션">
         <div className="pd-product-document-label">
-          <strong>PRODUCT DOCUMENT</strong>
+          <strong>운영 안내 및 설명</strong>
         </div>
         <div className="pd-product-document-row" role="tablist" aria-label="상품 상세 문서">
           {PRODUCT_DOCUMENT_TABS.map((item) => (
@@ -905,32 +917,37 @@ function ProductDocument({
 
           {activeTab === "included" && (
             <div className="pd-document-text-block">
-              <p className="pd-body-paragraph">{detailData.included}</p>
-              <div className="pd-body-document-table" aria-label="포함 항목">
-                {INCLUDED_ITEMS.map((item, index) => (
-                  <div key={item.title} className="pd-body-document-row">
-                    <span>{String(index + 1).padStart(2, "0")}</span>
-                    <div>
-                      <strong>{item.title}</strong>
-                      <small>{item.desc}</small>
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <div className="pd-document-info-stack" aria-label="포함 및 불포함 안내">
+                <article className="pd-document-info-card">
+                  <h3>포함사항</h3>
+                  <p className="pd-body-paragraph">{detailData.included}</p>
+                </article>
 
-              <p className="pd-body-paragraph pd-document-excluded-lead">
-                {detailData.excluded}
-              </p>
-              <div className="pd-body-document-table is-muted" aria-label="불포함 항목">
-                {EXCLUDED_ITEMS.map((item, index) => (
-                  <div key={item.title} className="pd-body-document-row">
-                    <span>{String(index + 1).padStart(2, "0")}</span>
-                    <div>
-                      <strong>{item.title}</strong>
-                      <small>{item.desc}</small>
-                    </div>
-                  </div>
-                ))}
+                <article className="pd-document-info-card">
+                  <h3>불포함사항</h3>
+                  <p className="pd-body-paragraph">{detailData.excluded}</p>
+                </article>
+              </div>
+            </div>
+          )}
+
+          {activeTab === "tourInfo" && (
+            <div className="pd-document-text-block">
+              <div className="pd-document-info-stack is-tour-info" aria-label="투어 정보">
+                <article className="pd-document-info-card">
+                  <h3>투어 요일</h3>
+                  <p className="pd-body-paragraph">{detailData.tourDay || "-"}</p>
+                </article>
+
+                <article className="pd-document-info-card">
+                  <h3>투어 시간</h3>
+                  <p className="pd-body-paragraph">{detailData.tourTime || "-"}</p>
+                </article>
+
+                <article className="pd-document-info-card">
+                  <h3>투어 요금 설명</h3>
+                  <p className="pd-body-paragraph">{detailData.priceDescription || "-"}</p>
+                </article>
               </div>
             </div>
           )}
