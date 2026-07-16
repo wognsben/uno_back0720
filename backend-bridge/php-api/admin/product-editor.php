@@ -144,27 +144,76 @@ function uno_api_editor_boarding_label_v2($body)
             uno_api_editor_text(isset($body['outboundDeparturePlace']) ? $body['outboundDeparturePlace'] : ''),
             uno_api_editor_text(isset($body['outboundDepartureTime']) ? $body['outboundDepartureTime'] : ''),
             uno_api_editor_text(isset($body['outboundArrivalPlace']) ? $body['outboundArrivalPlace'] : ''),
+            uno_api_editor_text(isset($body['outboundArrivalTime']) ? $body['outboundArrivalTime'] : ''),
             uno_api_editor_text(isset($body['outboundArrivalLabel']) ? $body['outboundArrivalLabel'] : ''),
         ),
         'RETURN' => array(
             uno_api_editor_text(isset($body['returnDeparturePlace']) ? $body['returnDeparturePlace'] : ''),
             uno_api_editor_text(isset($body['returnDepartureTime']) ? $body['returnDepartureTime'] : ''),
             uno_api_editor_text(isset($body['returnArrivalPlace']) ? $body['returnArrivalPlace'] : ''),
+            uno_api_editor_text(isset($body['returnArrivalTime']) ? $body['returnArrivalTime'] : ''),
             uno_api_editor_text(isset($body['returnArrivalLabel']) ? $body['returnArrivalLabel'] : ''),
         ),
     );
 
     $lines = array();
     foreach ($legs as $label => $leg) {
-        list($departurePlace, $departureTime, $arrivalPlace, $arrivalLabel) = $leg;
+        list($departurePlace, $departureTime, $arrivalPlace, $arrivalTime, $arrivalLabel) = $leg;
         $left = trim($departurePlace . ($departureTime !== '' ? ' ' . $departureTime : ''));
-        $right = trim($arrivalPlace . ($arrivalLabel !== '' ? ' / ' . $arrivalLabel : ''));
+        $right = trim($arrivalPlace . ($arrivalTime !== '' ? ' ' . $arrivalTime : '') . ($arrivalLabel !== '' ? ' / ' . $arrivalLabel : ''));
         if ($left !== '' || $right !== '') {
             $lines[] = $label . ': ' . trim($left . ($left !== '' && $right !== '' ? ' -> ' : '') . $right);
         }
     }
 
     return implode("\n", $lines);
+}
+
+function uno_api_editor_parse_boarding_pass($air)
+{
+    $air = trim((string) $air);
+    $emptyLeg = array(
+        'departDate' => '',
+        'arriveDate' => '',
+        'fromCode' => '',
+        'fromCity' => '',
+        'toCode' => '',
+        'toCity' => '',
+        'departTime' => '',
+        'arriveTime' => '',
+        'duration' => '',
+        'transfer' => '',
+    );
+    $boarding = array('outbound' => $emptyLeg, 'inbound' => $emptyLeg);
+
+    foreach (preg_split('/\r?\n/', $air) as $line) {
+        $line = trim($line);
+        if ($line === '' || strpos($line, ':') === false) {
+            continue;
+        }
+        list($label, $value) = array_map('trim', explode(':', $line, 2));
+        $key = strtoupper($label) === 'RETURN' ? 'inbound' : 'outbound';
+        $parts = array_map('trim', explode('->', $value, 2));
+        $left = isset($parts[0]) ? $parts[0] : '';
+        $right = isset($parts[1]) ? $parts[1] : '';
+        if (preg_match('/^(.*)\s+(\d{1,2}:\d{2})$/', $left, $m)) {
+            $boarding[$key]['fromCity'] = trim($m[1]);
+            $boarding[$key]['departTime'] = $m[2];
+        } else {
+            $boarding[$key]['fromCity'] = $left;
+        }
+        $rightParts = array_map('trim', explode('/', $right, 2));
+        $arrivalText = isset($rightParts[0]) ? $rightParts[0] : '';
+        if (preg_match('/^(.*)\s+(\d{1,2}:\d{2})$/', $arrivalText, $m)) {
+            $boarding[$key]['toCity'] = trim($m[1]);
+            $boarding[$key]['arriveTime'] = $m[2];
+        } else {
+            $boarding[$key]['toCity'] = $arrivalText;
+        }
+        $boarding[$key]['transfer'] = isset($rightParts[1]) ? $rightParts[1] : '';
+    }
+
+    return $boarding;
 }
 
 function uno_api_editor_product_type($row, $mapping)
@@ -437,11 +486,22 @@ function uno_api_editor_fetch_semi_schedules($legacyProductId)
 
     $items = array();
     while ($row = sql_fetch_array($result)) {
+        $scheduleId = isset($row['id']) ? (int) $row['id'] : 0;
+        $reservationRow = sql_fetch(
+            "select count(*) as cnt
+               from tour_reg
+              where pid = '{$legacyProductId}'
+                and find_in_set('{$scheduleId}', replace(fee_id, '|', ','))
+                and status <> 'cart'
+                and (del_time = 0 or del_time is null or del_time < 111)"
+        );
+        $air = isset($row['air']) ? (string) $row['air'] : '';
         $items[] = array(
-            'id' => isset($row['id']) ? (int) $row['id'] : 0,
+            'id' => $scheduleId,
             'startDate' => isset($row['start_time']) ? (string) $row['start_time'] : '',
             'arriveDate' => isset($row['arrive_time']) ? (string) $row['arrive_time'] : '',
-            'air' => isset($row['air']) ? (string) $row['air'] : '',
+            'air' => $air,
+            'boardingPass' => uno_api_editor_parse_boarding_pass($air),
             'deposit' => uno_api_editor_money(isset($row['fee_1']) ? $row['fee_1'] : 0),
             'localPayment' => uno_api_editor_money(isset($row['fee_2']) ? $row['fee_2'] : 0),
             'extraPayment' => uno_api_editor_money(isset($row['fee_3']) ? $row['fee_3'] : 0),
@@ -451,10 +511,80 @@ function uno_api_editor_fetch_semi_schedules($legacyProductId)
             'status' => isset($row['status']) ? (string) $row['status'] : '',
             'isVisible' => uno_api_reservation_bool(isset($row['is_view']) ? $row['is_view'] : ''),
             'isMain' => uno_api_reservation_bool(isset($row['is_main']) ? $row['is_main'] : ''),
+            'reservationCount' => isset($reservationRow['cnt']) ? (int) $reservationRow['cnt'] : 0,
         );
     }
 
     return $items;
+}
+
+function uno_api_editor_copy_semi_schedule($legacyProductId, $body)
+{
+    $legacyProductId = (int) $legacyProductId;
+    $sourceId = isset($body['id']) ? (int) $body['id'] : 0;
+
+    if ($sourceId <= 0) {
+        uno_api_error('VALIDATION_ERROR', '복제할 일정을 찾을 수 없습니다.', 400);
+    }
+
+    $row = sql_fetch(
+        "select start_time, arrive_time, air, fee_1, fee_2, fee_3, fee_air, price, seat, status
+           from v2_pkgTour
+          where id = '{$sourceId}'
+            and pid = '{$legacyProductId}'
+            and (del_time = 0 or del_time is null)
+          limit 1"
+    );
+
+    if (!$row || !isset($row['start_time'])) {
+        uno_api_error('NOT_FOUND', '복제할 일정을 찾을 수 없습니다.', 404);
+    }
+
+    $startDate = uno_api_editor_date(isset($body['startDate']) ? $body['startDate'] : '');
+    $arriveDate = uno_api_editor_date(isset($body['arriveDate']) ? $body['arriveDate'] : '');
+    if ($startDate === '') {
+        $startDate = date('Y-m-d', strtotime((string) $row['start_time'] . ' +7 days'));
+    }
+    if ($arriveDate === '') {
+        $arriveDate = $startDate;
+    }
+
+    $air = uno_api_editor_escape(isset($row['air']) ? $row['air'] : '');
+    $fee1 = uno_api_editor_money(isset($row['fee_1']) ? $row['fee_1'] : 0);
+    $fee2 = uno_api_editor_money(isset($row['fee_2']) ? $row['fee_2'] : 0);
+    $fee3 = uno_api_editor_money(isset($row['fee_3']) ? $row['fee_3'] : 0);
+    $feeAir = uno_api_editor_money(isset($row['fee_air']) ? $row['fee_air'] : 0);
+    $price = uno_api_editor_money(isset($row['price']) ? $row['price'] : 0);
+    $seat = isset($row['seat']) ? (int) $row['seat'] : 0;
+    $status = uno_api_editor_escape(isset($row['status']) ? $row['status'] : '');
+
+    sql_query(
+        "insert into v2_pkgTour
+            set pid = '{$legacyProductId}',
+                start_time = '{$startDate}',
+                arrive_time = '{$arriveDate}',
+                air = '{$air}',
+                fee_1 = '{$fee1}',
+                fee_2 = '{$fee2}',
+                fee_3 = '{$fee3}',
+                fee_air = '{$feeAir}',
+                price = '{$price}',
+                seat = '{$seat}',
+                status = '{$status}',
+                is_view = 'N',
+                is_main = 'N',
+                del_time = 0"
+    );
+}
+
+function uno_api_editor_is_deleted_time($value)
+{
+    $value = trim((string) $value);
+    if ($value === '' || $value === '0' || $value === '0000-00-00 00:00:00' || $value === '0000-00-00') {
+        return false;
+    }
+
+    return (int) $value > 0 || preg_match('/^\d{4}-\d{2}-\d{2}/', $value) === 1;
 }
 
 function uno_api_editor_fetch_daily_fee_options($legacyProductId)
@@ -871,13 +1001,53 @@ function uno_api_editor_delete_semi_schedule($legacyProductId, $body)
         uno_api_error('VALIDATION_ERROR', '삭제할 일정을 찾을 수 없습니다.', 400);
     }
 
-    $now = date('Y-m-d H:i:s');
+    $scheduleRow = sql_fetch(
+        "select id, del_time
+           from v2_pkgTour
+          where id = '{$scheduleId}'
+            and pid = '{$legacyProductId}'
+          limit 1"
+    );
+    if (!$scheduleRow || empty($scheduleRow['id'])) {
+        uno_api_error('NOT_FOUND', '삭제할 일정을 찾을 수 없습니다.', 404);
+    }
+
+    if (isset($scheduleRow['del_time']) && uno_api_editor_is_deleted_time($scheduleRow['del_time'])) {
+        uno_api_error('VALIDATION_ERROR', '이미 삭제된 일정입니다.', 409);
+    }
+
+    $reservationRow = sql_fetch(
+        "select count(*) as cnt
+           from tour_reg
+          where pid = '{$legacyProductId}'
+            and find_in_set('{$scheduleId}', replace(fee_id, '|', ','))
+            and status <> 'cart'
+            and (del_time = 0 or del_time is null or del_time < 111)"
+    );
+    if (isset($reservationRow['cnt']) && (int) $reservationRow['cnt'] > 0) {
+        uno_api_error('VALIDATION_ERROR', '예약이 연결된 일정은 삭제할 수 없습니다. 화면 숨김 또는 예약 마감으로 처리해 주세요.', 409);
+    }
+
+    $deletedAt = time();
     sql_query(
         "update v2_pkgTour
-            set del_time = '{$now}'
+            set del_time = '{$deletedAt}',
+                is_view = 'N'
           where id = '{$scheduleId}'
             and pid = '{$legacyProductId}'"
     );
+
+    $deletedRow = sql_fetch(
+        "select id
+           from v2_pkgTour
+          where id = '{$scheduleId}'
+            and pid = '{$legacyProductId}'
+            and (del_time = 0 or del_time is null)
+          limit 1"
+    );
+    if ($deletedRow && !empty($deletedRow['id'])) {
+        uno_api_error('SERVER_ERROR', '일정을 삭제하지 못했습니다. 잠시 후 다시 시도해 주세요.', 500);
+    }
 }
 
 function uno_api_editor_save_daily_calendar($legacyProductId, $body)
@@ -1214,6 +1384,8 @@ if ($action === 'saveProduct') {
     uno_api_editor_save_product_options($legacyProductId, $body);
 } elseif ($action === 'saveSemiSchedule') {
     uno_api_editor_save_semi_schedule($legacyProductId, $body);
+} elseif ($action === 'copySemiSchedule') {
+    uno_api_editor_copy_semi_schedule($legacyProductId, $body);
 } elseif ($action === 'deleteSemiSchedule') {
     uno_api_editor_delete_semi_schedule($legacyProductId, $body);
 } elseif ($action === 'saveDailyFeeOption') {

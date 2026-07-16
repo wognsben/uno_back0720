@@ -208,6 +208,37 @@ function uno_api_reservation_fetch_package_fee($legacyProductId, $scheduleId)
     );
 }
 
+function uno_api_reservation_package_schedule_from_options($options, $productType)
+{
+    if ($productType !== 'semi' || !count($options)) {
+        return null;
+    }
+
+    $first = $options[0];
+    $scheduleId = isset($first['feeId']) ? (int) $first['feeId'] : 0;
+    if ($scheduleId <= 0) {
+        return null;
+    }
+
+    $row = sql_fetch(
+        "select id, start_time, arrive_time, air
+           from v2_pkgTour
+          where id = '{$scheduleId}'
+          limit 1"
+    );
+
+    if (!$row || empty($row['id'])) {
+        return array('id' => $scheduleId);
+    }
+
+    return array(
+        'id' => (int) $row['id'],
+        'startDate' => isset($row['start_time']) ? (string) $row['start_time'] : '',
+        'endDate' => isset($row['arrive_time']) ? (string) $row['arrive_time'] : '',
+        'boardingLabel' => isset($row['air']) ? (string) $row['air'] : '',
+    );
+}
+
 function uno_api_reservation_options_from_row($row, $productType)
 {
     $feeIds = uno_api_reservation_pipe_values(isset($row['fee_id']) ? $row['fee_id'] : '');
@@ -266,6 +297,7 @@ function uno_api_reservation_response_from_row($row)
         : '';
     $productType = uno_api_reservation_type_from_row($row);
     $options = uno_api_reservation_options_from_row($row, $productType);
+    $packageSchedule = uno_api_reservation_package_schedule_from_options($options, $productType);
 
     return array(
         'rid' => (int) $row['id'],
@@ -285,6 +317,7 @@ function uno_api_reservation_response_from_row($row)
         ),
         'tourDate' => isset($row['tourDay']) ? (string) $row['tourDay'] : '',
         'tourTime' => isset($row['tourTime']) ? (string) $row['tourTime'] : '',
+        'packageSchedule' => $packageSchedule,
         'options' => $options,
         'totalDeposit' => isset($row['total_fee1']) ? (int) $row['total_fee1'] : uno_api_reservation_sum_options($options, 'deposit'),
         'totalLocalPayment' => isset($row['total_fee2']) ? (int) $row['total_fee2'] : uno_api_reservation_sum_options($options, 'localPayment'),

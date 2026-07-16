@@ -163,6 +163,7 @@ function uno_api_reservation_editor_fetch($rid)
         'statusLabel' => uno_api_reservation_editor_status_label(isset($row['status']) ? $row['status'] : ''),
         'tourDay' => isset($row['tourDay']) ? substr((string) $row['tourDay'], 0, 10) : '',
         'tourTime' => isset($row['tourTime']) ? (string) $row['tourTime'] : '',
+        'packageSchedule' => isset($detail['packageSchedule']) ? $detail['packageSchedule'] : null,
         'product' => array(
             'id' => isset($row['pid']) ? (int) $row['pid'] : 0,
             'title' => isset($row['wr_subject']) ? (string) $row['wr_subject'] : '',

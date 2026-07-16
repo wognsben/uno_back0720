@@ -65,6 +65,38 @@ uno_renewal_admin_render_pagehead(
       .uno-section-note { margin: 0 0 16px; color: var(--uno-muted); line-height: 1.65; word-break: keep-all; }
       .uno-schedule-list { display: grid; gap: 14px; }
       .uno-schedule-card { border: 1px solid var(--uno-line); background: #fff; padding: 16px; }
+      .uno-admin-modal.is-open { display: grid; align-items: center; justify-items: center; }
+      .uno-admin-modal-panel { width: 98vw; max-width: 1680px; height: 96vh; display: flex; flex-direction: column; }
+      .uno-admin-modal-head { flex: 0 0 auto; }
+      .uno-admin-modal [data-modal-body] { flex: 1 1 auto; min-height: 0; overflow: auto; padding-right: 4px; }
+      .uno-schedule-state { display: grid; grid-template-columns: repeat(auto-fit, minmax(148px, 1fr)); gap: 8px; margin: -4px 0 14px; }
+      .uno-schedule-state__item { min-height: 38px; display: flex; align-items: center; gap: 8px; border: 1px solid var(--uno-line); background: #fafaf8; padding: 8px 10px; color: var(--uno-ink); font-size: 13px; font-weight: 900; line-height: 1.3; }
+      .uno-schedule-state__item input { width: 16px; height: 16px; flex: 0 0 auto; }
+      .uno-schedule-card .uno-boarding-pass { grid-column: 1 / -1; display: grid; grid-template-columns: 92px minmax(0, 1fr); width: 100%; min-height: 430px; border: 1px solid rgba(21, 21, 21, 0.16); border-radius: 0; background: #fff; color: #151515; overflow: hidden; box-sizing: border-box; }
+      .uno-schedule-card .uno-boarding-barcode { position: relative; min-width: 0; margin: 34px 0; border-right: 1px dashed rgba(21, 21, 21, 0.18); background: repeating-linear-gradient(90deg, #151515 0, #151515 1.6px, transparent 1.6px, transparent 4px); background-size: 56px 100%; background-repeat: no-repeat; background-position: center; }
+      .uno-schedule-card .uno-boarding-main { min-width: 0; display: grid; grid-template-rows: 36px minmax(0, 1fr) minmax(0, 1fr); row-gap: 22px; padding: 30px 42px 34px; box-sizing: border-box; }
+      .uno-schedule-card .uno-boarding-header { display: flex; align-items: flex-start; justify-content: flex-end; min-width: 0; color: #003b7a; font-size: 18px; font-weight: 900; letter-spacing: .02em; }
+      .uno-schedule-card .uno-boarding-header span { display: none; }
+      .uno-schedule-card .uno-boarding-logo-text { color: #003b7a; font-size: 18px; font-weight: 900; letter-spacing: .02em; }
+      .uno-schedule-card .uno-boarding-segment { display: grid; grid-template-rows: auto minmax(64px, auto) auto; row-gap: 10px; min-width: 0; }
+      .uno-schedule-card .uno-boarding-segment + .uno-boarding-segment { padding-top: 18px; border-top: 1px dashed rgba(21, 21, 21, 0.22); }
+      .uno-schedule-card .uno-boarding-segment-label { font-size: 12px; line-height: 1; letter-spacing: 0.14em; font-weight: 760; color: #003b7a; text-transform: uppercase; white-space: nowrap; }
+      .uno-schedule-card .uno-boarding-route { display: grid; grid-template-columns: minmax(170px, 1fr) minmax(220px, 0.9fr) minmax(170px, 1fr); align-items: start; gap: 40px; min-width: 0; }
+      .uno-schedule-card .uno-boarding-airport { min-width: 0; padding-inline: 22px; padding-top: 0; }
+      .uno-schedule-card .uno-boarding-airport.is-arrival { text-align: right; padding-top: 0; }
+      .uno-schedule-card .uno-boarding-airport strong { display: block; font-size: clamp(32px, 5.2vw, 42px); line-height: 0.86; letter-spacing: -0.065em; font-weight: 820; color: #151515; white-space: nowrap; }
+      .uno-schedule-card .uno-boarding-airport span { display: block; margin-top: 10px; font-size: 12px; line-height: 1; letter-spacing: 0.08em; font-weight: 620; color: #151515; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .uno-schedule-card .uno-boarding-route i { position: relative; display: block; width: 100%; max-width: 180px; justify-self: center; align-self: center; height: 1px; background: rgba(21, 21, 21, 0.34); }
+      .uno-schedule-card .uno-boarding-route i::before { content: "✈"; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -52%); display: flex; align-items: center; justify-content: center; width: 30px; height: 22px; background: #fff; font-size: 20px; line-height: 1; color: #151515; }
+      .uno-schedule-card .uno-boarding-time-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 34px; min-width: 0; }
+      .uno-schedule-card .uno-boarding-time-grid > div:nth-child(2) { border-left: 1px solid rgba(21, 21, 21, 0.14); padding-left: 34px; }
+      .uno-schedule-card .uno-boarding-time-grid span { display: block; margin-bottom: 8px; font-size: 10px; line-height: 1; letter-spacing: 0.18em; font-weight: 760; color: #003b7a; text-transform: uppercase; }
+      .uno-schedule-card .uno-boarding-time-grid strong { display: block; font-size: 30px; line-height: 0.95; letter-spacing: -0.045em; font-weight: 760; color: #151515; }
+      .uno-schedule-card .uno-boarding-time-grid em { display: block; margin-top: 7px; font-size: 14px; line-height: 1.15; letter-spacing: -0.035em; font-style: normal; font-weight: 520; color: rgba(21, 21, 21, 0.76); }
+      .uno-schedule-card .uno-boarding-pass input { width: 100%; border: 0; background: transparent; color: inherit; font: inherit; font-weight: inherit; letter-spacing: inherit; line-height: inherit; text-align: inherit; padding: 0; outline: 0; }
+      .uno-schedule-card .uno-boarding-pass input:focus { outline: 2px solid rgba(0, 59, 122, .18); outline-offset: 3px; }
+      .uno-schedule-card .uno-boarding-time-grid input[type="time"] { min-height: 34px; }
+      .uno-schedule-card .uno-boarding-time-grid input[type="date"] { min-height: 22px; color: rgba(21, 21, 21, 0.76); }
       .uno-schedule-head { display: flex; justify-content: space-between; gap: 12px; align-items: center; margin-bottom: 14px; }
       .uno-schedule-title { margin: 0; font-size: 18px; }
       .uno-calendar-toolbar { display: flex; justify-content: space-between; gap: 12px; align-items: center; margin-bottom: 16px; }
@@ -108,6 +140,11 @@ uno_renewal_admin_render_pagehead(
       .uno-wide-textarea textarea { min-height: 280px; font-family: Consolas, "Noto Sans KR", monospace; font-size: 14px; }
       @media (max-width: 860px) {
         .uno-product-hero, .uno-product-state, .uno-form-grid, .uno-hub-grid, .uno-hub-grid.is-operational { grid-template-columns: 1fr; }
+        .uno-schedule-card .uno-boarding-pass { grid-template-columns: 68px minmax(0, 1fr); min-height: 398px; }
+        .uno-schedule-card .uno-boarding-main { row-gap: 15px; padding: 26px 26px 28px; }
+        .uno-schedule-card .uno-boarding-route { grid-template-columns: minmax(132px, 0.86fr) minmax(120px, 0.5fr) minmax(132px, 0.86fr); gap: 20px; }
+        .uno-schedule-card .uno-boarding-time-grid { column-gap: 24px; }
+        .uno-schedule-card .uno-boarding-time-grid > div:nth-child(2) { padding-left: 24px; }
         .uno-calendar-grid { grid-template-columns: 1fr; }
         .uno-calendar-weekday { display: none; }
       }
@@ -301,6 +338,8 @@ uno_renewal_admin_render_pagehead(
       )).join("") + '</div>';
 
       const field = (label, name, value = "", type = "text", placeholder = "") => '<div class="uno-form-field"><label>' + escapeHtml(label) + '</label><input type="' + escapeHtml(type) + '" data-field="' + escapeHtml(name) + '" value="' + escapeHtml(value) + '" placeholder="' + escapeHtml(placeholder) + '"></div>';
+      const semiAirportField = (name, value = "", helper = "", arrival = false) => '<div class="uno-boarding-airport ' + (arrival ? 'is-arrival' : '') + '"><strong><input type="text" data-field="' + escapeHtml(name) + '" value="' + escapeHtml(value) + '"></strong><span>' + escapeHtml(helper) + '</span></div>';
+      const semiTimeField = (label, timeName, timeValue = "", dateName = "", dateValue = "", min = "") => '<div><span>' + escapeHtml(label) + '</span><strong><input type="time" data-field="' + escapeHtml(timeName) + '" value="' + escapeHtml(timeValue) + '"></strong>' + (dateName ? '<em><input type="date" data-field="' + escapeHtml(dateName) + '" value="' + escapeHtml(dateValue) + '" min="' + escapeHtml(min) + '"></em>' : '<em>&nbsp;</em>') + '</div>';
       const textareaField = (label, name, value = "", placeholder = "") => '<div class="uno-form-field full"><label>' + escapeHtml(label) + '</label><textarea data-field="' + escapeHtml(name) + '" placeholder="' + escapeHtml(placeholder) + '">' + escapeHtml(value) + '</textarea></div>';
       const selectField = (label, name, options, selected = "") => '<div class="uno-form-field"><label>' + escapeHtml(label) + '</label><select data-field="' + escapeHtml(name) + '">' + options.map(([value, text]) => '<option value="' + escapeHtml(value) + '" ' + (value === selected ? 'selected' : '') + '>' + escapeHtml(text) + '</option>').join("") + '</select></div>';
       const readField = (root, name) => { const input = $('[data-field="' + name + '"]', root); if (!input) return ""; return input.type === "checkbox" ? input.checked : input.value.trim(); };
@@ -353,6 +392,10 @@ uno_renewal_admin_render_pagehead(
         '</div>';
       };
       const dateKey = (date) => date.getFullYear() + "-" + String(date.getMonth() + 1).padStart(2, "0") + "-" + String(date.getDate()).padStart(2, "0");
+      const dateInputValue = (value, fallback = dateKey(new Date())) => {
+        const text = String(value || "").trim().slice(0, 10);
+        return /^\d{4}-\d{2}-\d{2}$/.test(text) && text !== "0000-00-00" ? text : fallback;
+      };
       const parseDateKey = (value) => { const [y, m, d] = String(value || "").split("-").map(Number); return new Date(y || 1970, (m || 1) - 1, d || 1); };
 
       const actionLinks = (product) => '<div class="uno-admin-actions" style="justify-content:flex-start;margin-top:18px;">' +
@@ -396,7 +439,7 @@ uno_renewal_admin_render_pagehead(
 
       const parseBoardingText = (schedule) => {
         const raw = String(schedule.air || "").trim();
-        const parsed = { outboundDeparturePlace: "", outboundDepartureTime: "", outboundArrivalPlace: "", outboundArrivalLabel: "", returnDeparturePlace: "", returnDepartureTime: "", returnArrivalPlace: "", returnArrivalLabel: "", boardingLabel: "" };
+        const parsed = { outboundDeparturePlace: "", outboundDepartureTime: "", outboundArrivalPlace: "", outboundArrivalTime: "", outboundArrivalLabel: "", returnDeparturePlace: "", returnDepartureTime: "", returnArrivalPlace: "", returnArrivalTime: "", returnArrivalLabel: "", boardingLabel: "" };
         if (!raw) return parsed;
         const parseLeg = (text, prefix) => {
           const [left = "", right = ""] = text.split("->").map((part) => part.trim());
@@ -404,7 +447,10 @@ uno_renewal_admin_render_pagehead(
           parsed[prefix + "DepartureTime"] = timeMatch ? timeMatch[1] : "";
           parsed[prefix + "DeparturePlace"] = timeMatch ? left.replace(timeMatch[1], "").trim() : left;
           const rightParts = right.split("/").map((part) => part.trim());
-          parsed[prefix + "ArrivalPlace"] = rightParts[0] || "";
+          const arrivalText = rightParts[0] || "";
+          const arrivalTimeMatch = arrivalText.match(/(\d{1,2}:\d{2})/);
+          parsed[prefix + "ArrivalTime"] = arrivalTimeMatch ? arrivalTimeMatch[1] : "";
+          parsed[prefix + "ArrivalPlace"] = arrivalTimeMatch ? arrivalText.replace(arrivalTimeMatch[1], "").trim() : arrivalText;
           parsed[prefix + "ArrivalLabel"] = rightParts.slice(1).join(" / ");
         };
         raw.split(/\r?\n/).forEach((line) => {
@@ -419,32 +465,64 @@ uno_renewal_admin_render_pagehead(
       const semiScheduleCard = (schedule = {}) => {
         const parsed = parseBoardingText(schedule);
         const visibleChecked = schedule.id ? !!schedule.isVisible : true;
+        const reservationCount = Number(schedule.reservationCount || 0);
+        const defaultStartDate = dateInputValue(schedule.startDate || "", dateKey(new Date()));
+        const defaultArriveDate = dateInputValue(schedule.arriveDate || "", defaultStartDate);
         return '<article class="uno-schedule-card" data-semi-schedule-card data-id="' + escapeHtml(schedule.id || "") + '">' +
           '<div class="uno-schedule-head"><h3 class="uno-schedule-title">' + escapeHtml(schedule.id ? "일정 #" + schedule.id : "새 일정") + '</h3><div class="uno-admin-actions">' +
-          '<button class="uno-admin-button secondary" type="button" data-delete-semi-schedule ' + (!schedule.id ? 'disabled' : '') + '>삭제</button><button class="uno-admin-button" type="button" data-save-semi-schedule>저장</button></div></div>' +
+          '<button class="uno-admin-button secondary" type="button" data-delete-semi-schedule ' + (!schedule.id || reservationCount > 0 ? 'disabled' : '') + '>삭제</button><button class="uno-admin-button" type="button" data-save-semi-schedule>저장</button></div></div>' +
+          '<div class="uno-schedule-state">' +
+            '<span class="uno-schedule-state__item">예약 ' + reservationCount + '건</span>' +
+            '<span class="uno-schedule-state__item">상태 ' + escapeHtml(schedule.status || '상태값 없음') + '</span>' +
+            '<label class="uno-schedule-state__item"><input type="checkbox" data-field="isVisible" ' + (visibleChecked ? 'checked' : '') + '> 프런트 노출</label>' +
+            '<label class="uno-schedule-state__item"><input type="checkbox" data-field="isMain" ' + (schedule.isMain ? 'checked' : '') + '> 대표 일정</label>' +
+          '</div>' +
           '<div class="uno-form-grid">' +
-          field("투어 시작일", "startDate", schedule.startDate || "", "date") +
-          field("도착 / 종료일", "arriveDate", schedule.arriveDate || schedule.startDate || "", "date") +
-          field("가는 편 출발지", "outboundDeparturePlace", parsed.outboundDeparturePlace) +
-          field("가는 편 출발 시간", "outboundDepartureTime", parsed.outboundDepartureTime, "time") +
-          field("가는 편 도착지", "outboundArrivalPlace", parsed.outboundArrivalPlace) +
-          field("가는 편 도착 일정", "outboundArrivalLabel", parsed.outboundArrivalLabel, "text", "2일차 오전") +
-          field("오는 편 출발지", "returnDeparturePlace", parsed.returnDeparturePlace) +
-          field("오는 편 출발 시간", "returnDepartureTime", parsed.returnDepartureTime, "time") +
-          field("오는 편 도착지", "returnArrivalPlace", parsed.returnArrivalPlace) +
-          field("오는 편 도착 일정", "returnArrivalLabel", parsed.returnArrivalLabel, "text", "11일차 오후") +
-          '<div class="uno-form-field full"><div class="uno-check-row"><label><input type="checkbox" data-field="isVisible" ' + (visibleChecked ? 'checked' : '') + '> 프런트 노출</label><label><input type="checkbox" data-field="isMain" ' + (schedule.isMain ? 'checked' : '') + '> 대표 일정</label></div></div>' +
+          '<article class="uno-boarding-pass" aria-label="왕복 항공 보딩패스">' +
+            '<aside class="uno-boarding-barcode" aria-hidden="true"></aside>' +
+            '<main class="uno-boarding-main">' +
+              '<header class="uno-boarding-header"><strong class="uno-boarding-logo-text">KOREAN AIR</strong><span>BOARDING PASS</span></header>' +
+              '<section class="uno-boarding-segment" aria-label="가는 편">' +
+                '<div class="uno-boarding-segment-label">OUTBOUND · 가는 편</div>' +
+                '<div class="uno-boarding-route">' +
+                  semiAirportField("outboundDeparturePlace", parsed.outboundDeparturePlace, "출발지") +
+                  '<i aria-hidden="true"></i>' +
+                  semiAirportField("outboundArrivalPlace", parsed.outboundArrivalPlace, "목적지", true) +
+                '</div>' +
+                '<div class="uno-boarding-time-grid">' +
+                  semiTimeField("Depart", "outboundDepartureTime", parsed.outboundDepartureTime, "startDate", defaultStartDate) +
+                  semiTimeField("Arrive", "outboundArrivalTime", parsed.outboundArrivalTime, "outboundArrivalDate", defaultStartDate, defaultStartDate) +
+                '</div>' +
+              '</section>' +
+              '<section class="uno-boarding-segment" aria-label="오는 편">' +
+                '<div class="uno-boarding-segment-label">INBOUND · 오는 편</div>' +
+                '<div class="uno-boarding-route">' +
+                  semiAirportField("returnDeparturePlace", parsed.returnDeparturePlace, "출발지") +
+                  '<i aria-hidden="true"></i>' +
+                  semiAirportField("returnArrivalPlace", parsed.returnArrivalPlace, "목적지", true) +
+                '</div>' +
+                '<div class="uno-boarding-time-grid">' +
+                  semiTimeField("Depart", "returnDepartureTime", parsed.returnDepartureTime, "returnDepartureDate", defaultArriveDate, defaultStartDate) +
+                  semiTimeField("Arrive", "returnArrivalTime", parsed.returnArrivalTime, "arriveDate", defaultArriveDate, defaultStartDate) +
+                '</div>' +
+              '</section>' +
+            '</main>' +
+          '</article>' +
           '</div></article>';
       };
 
       const buildSemiScheduleEditor = () => {
-        const schedules = state.data.semiSchedules || [];
+        const schedules = (state.data.semiSchedules || []).slice().sort((a, b) => Number(!!b.isMain) - Number(!!a.isMain));
         return '<p class="uno-section-note">좌석, 항공권 코드, 추가금 같은 항공권 판매 항목은 여기서 다루지 않습니다. 프런트 보딩패스에 필요한 일정만 관리합니다.</p>' +
           '<div class="uno-admin-actions" style="justify-content:flex-start;margin-bottom:14px;"><button class="uno-admin-button" type="button" data-add-semi-schedule>일정 추가</button></div>' +
           '<div class="uno-schedule-list" data-semi-schedule-list>' + (schedules.length ? schedules.map(semiScheduleCard).join("") : semiScheduleCard({})) + '</div>';
       };
 
-      const semiPayload = (card) => ({ action: "saveSemiSchedule", id: card.dataset.id ? Number(card.dataset.id) : 0, startDate: readField(card, "startDate"), arriveDate: readField(card, "arriveDate"), outboundDeparturePlace: readField(card, "outboundDeparturePlace"), outboundDepartureTime: readField(card, "outboundDepartureTime"), outboundArrivalPlace: readField(card, "outboundArrivalPlace"), outboundArrivalLabel: readField(card, "outboundArrivalLabel"), returnDeparturePlace: readField(card, "returnDeparturePlace"), returnDepartureTime: readField(card, "returnDepartureTime"), returnArrivalPlace: readField(card, "returnArrivalPlace"), returnArrivalLabel: readField(card, "returnArrivalLabel"), isVisible: readField(card, "isVisible"), isMain: readField(card, "isMain") });
+      const semiPayload = (card) => {
+        const startDate = dateInputValue(readField(card, "startDate"), dateKey(new Date()));
+        const arriveDate = dateInputValue(readField(card, "arriveDate"), startDate);
+        return { action: "saveSemiSchedule", id: card.dataset.id ? Number(card.dataset.id) : 0, startDate, arriveDate, outboundDeparturePlace: readField(card, "outboundDeparturePlace"), outboundDepartureTime: readField(card, "outboundDepartureTime"), outboundArrivalPlace: readField(card, "outboundArrivalPlace"), outboundArrivalTime: readField(card, "outboundArrivalTime"), returnDeparturePlace: readField(card, "returnDeparturePlace"), returnDepartureTime: readField(card, "returnDepartureTime"), returnArrivalPlace: readField(card, "returnArrivalPlace"), returnArrivalTime: readField(card, "returnArrivalTime"), isVisible: readField(card, "isVisible"), isMain: readField(card, "isMain") };
+      };
 
       const priceField = (label, name, value = "") => field(label, name, String(value || ""), "number");
       const textPriceField = (label, name, value = "", placeholder = "") => field(label, name, String(value || ""), "text", placeholder);
@@ -776,10 +854,29 @@ uno_renewal_admin_render_pagehead(
         if (applyPattern) { try { applyPattern.disabled = true; setStatus("반복 캘린더를 적용하는 중입니다."); await apiRequest(patternPayload()); setStatus("반복 캘린더가 적용되었습니다.", "ok"); refreshCurrentModal(); } catch (error) { setStatus(error.message || "반복 캘린더를 적용하지 못했습니다.", "warn"); } finally { applyPattern.disabled = false; } }
       });
 
+      const syncSemiRouteField = (card, sourceName, targetName, flagName) => {
+        const source = $('[data-field="' + sourceName + '"]', card);
+        const target = $('[data-field="' + targetName + '"]', card);
+        if (!source || !target || card.dataset[flagName] === "manual") return;
+        target.value = source.value;
+      };
+
       document.addEventListener("input", (event) => {
         const guideSearch = event.target.closest("[data-guide-search]");
-        if (!guideSearch) return;
-        filterGuideSelector(guideSearch.closest("[data-guide-selector]"), guideSearch.value);
+        if (guideSearch) {
+          filterGuideSelector(guideSearch.closest("[data-guide-selector]"), guideSearch.value);
+          return;
+        }
+
+        const fieldInput = event.target.closest("[data-field]");
+        const scheduleCard = fieldInput ? fieldInput.closest("[data-semi-schedule-card]") : null;
+        if (!scheduleCard) return;
+
+        const fieldName = fieldInput.dataset.field || "";
+        if (fieldName === "returnArrivalPlace") scheduleCard.dataset.returnArrivalPlaceSync = "manual";
+        if (fieldName === "returnDeparturePlace") scheduleCard.dataset.returnDeparturePlaceSync = "manual";
+        if (fieldName === "outboundDeparturePlace") syncSemiRouteField(scheduleCard, "outboundDeparturePlace", "returnArrivalPlace", "returnArrivalPlaceSync");
+        if (fieldName === "outboundArrivalPlace") syncSemiRouteField(scheduleCard, "outboundArrivalPlace", "returnDeparturePlace", "returnDeparturePlaceSync");
       });
 
       document.addEventListener("change", (event) => {

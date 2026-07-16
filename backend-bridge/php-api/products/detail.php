@@ -327,6 +327,53 @@ function uno_api_fetch_daily_fee_options($legacyProductId)
     return $items;
 }
 
+function uno_api_detail_parse_boarding_pass($air)
+{
+    $air = trim((string) $air);
+    $emptyLeg = array(
+        'departDate' => '',
+        'arriveDate' => '',
+        'fromCode' => '',
+        'fromCity' => '',
+        'toCode' => '',
+        'toCity' => '',
+        'departTime' => '',
+        'arriveTime' => '',
+        'duration' => '',
+        'transfer' => '',
+    );
+    $boarding = array('outbound' => $emptyLeg, 'inbound' => $emptyLeg);
+
+    foreach (preg_split('/\r?\n/', $air) as $line) {
+        $line = trim($line);
+        if ($line === '' || strpos($line, ':') === false) {
+            continue;
+        }
+        list($label, $value) = array_map('trim', explode(':', $line, 2));
+        $key = strtoupper($label) === 'RETURN' ? 'inbound' : 'outbound';
+        $parts = array_map('trim', explode('->', $value, 2));
+        $left = isset($parts[0]) ? $parts[0] : '';
+        $right = isset($parts[1]) ? $parts[1] : '';
+        if (preg_match('/^(.*)\s+(\d{1,2}:\d{2})$/', $left, $m)) {
+            $boarding[$key]['fromCity'] = trim($m[1]);
+            $boarding[$key]['departTime'] = $m[2];
+        } else {
+            $boarding[$key]['fromCity'] = $left;
+        }
+        $rightParts = array_map('trim', explode('/', $right, 2));
+        $arrivalText = isset($rightParts[0]) ? $rightParts[0] : '';
+        if (preg_match('/^(.*)\s+(\d{1,2}:\d{2})$/', $arrivalText, $m)) {
+            $boarding[$key]['toCity'] = trim($m[1]);
+            $boarding[$key]['arriveTime'] = $m[2];
+        } else {
+            $boarding[$key]['toCity'] = $arrivalText;
+        }
+        $boarding[$key]['transfer'] = isset($rightParts[1]) ? $rightParts[1] : '';
+    }
+
+    return $boarding;
+}
+
 function uno_api_fetch_package_schedules($legacyProductId)
 {
     if (!function_exists('sql_query')) {
@@ -335,7 +382,7 @@ function uno_api_fetch_package_schedules($legacyProductId)
 
     $legacyProductId = (int) $legacyProductId;
     $result = sql_query(
-        "select id, start_time, arrive_time, fee_1, fee_2, fee_3, fee_air, price, seat, status, is_main
+        "select id, start_time, arrive_time, air, fee_1, fee_2, fee_3, fee_air, price, seat, status, is_main
            from v2_pkgTour
           where pid = '{$legacyProductId}'
             and (del_time = 0 or del_time is null)
@@ -345,11 +392,14 @@ function uno_api_fetch_package_schedules($legacyProductId)
 
     $items = array();
     while ($row = sql_fetch_array($result)) {
+        $air = isset($row['air']) ? (string) $row['air'] : '';
         $items[] = array(
             'id' => (int) $row['id'],
             'label' => trim((string) $row['start_time'] . ' 출발'),
             'startDate' => isset($row['start_time']) ? (string) $row['start_time'] : '',
             'endDate' => isset($row['arrive_time']) ? (string) $row['arrive_time'] : '',
+            'boardingLabel' => $air,
+            'boardingPass' => uno_api_detail_parse_boarding_pass($air),
             'deposit' => uno_api_money(isset($row['fee_1']) ? $row['fee_1'] : 0),
             'middlePayment' => uno_api_money(isset($row['fee_2']) ? $row['fee_2'] : 0),
             'intermediatePayment' => uno_api_money(isset($row['fee_2']) ? $row['fee_2'] : 0),
