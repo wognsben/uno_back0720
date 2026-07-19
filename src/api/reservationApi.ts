@@ -163,6 +163,7 @@ export type ProductDetailResponse = ProductSummary & {
   };
   feeOptions: ProductFeeOption[];
   packageSchedules?: PackageScheduleOption[];
+  reviews?: ProductReviewItem[];
   faqs?: ProductFaqItem[];
   detailHtml?: string;
   heroImageUrl?: string;
@@ -183,6 +184,18 @@ export type ProductDetailResponse = ProductSummary & {
     course?: ProductImageItem[];
     features?: ProductImageItem[];
   };
+};
+
+export type ProductReviewItem = {
+  id: string;
+  nickname: string;
+  writtenAt: string;
+  productTitle: string;
+  rating: number;
+  title: string;
+  body: string;
+  helpfulCount?: number;
+  href?: string;
 };
 
 export type ProductListResponse = {

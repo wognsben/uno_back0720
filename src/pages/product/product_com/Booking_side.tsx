@@ -1156,13 +1156,21 @@ export default function BookingSide({
 }: BookingSideProps) {
   const panelRef = useRef<HTMLDivElement>(null);
   const toggleRef = useRef<HTMLButtonElement>(null);
+  const isDailyTour = product.productType === "daily";
 
   const selectableDates = useMemo(
-    () => availableDates.filter((date) => !isDateSoldOut(date)),
-    [availableDates],
+    () =>
+      availableDates.filter((date) =>
+        !isDateSoldOut(date, { useSeatAvailability: isDailyTour }),
+      ),
+    [availableDates, isDailyTour],
   );
 
   const initialSelectedDateId = selectableDates[0]?.id ?? availableDates[0]?.id ?? "";
+  const initialFeeOptionId =
+    product.productType === "semi"
+      ? product.feeOptions?.find((option) => option.id !== undefined && option.id !== null)?.id
+      : undefined;
   const {
     selectedDateId,
     peopleCount,
@@ -1172,7 +1180,7 @@ export default function BookingSide({
     setPeopleCount,
     setFeeCounts,
     setIsCartAdded,
-  } = useReservationSelection(product.id, initialSelectedDateId);
+  } = useReservationSelection(product.id, initialSelectedDateId, initialFeeOptionId);
   const [isPanelOpen, setIsPanelOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [isDockOpen, setIsDockOpen] = useState(false);
@@ -1202,7 +1210,6 @@ export default function BookingSide({
     };
   }, []);
 
-  const isDailyTour = product.productType === "daily";
   const selectedDate =
     availableDates.find((date) => date.id === selectedDateId) ??
     selectableDates[0] ??
@@ -1213,7 +1220,9 @@ export default function BookingSide({
     ? selectedDate?.price ?? product.basePrice ?? 0
     : selectedDate?.deposit ?? selectedDate?.price ?? 0;
   const maxPeople = Math.max(1, selectedDate?.seats ?? 99);
-  const isSelectedSoldOut = !selectedDate || isDateSoldOut(selectedDate);
+  const isSelectedSoldOut =
+    !selectedDate ||
+    isDateSoldOut(selectedDate, { useSeatAvailability: isDailyTour });
   const selectableFeeOptions = product.feeOptions ?? [];
   const hasSelectableFeeOptions = selectableFeeOptions.length > 0;
   const selectedFeeItems = selectableFeeOptions
@@ -1229,18 +1238,20 @@ export default function BookingSide({
     ? selectedFeeItems.reduce((sum, item) => sum + item.deposit * item.personCount, 0)
     : selectedPrice * peopleCount;
   const isFeeSelectionEmpty = hasSelectableFeeOptions && selectedFeePeople < 1;
-  const isSemiPriceMissing = !isDailyTour && !hasSemiSchedulePrice;
+  const isSemiPriceMissing = !isDailyTour && !hasSemiSchedulePrice && totalPrice <= 0;
   const selectedStatusLabel = isSelectedSoldOut
     ? "예약 마감"
     : selectedDate
-      ? getAvailabilityDisplayLabel(getAvailabilityStatus(selectedDate))
+      ? getAvailabilityDisplayLabel(
+          getAvailabilityStatus(selectedDate, { useSeatAvailability: isDailyTour }),
+        )
       : "";
 
   useEffect(() => {
     if (import.meta.env.DEV && isSemiPriceMissing) {
       console.warn("[reservation] Missing schedule price", selectedDate);
     }
-  }, [isSemiPriceMissing, selectedDate]);
+  }, [isSemiPriceMissing, selectedDate, totalPrice]);
 
   const calendarMeta = useMemo(() => {
     const firstDate = availableDates[0];
@@ -1459,10 +1470,16 @@ export default function BookingSide({
                     {Array.from({ length: calendarMeta.daysInMonth }).map((_, i) => {
                       const dayNumber = i + 1;
                       const date = datesByDay.get(dayNumber);
-                      const disabled = !date || isDateSoldOut(date);
+                      const disabled =
+                        !date ||
+                        isDateSoldOut(date, { useSeatAvailability: isDailyTour });
                       const isSelected = !!date && date.id === selectedDate?.id;
                       const dateStatusLabel = date
-                        ? getAvailabilityDisplayLabel(getAvailabilityStatus(date))
+                        ? getAvailabilityDisplayLabel(
+                            getAvailabilityStatus(date, {
+                              useSeatAvailability: isDailyTour,
+                            }),
+                          )
                         : "";
                       return (
                         <button
@@ -1483,7 +1500,7 @@ export default function BookingSide({
                   </div>
                   {selectedDate && (
                     <p className="uno-booking-side__selected-date">
-                      선택: {selectedDate.label} ({selectedDate.day}) · {getAvailabilityDisplayLabel(getAvailabilityStatus(selectedDate))} · 잔여 {selectedDate.seats}석
+                      선택: {selectedDate.label} ({selectedDate.day}) · {getAvailabilityDisplayLabel(getAvailabilityStatus(selectedDate, { useSeatAvailability: isDailyTour }))} · 잔여 {selectedDate.seats}석
                     </p>
                   )}
                 </>
@@ -1499,8 +1516,14 @@ export default function BookingSide({
                     onChange={(e) => { setSelectedDateId(e.target.value); setPeopleCount(1); setIsCartAdded(false); }}
                   >
                     {availableDates.map((date) => (
-                      <option key={date.id} value={date.id} disabled={isDateSoldOut(date)}>
-                        {formatCompactDateLabel(date.label)} ({date.day}) · {getAvailabilityDisplayLabel(getAvailabilityStatus(date))}
+                      <option
+                        key={date.id}
+                        value={date.id}
+                        disabled={isDateSoldOut(date, {
+                          useSeatAvailability: isDailyTour,
+                        })}
+                      >
+                        {formatCompactDateLabel(date.label)} ({date.day}) · {getAvailabilityDisplayLabel(getAvailabilityStatus(date, { useSeatAvailability: isDailyTour }))}
                       </option>
                     ))}
                   </select>

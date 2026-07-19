@@ -860,24 +860,33 @@ function ProductDocument({
               <p>{detailData.review}</p>
 
               <div className="pd-document-review-list">
-                {detailData.reviews.slice(0, 2).map((review) => (
-                  <button
-                    key={review.id}
-                    type="button"
-                    className="pd-document-review-item"
-                    onClick={onOpenReview}
-                  >
-                    <span>
-                      {review.nickname} · {review.writtenAt}
-                    </span>
-                    <strong>{review.title}</strong>
-                  </button>
-                ))}
+                {detailData.reviews.length > 0 ? (
+                  detailData.reviews.slice(0, 2).map((review) => (
+                    <button
+                      key={review.id}
+                      type="button"
+                      className="pd-document-review-item"
+                      onClick={onOpenReview}
+                    >
+                      <span>
+                        {review.nickname} · {review.writtenAt}
+                      </span>
+                      <strong>{review.title}</strong>
+                    </button>
+                  ))
+                ) : (
+                  <div className="pd-document-review-item" aria-disabled="true">
+                    <span>REVIEW</span>
+                    <strong>등록된 여행후기가 없습니다.</strong>
+                  </div>
+                )}
               </div>
 
-              <button type="button" className="pd-body-text-button" onClick={onOpenReview}>
-                전체 리뷰 보기 →
-              </button>
+              {detailData.reviews.length > 0 ? (
+                <button type="button" className="pd-body-text-button" onClick={onOpenReview}>
+                  전체 리뷰 보기 →
+                </button>
+              ) : null}
             </div>
           )}
 

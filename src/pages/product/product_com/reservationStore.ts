@@ -147,6 +147,7 @@ export const updateReservationSelection = (
 export const useReservationSelection = (
   productId: string,
   initialSelectedDateId = "",
+  initialFeeOptionId?: string | number,
 ) => {
   const state = useSyncExternalStore(
     (listener) => {
@@ -162,6 +163,26 @@ export const useReservationSelection = (
       updateReservationSelection(productId, { selectedDateId: initialSelectedDateId });
     }
   }, [initialSelectedDateId, productId, state.selectedDateId]);
+
+  useEffect(() => {
+    if (initialFeeOptionId === undefined || initialFeeOptionId === null) return;
+
+    const feeOptionKey = String(initialFeeOptionId);
+
+    updateReservationSelection(productId, (current) => {
+      if (Object.keys(current.feeCounts).length > 0) {
+        return {};
+      }
+
+      return {
+        feeCounts: {
+          [feeOptionKey]: 1,
+        },
+        peopleCount: 1,
+        isCartAdded: false,
+      };
+    });
+  }, [initialFeeOptionId, productId]);
 
   const setSelectedDateId = useCallback(
     (selectedDateId: string) =>

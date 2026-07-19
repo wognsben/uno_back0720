@@ -6,12 +6,6 @@ const FONT_MONO = "var(--font-en)";
 
 const COMMUNITY_HUB_ITEMS = [
   {
-    label: "여행후기",
-    labelEn: "REVIEW",
-    description: "우노트래블을 경험한 여행자의 기록을 확인합니다.",
-    href: "/community/review",
-  },
-  {
     label: "공지사항",
     labelEn: "NOTICE",
     description: "예약, 운영, 상품 관련 주요 안내를 확인합니다.",
@@ -24,10 +18,16 @@ const COMMUNITY_HUB_ITEMS = [
     href: "/community/event",
   },
   {
-    label: "FAQ",
-    labelEn: "FAQ",
-    description: "예약 전 자주 묻는 질문을 빠르게 확인합니다.",
-    href: "/community/faq",
+    label: "문의하기",
+    labelEn: "INQUIRY",
+    description: "공개 문의를 작성하고 답변을 확인합니다.",
+    href: "/community/inquiry",
+  },
+  {
+    label: "여행후기",
+    labelEn: "REVIEW",
+    description: "우노트래블을 경험한 여행자의 기록을 확인합니다.",
+    href: "/community/review",
   },
 ] as const;
 

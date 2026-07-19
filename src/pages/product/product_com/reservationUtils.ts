@@ -29,6 +29,10 @@ export type AvailableDate = {
 export type AvailabilityStatus = "available" | "soon" | "soldout";
 export type AvailabilityTone = AvailabilityStatus;
 
+type AvailabilityOptions = {
+  useSeatAvailability?: boolean;
+};
+
 export type PriceTextProps = {
   price: number;
   currency?: string;
@@ -206,9 +210,13 @@ export const getDailyDateOption = (date: Date, dates: AvailableDate[]) => {
   };
 };
 
-export const isDateSoldOut = (date?: AvailableDate) => {
+export const isDateSoldOut = (
+  date?: AvailableDate,
+  options?: AvailabilityOptions,
+) => {
   if (!date) return false;
-  return date.seats <= 0 || isDateClosedStatus(date.status);
+  if (isDateClosedStatus(date.status)) return true;
+  return options?.useSeatAvailability !== false && date.seats <= 0;
 };
 
 export const isDateBookable = (date: AvailableDate | undefined, today: Date) => {
@@ -235,13 +243,18 @@ export const getInitialDailyDateId = (dates: AvailableDate[]) => {
 
 export const getAvailabilityStatus = (
   date?: AvailableDate,
+  options?: AvailabilityOptions,
 ): AvailabilityStatus => {
-  if (!date || date.seats <= 0 || isDateClosedStatus(date.status)) {
+  if (!date || isDateClosedStatus(date.status)) {
     return "soldout";
   }
 
-  const remainingRatio = date.capacity > 0 ? date.seats / date.capacity : 0;
-  if (remainingRatio <= 0.3) return "soon";
+  if (options?.useSeatAvailability !== false) {
+    if (date.seats <= 0) return "soldout";
+
+    const remainingRatio = date.capacity > 0 ? date.seats / date.capacity : 0;
+    if (remainingRatio <= 0.3) return "soon";
+  }
 
   return normalizeAvailabilityStatus(date.status);
 };
@@ -252,8 +265,11 @@ export const getAvailabilityTone = (
   return normalizeAvailabilityStatus(status);
 };
 
-export const getAvailabilityClassName = (date?: AvailableDate) => {
-  return `is-${getAvailabilityTone(getAvailabilityStatus(date))}`;
+export const getAvailabilityClassName = (
+  date?: AvailableDate,
+  options?: AvailabilityOptions,
+) => {
+  return `is-${getAvailabilityTone(getAvailabilityStatus(date, options))}`;
 };
 
 export const formatAvailablePeople = (count?: number) => {

@@ -12,11 +12,11 @@ require_once __DIR__ . '/_layout.php';
 $legacyProductId = isset($_GET['legacyProductId']) ? (int) $_GET['legacyProductId'] : 0;
 uno_renewal_admin_require_access('/admin/renewal/product-edit.php?legacyProductId=' . $legacyProductId);
 
-uno_renewal_admin_render_head('UNO Renewal Product Hub');
+uno_renewal_admin_render_head('UNO Renewal 상품 상세페이지 수정');
 uno_renewal_admin_render_header();
 uno_renewal_admin_render_pagehead(
     'UNO Travel Renewal Admin',
-    'Product<br>Hub',
+    '상품 상세페이지<br>수정',
     '상품 기본 정보와 운영 기능을 한 화면에 몰아넣지 않고, 필요한 편집만 모달로 열어 관리합니다. 세미패키지 일정과 데일리투어 캘린더는 각각의 운영 방식에 맞게 분리합니다.',
     array(
         array('label' => '상품 운영', 'href' => '/admin/renewal/products.php', 'secondary' => true),
@@ -197,7 +197,6 @@ uno_renewal_admin_render_pagehead(
         <article class="uno-admin-card uno-hub-card" data-semi-card><div><span class="uno-card-kicker">Semi Schedule</span><h3>세미패키지 일정</h3><p>항공권 판매 항목이 아니라, 보딩패스 UI에 표시할 출발/도착 일정만 관리합니다.</p></div><button class="uno-admin-button secondary" type="button" data-open-modal="semi">수정</button></article>
         <article class="uno-admin-card uno-hub-card" data-daily-card><div><span class="uno-card-kicker">Daily Calendar</span><h3>데일리투어 캘린더</h3><p>월 단위 캘린더에서 가능, 임박, 마감, 정원과 예약 인원을 관리합니다.</p></div><button class="uno-admin-button secondary" type="button" data-open-modal="daily">수정</button></article>
         <article class="uno-admin-card uno-hub-card"><div><span class="uno-card-kicker">Operation Notes</span><h3>운영 안내 및 설명</h3><p>가이드 정보, 만남장소, 포함사항, 준비물, 취소 규정을 한곳에서 관리합니다.</p></div><button class="uno-admin-button secondary" type="button" data-open-modal="operation">수정</button></article>
-        <article class="uno-admin-card uno-hub-card"><div><span class="uno-card-kicker">Front Status</span><h3>프런트 노출 상태</h3><p>프런트 노출, 준비중, 숨김 상태는 상품 운영 목록에서 빠르게 조정합니다.</p></div><a class="uno-admin-button secondary" href="/admin/renewal/products.php">이동</a></article>
       </div>
     </section>
 
@@ -207,14 +206,14 @@ uno_renewal_admin_render_pagehead(
       </div>
       <div class="uno-hub-grid">
         <article class="uno-admin-card uno-hub-card"><div><span class="uno-card-kicker">Detail</span><h3>상세 내용 / 코스</h3><p>상세 본문, 코스 이미지, 안내 이미지처럼 무거운 상세 콘텐츠를 관리합니다.</p></div><button class="uno-admin-button secondary" type="button" data-open-modal="detail">수정</button></article>
-        <article class="uno-admin-card uno-hub-card"><div><span class="uno-card-kicker">Legacy Audit</span><h3>누락 검토</h3><p>정상가격, B2B, 바우처, 상품 팝업, 추천 표시 등 기존 필드를 재검토합니다.</p></div><button class="uno-admin-button secondary" type="button" data-open-modal="audit">수정</button></article>
+        <article class="uno-admin-card uno-hub-card"><div><span class="uno-card-kicker">Legacy Audit</span><h3>누락 검토</h3><p>바우처, 상품 팝업, 추천 표시 등 남은 기존 필드를 재검토합니다.</p></div><button class="uno-admin-button secondary" type="button" data-open-modal="audit">수정</button></article>
       </div>
     </section>
 
     <div class="uno-admin-modal" data-modal aria-hidden="true">
       <section class="uno-admin-modal-panel" role="dialog" aria-modal="true" aria-labelledby="modal-title">
         <div class="uno-admin-modal-head">
-          <div><p class="uno-admin-eyebrow" data-modal-eyebrow>Product Hub</p><h2 id="modal-title" data-modal-title>편집 영역</h2></div>
+          <div><p class="uno-admin-eyebrow" data-modal-eyebrow>상품 상세페이지 수정</p><h2 id="modal-title" data-modal-title>편집 영역</h2></div>
           <button class="uno-admin-close" type="button" data-close-modal>닫기</button>
         </div>
         <div data-modal-body></div>
@@ -223,7 +222,7 @@ uno_renewal_admin_render_pagehead(
 
     <script>
       const legacyProductId = <?php echo (int) $legacyProductId; ?>;
-      const state = { data: null, activeModal: "", dailyMonth: null };
+      const state = { data: null, activeModal: "", dailyMonth: null, visibleSemiScheduleId: "" };
       const $ = (selector, root = document) => root.querySelector(selector);
       const statusEl = $("[data-status]");
       const titleEl = $("[data-product-title]");
@@ -414,19 +413,20 @@ uno_renewal_admin_render_pagehead(
         return /^\d{4}-\d{2}-\d{2}$/.test(text) && text !== "0000-00-00" ? text : fallback;
       };
       const parseDateKey = (value) => { const [y, m, d] = String(value || "").split("-").map(Number); return new Date(y || 1970, (m || 1) - 1, d || 1); };
-
       const actionLinks = (product) => '<div class="uno-admin-actions" style="justify-content:flex-start;margin-top:18px;">' +
         (product.frontendHref ? '<a class="uno-admin-button secondary" href="' + escapeHtml(product.frontendHref) + '" target="_blank" rel="noopener">프런트 보기</a>' : '') +
         '<a class="uno-admin-button secondary" href="' + escapeHtml(product.legacyEditHref || ("/admin/write.php?w=u&bo_table=product&wr_id=" + legacyProductId)) + '">기존 고급 수정</a></div>';
 
       const buildBasicEditor = () => {
         const product = state.data.product || {};
+        const extras = product.extras || {};
         return '<p class="uno-section-note">상품명, 카테고리, 간단 소개, 예약 입력 필수값처럼 상품의 뼈대가 되는 정보만 관리합니다.</p>' +
           '<div class="uno-price-row" data-basic-editor>' +
             '<div class="uno-schedule-head"><h3 class="uno-schedule-title">기본 정보</h3><button class="uno-admin-button" type="button" data-save-basic>기본 정보 저장</button></div>' +
             '<div class="uno-form-grid">' +
               field("상품명", "title", product.title || "", "text", "상품명을 입력해 주세요") +
               field("카테고리", "category", product.category || "", "text", "예: 세미패키지, 유럽, 이탈리아") +
+              field("홈페이지 보이는 순서", "b2bStatus", extras.b2bStatus || "", "text", "기본 노출 순서에 사용할 값") +
               textareaField("간단 소개", "summary", textFromHtml(product.summary || ""), "상품 목록과 상세 상단에 쓰이는 짧은 소개") +
               textareaField("가이드 문구", "guideText", textFromHtml(product.guideText || ""), "상세 상단 또는 예약 모듈에 표시할 안내 문구") +
               selectField("예약 상태값", "reservationStatus", [["", "기본값"], ["Y", "예약 가능"], ["N", "예약 중지"], ["H", "숨김 / 확인 필요"]], product.reservationStatus || "") +
@@ -451,6 +451,9 @@ uno_renewal_admin_render_pagehead(
           requiresPassport: readField(box, "requiresPassport"),
           requiresRoomInfo: readField(box, "requiresRoomInfo"),
           requiresDelivery: readField(box, "requiresDelivery"),
+          extras: {
+            b2bStatus: readField(box, "b2bStatus"),
+          },
         };
       };
 
@@ -497,7 +500,6 @@ uno_renewal_admin_render_pagehead(
           '</div>' +
           '<div class="uno-form-grid">' +
           '<article class="uno-boarding-pass" aria-label="왕복 항공 보딩패스">' +
-            '<label class="uno-schedule-select" title="이 일정 선택"><input type="checkbox" data-select-semi-schedule></label>' +
             '<aside class="uno-boarding-barcode" aria-hidden="true"></aside>' +
             '<main class="uno-boarding-main">' +
               '<header class="uno-boarding-header"><strong class="uno-boarding-logo-text">KOREAN AIR</strong><span>BOARDING PASS</span></header>' +
@@ -532,15 +534,32 @@ uno_renewal_admin_render_pagehead(
 
       const buildSemiScheduleEditor = () => {
         const schedules = (state.data.semiSchedules || []).slice().sort((a, b) => Number(!!b.isMain) - Number(!!a.isMain));
+        const defaultVisibleScheduleId = state.visibleSemiScheduleId || (schedules.length === 1 && schedules[0].id ? String(schedules[0].id) : "");
+        const visibleSchedule = defaultVisibleScheduleId
+          ? schedules.find((schedule) => String(schedule.id) === String(defaultVisibleScheduleId))
+          : null;
+        const scheduleSelector = schedules.length
+          ? '<select data-show-semi-schedule style="min-height:40px;border:1px solid var(--uno-line);background:#fff;padding:0 10px;font-weight:800;">' +
+              '<option value="">저장된 일정 선택</option>' +
+              schedules.map((schedule) => {
+                const selected = visibleSchedule && String(visibleSchedule.id) === String(schedule.id) ? ' selected' : '';
+                const label = (schedule.startDate || '날짜 없음') + (schedule.arriveDate && schedule.arriveDate !== schedule.startDate ? ' ~ ' + schedule.arriveDate : '') + ' #' + schedule.id;
+                return '<option value="' + escapeHtml(schedule.id || '') + '"' + selected + '>' + escapeHtml(label) + '</option>';
+              }).join("") +
+            '</select>'
+          : '';
+        const summaryText = schedules.length
+          ? '<p class="uno-section-note">새 일정이 필요할 때만 일정 추가를 눌러 입력해 주세요.</p>'
+          : '<p class="uno-section-note">등록된 세미패키지 일정이 없습니다.</p>';
         return '<p class="uno-section-note">좌석, 항공권 코드, 추가금 같은 항공권 판매 항목은 여기서 다루지 않습니다. 프런트 보딩패스에 필요한 일정만 관리합니다.</p>' +
+          summaryText +
           '<div class="uno-schedule-toolbar">' +
             '<div class="uno-schedule-toolbar__left">' +
               '<button class="uno-admin-button" type="button" data-add-semi-schedule>일정 추가</button>' +
-              '<label class="uno-schedule-bulk"><input type="checkbox" data-select-all-semi-schedules> 전체 선택</label>' +
-              '<span class="uno-schedule-selected-count" data-semi-selected-count>선택 0개</span>' +
+              scheduleSelector +
             '</div>' +
           '</div>' +
-          '<div class="uno-schedule-list" data-semi-schedule-list>' + (schedules.length ? schedules.map(semiScheduleCard).join("") : '<p class="uno-section-note">등록된 세미패키지 일정이 없습니다. 일정 추가 버튼을 눌러 새 일정을 입력해 주세요.</p>') + '</div>';
+          '<div class="uno-schedule-list" data-semi-schedule-list data-rendered="' + (visibleSchedule ? '1' : '0') + '">' + (visibleSchedule ? semiScheduleCard(visibleSchedule) : '<p class="uno-section-note">일정 추가 버튼을 눌러 새 일정을 입력해 주세요.</p>') + '</div>';
       };
 
       const semiPayload = (card) => {
@@ -718,24 +737,21 @@ uno_renewal_admin_render_pagehead(
       const buildAuditEditor = () => {
         const product = state.data.product || {};
         const extras = product.extras || {};
+        const isDaily = product.productType === "daily";
+        const calendarField = isDaily ? field("캘린더 표시 개월", "calendarMonths", extras.calendarMonths || 2, "number", "예: 2") : "";
         return '<p class="uno-section-note">기존 관리자에서 흩어져 있던 상품 운영 필드를 한곳에서 점검합니다. 상세 본문이나 일정은 각 전용 모달에서 관리하고, 이 화면은 프런트 표시와 예약 안내에 직접 영향을 주는 누락 가능 항목만 저장합니다.</p>' +
           '<div class="uno-price-row" data-audit-editor>' +
             '<div class="uno-schedule-head"><h3 class="uno-schedule-title">누락 검토 / 표시 설정</h3><button class="uno-admin-button" type="button" data-save-audit>누락 검토 저장</button></div>' +
             '<div class="uno-form-grid">' +
-              textareaField("정상가격 / 전체 상품가", "originalFeeText", extras.originalFeeText || "", "예: 6000000") +
-              textareaField("가격 안내 문구", "priceDescription", extras.priceDescription || "", "예: 투어 요금 600만원은 예약 비용과 요금을 포함한 금액입니다.") +
-              field("B2B 상태", "b2bStatus", extras.b2bStatus || "", "text", "B2B 또는 제휴 판매 상태 메모") +
-              field("캘린더 표시 개월", "calendarMonths", extras.calendarMonths || 2, "number", "예: 2") +
+              calendarField +
               '<div class="uno-form-field full"><label>상품 플래그</label><div class="uno-check-row">' +
                 '<label><input type="checkbox" data-field="isTicket" ' + (extras.isTicket ? 'checked' : '') + '> 티켓 상품</label>' +
                 '<label><input type="checkbox" data-field="isBestTour" ' + (extras.isBestTour ? 'checked' : '') + '> 추천 상품 표시</label>' +
               '</div></div>' +
-              textareaField("예약 상단 안내", "reservationTopMessage", textFromHtml(extras.reservationTopMessage || ""), "예약 화면 상단에 보여줄 안내") +
               textareaField("예약 중간 안내", "reservationMiddleMessage", textFromHtml(extras.reservationMiddleMessage || ""), "예약 입력 중간 안내") +
               textareaField("예약 하단 안내", "reservationBottomMessage", textFromHtml(extras.reservationBottomMessage || ""), "예약 화면 하단 안내") +
               textareaField("예약 이벤트 안내", "reservationEventMessage", textFromHtml(extras.reservationEventMessage || ""), "이벤트/프로모션 안내") +
               textareaField("바우처 문구", "voucherMessage", textFromHtml(extras.voucherMessage || ""), "예약 확정 후 바우처에 노출할 문구") +
-              textareaField("취소 규정 요약", "cancelRule", textFromHtml(extras.cancelRule || ""), "상품별 취소/환불 규정 요약") +
               textareaField("상품 팝업 내용", "popupContent", textFromHtml(extras.popupContent || ""), "상품 상세 진입 시 안내 팝업이 필요할 때만 사용") +
             '</div>' +
           '</div>' +
@@ -744,24 +760,21 @@ uno_renewal_admin_render_pagehead(
 
       const auditPayload = () => {
         const box = $("[data-audit-editor]", modalBodyEl);
-        return {
+        const payload = {
           action: "saveAuditFields",
           extras: {
-            originalFeeText: readField(box, "originalFeeText"),
-            priceDescription: readField(box, "priceDescription"),
-            b2bStatus: readField(box, "b2bStatus"),
             isTicket: readField(box, "isTicket"),
             isBestTour: readField(box, "isBestTour"),
-            calendarMonths: Number(readField(box, "calendarMonths") || 2),
-            reservationTopMessage: linesToHtml(readField(box, "reservationTopMessage")),
             reservationMiddleMessage: linesToHtml(readField(box, "reservationMiddleMessage")),
             reservationBottomMessage: linesToHtml(readField(box, "reservationBottomMessage")),
             reservationEventMessage: linesToHtml(readField(box, "reservationEventMessage")),
             voucherMessage: linesToHtml(readField(box, "voucherMessage")),
-            cancelRule: linesToHtml(readField(box, "cancelRule")),
             popupContent: linesToHtml(readField(box, "popupContent")),
           },
         };
+        const calendarInput = $('[data-field="calendarMonths"]', box);
+        if (calendarInput) payload.extras.calendarMonths = Number(readField(box, "calendarMonths") || 2);
+        return payload;
       };
 
       const dailyFeePayload = (card) => ({ action: "saveDailyFeeOption", id: card.dataset.id ? Number(card.dataset.id) : 0, label: readField(card, "label"), deposit: money(readField(card, "deposit")), localPayment: readField(card, "localPayment"), extraPayment: readField(card, "extraPayment"), ticketFeeId: readField(card, "ticketFeeId"), isDefault: readField(card, "isDefault") });
@@ -871,13 +884,6 @@ uno_renewal_admin_render_pagehead(
         .map((checkbox) => checkbox.closest("[data-semi-schedule-card]"))
         .filter(Boolean);
 
-      const isBulkSelectableSemiSchedule = (card) => {
-        if (!card || !card.dataset.id) return false;
-        if (card.dataset.isMain === "1") return false;
-        const deleteButton = card.querySelector("[data-delete-semi-schedule]");
-        return !deleteButton || !deleteButton.disabled;
-      };
-
       const updateSemiScheduleSelectionState = () => {
         const cards = Array.from(modalBodyEl.querySelectorAll("[data-semi-schedule-card]"));
         const selectedCards = getSelectedSemiScheduleCards();
@@ -885,15 +891,6 @@ uno_renewal_admin_render_pagehead(
           const checkbox = card.querySelector("[data-select-semi-schedule]");
           card.classList.toggle("is-selected", !!(checkbox && checkbox.checked));
         });
-        const selectableCards = cards.filter(isBulkSelectableSemiSchedule);
-        const selectAll = $("[data-select-all-semi-schedules]", modalBodyEl);
-        if (selectAll) {
-          selectAll.checked = selectableCards.length > 0 && selectableCards.every((card) => {
-            const checkbox = card.querySelector("[data-select-semi-schedule]");
-            return checkbox && checkbox.checked;
-          });
-          selectAll.indeterminate = selectedCards.length > 0 && !selectAll.checked;
-        }
         const count = $("[data-semi-selected-count]", modalBodyEl);
         if (count) count.textContent = "선택 " + selectedCards.length + "개";
       };
@@ -935,7 +932,31 @@ uno_renewal_admin_render_pagehead(
         const saveSemiPrice = event.target.closest("[data-save-semi-price]");
         if (saveSemiPrice) { const card = saveSemiPrice.closest("[data-semi-price-card]"); try { saveSemiPrice.disabled = true; setStatus("세미패키지 가격을 저장하는 중입니다."); await apiRequest(semiPricePayload(card)); setStatus("세미패키지 가격이 저장되었습니다.", "ok"); refreshCurrentModal(); } catch (error) { setStatus(error.message || "세미패키지 가격을 저장하지 못했습니다.", "warn"); } finally { saveSemiPrice.disabled = false; } return; }
         const saveSemi = event.target.closest("[data-save-semi-schedule]");
-        if (saveSemi) { const card = saveSemi.closest("[data-semi-schedule-card]"); try { saveSemi.disabled = true; setStatus("세미패키지 일정을 저장하는 중입니다."); await apiRequest(semiPayload(card)); setStatus("세미패키지 일정이 저장되었습니다.", "ok"); refreshCurrentModal(); showModalNotice("저장했습니다."); } catch (error) { setStatus(error.message || "일정을 저장하지 못했습니다.", "warn"); showModalNotice(error.message || "일정을 저장하지 못했습니다.", "warn"); } finally { saveSemi.disabled = false; } return; }
+        if (saveSemi) {
+          const card = saveSemi.closest("[data-semi-schedule-card]");
+          const previousId = card.dataset.id ? Number(card.dataset.id) : 0;
+          try {
+            saveSemi.disabled = true;
+            setStatus("세미패키지 일정을 저장하는 중입니다.");
+            const data = await apiRequest(semiPayload(card));
+            const schedules = state.data.semiSchedules || [];
+            const savedId = data && data.actionResult && data.actionResult.scheduleId ? Number(data.actionResult.scheduleId) : previousId;
+            const savedSchedule = savedId ? schedules.find((schedule) => Number(schedule.id) === savedId) : null;
+            if (!savedSchedule || !savedSchedule.id) {
+              throw new Error("Saved schedule could not be reloaded.");
+            }
+            state.visibleSemiScheduleId = String(savedSchedule.id);
+            setStatus("세미패키지 일정이 저장되었습니다.", "ok");
+            refreshCurrentModal();
+            showModalNotice("저장했습니다.");
+          } catch (error) {
+            setStatus(error.message || "일정을 저장하지 못했습니다.", "warn");
+            showModalNotice(error.message || "일정을 저장하지 못했습니다.", "warn");
+          } finally {
+            saveSemi.disabled = false;
+          }
+          return;
+        }
         const deleteSemi = event.target.closest("[data-delete-semi-schedule]");
         if (deleteSemi) {
           const selectedCards = getSelectedSemiScheduleCards();
@@ -1017,13 +1038,10 @@ uno_renewal_admin_render_pagehead(
       });
 
       document.addEventListener("change", (event) => {
-        const selectAllSemi = event.target.closest("[data-select-all-semi-schedules]");
-        if (selectAllSemi) {
-          modalBodyEl.querySelectorAll("[data-semi-schedule-card]").forEach((card) => {
-            const checkbox = card.querySelector("[data-select-semi-schedule]");
-            if (checkbox && isBulkSelectableSemiSchedule(card)) checkbox.checked = selectAllSemi.checked;
-          });
-          updateSemiScheduleSelectionState();
+        const showSemiSchedule = event.target.closest("[data-show-semi-schedule]");
+        if (showSemiSchedule) {
+          state.visibleSemiScheduleId = showSemiSchedule.value || "";
+          refreshCurrentModal();
           return;
         }
 
@@ -1057,7 +1075,7 @@ uno_renewal_admin_render_pagehead(
       });
 
       document.addEventListener("keydown", (event) => { if (event.key === "Escape") closeModal(); });
-      apiRequest().then(() => { renderProduct(); setStatus("상품 허브를 불러왔습니다.", "ok"); }).catch((error) => setStatus(error.message || "상품 정보를 불러오지 못했습니다.", "warn"));
+      apiRequest().then(() => { renderProduct(); setStatus("상품 상세페이지 수정 화면을 불러왔습니다.", "ok"); }).catch((error) => setStatus(error.message || "상품 정보를 불러오지 못했습니다.", "warn"));
     </script>
 
 <?php

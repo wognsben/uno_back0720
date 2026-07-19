@@ -140,7 +140,7 @@ function uno_api_cart_fetch_package_option($legacyProductId, $scheduleId)
     $legacyProductId = (int) $legacyProductId;
     $scheduleId = (int) $scheduleId;
     $row = sql_fetch(
-        "select id, start_time, fee_1, fee_2, fee_3, fee_air, price, seat, status
+        "select id, start_time, status
            from v2_pkgTour
           where pid = '{$legacyProductId}'
             and id = '{$scheduleId}'
@@ -153,18 +153,13 @@ function uno_api_cart_fetch_package_option($legacyProductId, $scheduleId)
     }
 
     $statusText = isset($row['status']) ? strtoupper((string) $row['status']) : '';
-    if (in_array($statusText, array('Y', 'E', 'CLOSED', 'SOLDOUT'), true) || strpos($statusText, '마감') !== false) {
+    if (in_array($statusText, array('CLOSED', 'SOLDOUT'), true) || strpos($statusText, '마감') !== false) {
         uno_api_error('SOLD_OUT', '마감된 출발 일정입니다.', 409);
     }
 
     return array(
-        'feeId' => (int) $row['id'],
+        'scheduleId' => (int) $row['id'],
         'label' => isset($row['start_time']) ? (string) $row['start_time'] : '',
-        'deposit' => uno_api_cart_money(isset($row['fee_1']) ? $row['fee_1'] : 0),
-        'localPayment' => uno_api_cart_money(isset($row['fee_2']) ? $row['fee_2'] : 0),
-        'extraPayment' => uno_api_cart_money(isset($row['fee_3']) ? $row['fee_3'] : 0),
-        'packageTotal' => uno_api_cart_money(isset($row['price']) ? $row['price'] : 0),
-        'airfare' => uno_api_cart_money(isset($row['fee_air']) ? $row['fee_air'] : 0),
     );
 }
 
@@ -196,7 +191,18 @@ function uno_api_cart_build_lines($payload, $mapping, $productType)
             if (!$scheduleId) {
                 uno_api_error('VALIDATION_ERROR', '출발 일정 ID가 필요합니다.', 400);
             }
-            $option = uno_api_cart_fetch_package_option($legacyProductId, $scheduleId);
+            $feeId = isset($item['feeId']) && $item['feeId']
+                ? $item['feeId']
+                : (isset($mapping['legacyFeeOptionId']) ? $mapping['legacyFeeOptionId'] : null);
+            if (!$feeId) {
+                uno_api_error('VALIDATION_ERROR', '?붽툑 ?듭뀡 ID媛 ?꾩슂?⑸땲??', 400);
+            }
+            $schedule = uno_api_cart_fetch_package_option($legacyProductId, $scheduleId);
+            $option = uno_api_cart_fetch_daily_option($legacyProductId, $feeId);
+            if (!empty($schedule['label'])) {
+                $option['label'] = $schedule['label'];
+            }
+            $option['legacyPackageScheduleId'] = $schedule['scheduleId'];
         } else {
             $feeId = isset($item['feeId']) && $item['feeId']
                 ? $item['feeId']

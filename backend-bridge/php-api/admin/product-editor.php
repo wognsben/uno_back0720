@@ -58,6 +58,19 @@ function uno_api_editor_escape($value)
     return uno_api_reservation_escape((string) $value);
 }
 
+function uno_api_editor_insert_id()
+{
+    if (function_exists('sql_insert_id')) {
+        return (int) sql_insert_id();
+    }
+
+    if (function_exists('mysql_insert_id')) {
+        return (int) mysql_insert_id();
+    }
+
+    return 0;
+}
+
 function uno_api_editor_text_from_html($value)
 {
     $text = html_entity_decode(strip_tags((string) $value), ENT_QUOTES, 'UTF-8');
@@ -748,56 +761,56 @@ function uno_api_editor_save_product($legacyProductId, $body)
     $requiresDelivery = !empty($body['requiresDelivery']) ? 'Y' : '';
     $requiresRoomInfo = !empty($body['requiresRoomInfo']) ? 'Y' : '';
     $extras = isset($body['extras']) && is_array($body['extras']) ? $body['extras'] : array();
-    $originalFeeText = uno_api_editor_escape(isset($extras['originalFeeText']) ? $extras['originalFeeText'] : '');
-    $priceDescription = uno_api_editor_escape(isset($extras['priceDescription']) ? $extras['priceDescription'] : '');
-    $b2bStatus = uno_api_editor_escape(isset($extras['b2bStatus']) ? $extras['b2bStatus'] : '');
-    $isTicket = !empty($extras['isTicket']) ? 'Y' : '';
-    $isBestTour = !empty($extras['isBestTour']) ? 'Y' : '';
-    $calendarMonths = isset($extras['calendarMonths']) ? max(1, min(18, (int) $extras['calendarMonths'])) : 2;
-    $reservationTopMessage = uno_api_editor_escape(isset($extras['reservationTopMessage']) ? $extras['reservationTopMessage'] : '');
-    $reservationMiddleMessage = uno_api_editor_escape(isset($extras['reservationMiddleMessage']) ? $extras['reservationMiddleMessage'] : '');
-    $reservationBottomMessage = uno_api_editor_escape(isset($extras['reservationBottomMessage']) ? $extras['reservationBottomMessage'] : '');
-    $reservationEventMessage = uno_api_editor_escape(isset($extras['reservationEventMessage']) ? $extras['reservationEventMessage'] : '');
-    $voucherMessage = uno_api_editor_escape(isset($extras['voucherMessage']) ? $extras['voucherMessage'] : '');
-    $cancelRule = uno_api_editor_escape(isset($extras['cancelRule']) ? $extras['cancelRule'] : '');
-    $popupContent = uno_api_editor_escape(isset($extras['popupContent']) ? $extras['popupContent'] : '');
-    $guideInfo = uno_api_editor_escape(isset($extras['guideInfo']) ? $extras['guideInfo'] : '');
-    $recommendTour = uno_api_editor_escape(isset($extras['recommendTour']) ? $extras['recommendTour'] : '');
-    $eventCourse = uno_api_editor_escape(isset($extras['eventCourse']) ? $extras['eventCourse'] : '');
 
     if ($title === '') {
         uno_api_error('VALIDATION_ERROR', '상품명은 비워둘 수 없습니다.', 400);
     }
 
-    sql_query(
-        "update {$productTable}
-            set wr_subject = '{$title}',
-                ca_name = '{$category}',
-                wr_2 = '{$summary}',
-                wr_5 = '{$guideText}',
-                wr_content = '{$content}',
-                wr_reg_result = '{$reservationStatus}',
-                is_passport = '{$requiresPassport}',
-                is_delivery = '{$requiresDelivery}',
-                is_roominfo = '{$requiresRoomInfo}',
-                fee_org = '{$originalFeeText}',
-                wr_4 = '{$priceDescription}',
-                wr_b2b_result = '{$b2bStatus}',
-                is_ticket = '{$isTicket}',
-                is_best_tour = '{$isBestTour}',
-                carlendar_max_m = '{$calendarMonths}',
-                reg_msg_top = '{$reservationTopMessage}',
-                reg_msg_middel = '{$reservationMiddleMessage}',
-                reg_msg_bottom = '{$reservationBottomMessage}',
-                reg_msg_event = '{$reservationEventMessage}',
-                voucher_msg = '{$voucherMessage}',
-                wr_can_rule = '{$cancelRule}',
-                pop_content = '{$popupContent}',
-                guide_info = '{$guideInfo}',
-                recommend_tour = '{$recommendTour}',
-                wr_event_course = '{$eventCourse}'
-          where wr_id = '{$legacyProductId}'"
+    $set = array(
+        "wr_subject = '{$title}'",
+        "ca_name = '{$category}'",
+        "wr_2 = '{$summary}'",
+        "wr_5 = '{$guideText}'",
+        "wr_content = '{$content}'",
+        "wr_reg_result = '{$reservationStatus}'",
+        "is_passport = '{$requiresPassport}'",
+        "is_delivery = '{$requiresDelivery}'",
+        "is_roominfo = '{$requiresRoomInfo}'",
     );
+
+    $extraColumnMap = array(
+        'originalFeeText' => 'fee_org',
+        'priceDescription' => 'wr_4',
+        'b2bStatus' => 'wr_b2b_result',
+        'reservationTopMessage' => 'reg_msg_top',
+        'reservationMiddleMessage' => 'reg_msg_middel',
+        'reservationBottomMessage' => 'reg_msg_bottom',
+        'reservationEventMessage' => 'reg_msg_event',
+        'voucherMessage' => 'voucher_msg',
+        'cancelRule' => 'wr_can_rule',
+        'popupContent' => 'pop_content',
+        'guideInfo' => 'guide_info',
+        'recommendTour' => 'recommend_tour',
+        'eventCourse' => 'wr_event_course',
+    );
+    foreach ($extraColumnMap as $key => $column) {
+        if (array_key_exists($key, $extras)) {
+            $value = uno_api_editor_escape($extras[$key]);
+            $set[] = "{$column} = '{$value}'";
+        }
+    }
+    if (array_key_exists('isTicket', $extras)) {
+        $set[] = "is_ticket = '" . (!empty($extras['isTicket']) ? 'Y' : '') . "'";
+    }
+    if (array_key_exists('isBestTour', $extras)) {
+        $set[] = "is_best_tour = '" . (!empty($extras['isBestTour']) ? 'Y' : '') . "'";
+    }
+    if (array_key_exists('calendarMonths', $extras)) {
+        $calendarMonths = max(1, min(18, (int) $extras['calendarMonths']));
+        $set[] = "carlendar_max_m = '{$calendarMonths}'";
+    }
+
+    sql_query("update {$productTable} set " . implode(', ', $set) . " where wr_id = '{$legacyProductId}'");
 }
 
 function uno_api_editor_save_pricing_meta($legacyProductId, $body)
@@ -863,35 +876,67 @@ function uno_api_editor_save_audit_fields($legacyProductId, $body)
     $productTable = uno_api_reservation_table_product();
     $extras = isset($body['extras']) && is_array($body['extras']) ? $body['extras'] : array();
 
-    $originalFeeText = uno_api_editor_escape(isset($extras['originalFeeText']) ? $extras['originalFeeText'] : '');
-    $priceDescription = uno_api_editor_escape(isset($extras['priceDescription']) ? $extras['priceDescription'] : '');
-    $b2bStatus = uno_api_editor_escape(isset($extras['b2bStatus']) ? $extras['b2bStatus'] : '');
-    $isTicket = !empty($extras['isTicket']) ? 'Y' : '';
-    $isBestTour = !empty($extras['isBestTour']) ? 'Y' : '';
-    $calendarMonths = isset($extras['calendarMonths']) ? max(1, min(18, (int) $extras['calendarMonths'])) : 2;
-    $reservationTopMessage = uno_api_editor_escape(isset($extras['reservationTopMessage']) ? $extras['reservationTopMessage'] : '');
-    $reservationMiddleMessage = uno_api_editor_escape(isset($extras['reservationMiddleMessage']) ? $extras['reservationMiddleMessage'] : '');
-    $reservationBottomMessage = uno_api_editor_escape(isset($extras['reservationBottomMessage']) ? $extras['reservationBottomMessage'] : '');
-    $reservationEventMessage = uno_api_editor_escape(isset($extras['reservationEventMessage']) ? $extras['reservationEventMessage'] : '');
-    $voucherMessage = uno_api_editor_escape(isset($extras['voucherMessage']) ? $extras['voucherMessage'] : '');
-    $cancelRule = uno_api_editor_escape(isset($extras['cancelRule']) ? $extras['cancelRule'] : '');
-    $popupContent = uno_api_editor_escape(isset($extras['popupContent']) ? $extras['popupContent'] : '');
+    $set = array();
+    if (array_key_exists('originalFeeText', $extras)) {
+        $originalFeeText = uno_api_editor_escape($extras['originalFeeText']);
+        $set[] = "fee_org = '{$originalFeeText}'";
+    }
+    if (array_key_exists('priceDescription', $extras)) {
+        $priceDescription = uno_api_editor_escape($extras['priceDescription']);
+        $set[] = "wr_4 = '{$priceDescription}'";
+    }
+    if (array_key_exists('b2bStatus', $extras)) {
+        $b2bStatus = uno_api_editor_escape($extras['b2bStatus']);
+        $set[] = "wr_b2b_result = '{$b2bStatus}'";
+    }
+    if (array_key_exists('isTicket', $extras)) {
+        $isTicket = !empty($extras['isTicket']) ? 'Y' : '';
+        $set[] = "is_ticket = '{$isTicket}'";
+    }
+    if (array_key_exists('isBestTour', $extras)) {
+        $isBestTour = !empty($extras['isBestTour']) ? 'Y' : '';
+        $set[] = "is_best_tour = '{$isBestTour}'";
+    }
+    if (array_key_exists('calendarMonths', $extras)) {
+        $calendarMonths = max(1, min(18, (int) $extras['calendarMonths']));
+        $set[] = "carlendar_max_m = '{$calendarMonths}'";
+    }
+    if (array_key_exists('reservationTopMessage', $extras)) {
+        $reservationTopMessage = uno_api_editor_escape($extras['reservationTopMessage']);
+        $set[] = "reg_msg_top = '{$reservationTopMessage}'";
+    }
+    if (array_key_exists('reservationMiddleMessage', $extras)) {
+        $reservationMiddleMessage = uno_api_editor_escape($extras['reservationMiddleMessage']);
+        $set[] = "reg_msg_middel = '{$reservationMiddleMessage}'";
+    }
+    if (array_key_exists('reservationBottomMessage', $extras)) {
+        $reservationBottomMessage = uno_api_editor_escape($extras['reservationBottomMessage']);
+        $set[] = "reg_msg_bottom = '{$reservationBottomMessage}'";
+    }
+    if (array_key_exists('reservationEventMessage', $extras)) {
+        $reservationEventMessage = uno_api_editor_escape($extras['reservationEventMessage']);
+        $set[] = "reg_msg_event = '{$reservationEventMessage}'";
+    }
+    if (array_key_exists('voucherMessage', $extras)) {
+        $voucherMessage = uno_api_editor_escape($extras['voucherMessage']);
+        $set[] = "voucher_msg = '{$voucherMessage}'";
+    }
+    if (array_key_exists('cancelRule', $extras)) {
+        $cancelRule = uno_api_editor_escape($extras['cancelRule']);
+        $set[] = "wr_can_rule = '{$cancelRule}'";
+    }
+    if (array_key_exists('popupContent', $extras)) {
+        $popupContent = uno_api_editor_escape($extras['popupContent']);
+        $set[] = "pop_content = '{$popupContent}'";
+    }
+
+    if (count($set) === 0) {
+        return;
+    }
 
     sql_query(
         "update {$productTable}
-            set fee_org = '{$originalFeeText}',
-                wr_4 = '{$priceDescription}',
-                wr_b2b_result = '{$b2bStatus}',
-                is_ticket = '{$isTicket}',
-                is_best_tour = '{$isBestTour}',
-                carlendar_max_m = '{$calendarMonths}',
-                reg_msg_top = '{$reservationTopMessage}',
-                reg_msg_middel = '{$reservationMiddleMessage}',
-                reg_msg_bottom = '{$reservationBottomMessage}',
-                reg_msg_event = '{$reservationEventMessage}',
-                voucher_msg = '{$voucherMessage}',
-                wr_can_rule = '{$cancelRule}',
-                pop_content = '{$popupContent}'
+            set " . implode(",\n                ", $set) . "
           where wr_id = '{$legacyProductId}'"
     );
 }
@@ -992,7 +1037,7 @@ function uno_api_editor_save_semi_schedule($legacyProductId, $body)
     }
 
     if ($scheduleId > 0) {
-        sql_query(
+        $result = sql_query(
             "update v2_pkgTour
                 set start_time = '{$startDate}',
                     arrive_time = '{$arriveDate}',
@@ -1008,11 +1053,29 @@ function uno_api_editor_save_semi_schedule($legacyProductId, $body)
                     is_main = '{$isMain}'
               where id = '{$scheduleId}'
                 and pid = '{$legacyProductId}'"
+            ,
+            false
         );
-        return;
+        if (!$result) {
+            uno_api_error('SERVER_ERROR', '일정을 저장하지 못했습니다.', 500);
+        }
+
+        $savedRow = sql_fetch(
+            "select id
+               from v2_pkgTour
+              where id = '{$scheduleId}'
+                and pid = '{$legacyProductId}'
+                and (del_time = 0 or del_time is null)
+              limit 1"
+        );
+        if (!$savedRow || empty($savedRow['id'])) {
+            uno_api_error('SERVER_ERROR', '저장된 일정을 다시 확인하지 못했습니다.', 500);
+        }
+
+        return array('scheduleId' => $scheduleId);
     }
 
-    sql_query(
+    $result = sql_query(
         "insert into v2_pkgTour
             set pid = '{$legacyProductId}',
                 start_time = '{$startDate}',
@@ -1028,7 +1091,34 @@ function uno_api_editor_save_semi_schedule($legacyProductId, $body)
                 is_view = '{$isVisible}',
                 is_main = '{$isMain}',
                 del_time = 0"
+        ,
+        false
     );
+    if (!$result) {
+        uno_api_error('SERVER_ERROR', '일정을 저장하지 못했습니다.', 500);
+    }
+
+    $savedId = uno_api_editor_insert_id();
+    if ($savedId <= 0) {
+        $savedRow = sql_fetch(
+            "select id
+               from v2_pkgTour
+              where pid = '{$legacyProductId}'
+                and start_time = '{$startDate}'
+                and arrive_time = '{$arriveDate}'
+                and air = '{$air}'
+                and (del_time = 0 or del_time is null)
+              order by id desc
+              limit 1"
+        );
+        $savedId = $savedRow && !empty($savedRow['id']) ? (int) $savedRow['id'] : 0;
+    }
+
+    if ($savedId <= 0) {
+        uno_api_error('SERVER_ERROR', '저장된 일정을 다시 확인하지 못했습니다.', 500);
+    }
+
+    return array('scheduleId' => $savedId);
 }
 
 function uno_api_editor_delete_semi_schedule($legacyProductId, $body)
@@ -1133,6 +1223,7 @@ function uno_api_editor_save_product_options($legacyProductId, $body)
     $extras = isset($body['extras']) && is_array($body['extras']) ? $body['extras'] : array();
     $guideInfo = array_key_exists('guideInfo', $extras) ? uno_api_editor_escape($extras['guideInfo']) : null;
     $priceDescription = array_key_exists('priceDescription', $extras) ? uno_api_editor_escape($extras['priceDescription']) : null;
+    $reservationTopMessage = array_key_exists('reservationTopMessage', $extras) ? uno_api_editor_escape($extras['reservationTopMessage']) : null;
     $meeting = uno_api_editor_escape(isset($options['meeting']) ? $options['meeting'] : '');
     $meetingTime = uno_api_editor_escape(isset($options['meetingTime']) ? $options['meetingTime'] : '');
     $tourDay = uno_api_editor_escape(isset($options['tourDay']) ? $options['tourDay'] : '');
@@ -1154,6 +1245,11 @@ function uno_api_editor_save_product_options($legacyProductId, $body)
     if ($priceDescription !== null) {
         $productTable = isset($productTable) ? $productTable : uno_api_reservation_table_product();
         sql_query("update {$productTable} set wr_4 = '{$priceDescription}' where wr_id = '{$legacyProductId}'");
+    }
+
+    if ($reservationTopMessage !== null) {
+        $productTable = isset($productTable) ? $productTable : uno_api_reservation_table_product();
+        sql_query("update {$productTable} set reg_msg_top = '{$reservationTopMessage}' where wr_id = '{$legacyProductId}'");
     }
 
     if ($exists && isset($exists['id'])) {
@@ -1421,6 +1517,7 @@ if (isset($_POST['action']) && (string) $_POST['action'] === 'uploadThumbnail') 
 
 $body = uno_api_editor_json_body();
 $action = isset($body['action']) ? (string) $body['action'] : '';
+$actionResult = null;
 
 if ($action === 'saveProduct') {
     uno_api_editor_save_product($legacyProductId, $body);
@@ -1435,7 +1532,7 @@ if ($action === 'saveProduct') {
 } elseif ($action === 'saveProductOptions') {
     uno_api_editor_save_product_options($legacyProductId, $body);
 } elseif ($action === 'saveSemiSchedule') {
-    uno_api_editor_save_semi_schedule($legacyProductId, $body);
+    $actionResult = uno_api_editor_save_semi_schedule($legacyProductId, $body);
 } elseif ($action === 'copySemiSchedule') {
     uno_api_editor_copy_semi_schedule($legacyProductId, $body);
 } elseif ($action === 'deleteSemiSchedule') {
@@ -1452,4 +1549,9 @@ if ($action === 'saveProduct') {
     uno_api_error('VALIDATION_ERROR', '알 수 없는 저장 요청입니다.', 400);
 }
 
-uno_api_success(uno_api_editor_get_payload($legacyProductId));
+$payload = uno_api_editor_get_payload($legacyProductId);
+if ($actionResult !== null) {
+    $payload['actionResult'] = $actionResult;
+}
+
+uno_api_success($payload);

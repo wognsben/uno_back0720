@@ -70,6 +70,12 @@ function uno_api_is_closed_status($value)
         || strpos($normalized, '휴무') !== false;
 }
 
+function uno_api_is_package_closed_status($value)
+{
+    $normalized = strtoupper(trim((string) $value));
+    return in_array($normalized, array('CLOSED', 'SOLDOUT'), true);
+}
+
 function uno_api_create_availability_item($date, $status, $remainingSeats = null, $extra = array())
 {
     $item = array(
@@ -202,9 +208,9 @@ function uno_api_package_availability($legacyProductId, $from, $to)
         }
 
         $remainingSeats = isset($row['seat']) ? max(0, (int) $row['seat']) : null;
-        $status = uno_api_is_closed_status(isset($row['status']) ? $row['status'] : '')
+        $status = uno_api_is_package_closed_status(isset($row['status']) ? $row['status'] : '')
             ? 'soldout'
-            : uno_api_availability_status_from_remaining($remainingSeats, isset($row['seat']) ? (int) $row['seat'] : 0);
+            : 'available';
 
         $items[] = uno_api_create_availability_item($date, $status, $remainingSeats, array(
             'legacyPackageScheduleId' => isset($row['id']) ? (int) $row['id'] : null,

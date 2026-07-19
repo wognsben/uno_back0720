@@ -473,6 +473,75 @@ function uno_api_fetch_product_faqs($legacyProductId)
     return $items;
 }
 
+function uno_api_fetch_product_reviews($legacyProductId, $productId, $productTitle)
+{
+    global $g5;
+
+    if (!function_exists('sql_query') || !function_exists('sql_fetch_array')) {
+        return array();
+    }
+
+    $prefix = isset($g5['write_prefix']) && $g5['write_prefix'] !== ''
+        ? $g5['write_prefix']
+        : 'g5_write_';
+    $table = $prefix . 'write';
+    $legacyProductId = (int) $legacyProductId;
+    $safeLegacyProductId = uno_api_sql_escape((string) $legacyProductId);
+    $safeProductId = uno_api_sql_escape((string) $productId);
+    $safeProductTitle = uno_api_sql_escape((string) $productTitle);
+    $whereParts = array();
+
+    for ($i = 1; $i <= 10; $i++) {
+        $column = 'wr_' . $i;
+        $whereParts[] = "{$column} = '{$safeLegacyProductId}'";
+        if ($safeProductId !== '') {
+            $whereParts[] = "{$column} = '{$safeProductId}'";
+        }
+    }
+
+    if ($safeProductTitle !== '') {
+        $whereParts[] = "wr_subject like '%{$safeProductTitle}%'";
+        $whereParts[] = "wr_content like '%{$safeProductTitle}%'";
+    }
+
+    if (!$whereParts) {
+        return array();
+    }
+
+    $where = implode(' or ', $whereParts);
+    $result = sql_query(
+        "select wr_id, wr_subject, wr_content, wr_name, mb_id, wr_datetime, wr_good
+           from {$table}
+          where wr_is_comment = 0
+            and ({$where})
+          order by wr_num asc, wr_reply asc
+          limit 6",
+        false
+    );
+
+    if (!$result) {
+        return array();
+    }
+
+    $items = array();
+    while ($row = sql_fetch_array($result)) {
+        $contentText = isset($row['wr_content']) ? uno_api_text_from_html($row['wr_content']) : '';
+        $items[] = array(
+            'id' => isset($row['wr_id']) ? (string) $row['wr_id'] : '',
+            'nickname' => isset($row['wr_name']) ? uno_api_text_from_html($row['wr_name']) : '',
+            'writtenAt' => isset($row['wr_datetime']) ? substr((string) $row['wr_datetime'], 0, 10) : '',
+            'productTitle' => (string) $productTitle,
+            'rating' => 5,
+            'title' => isset($row['wr_subject']) ? uno_api_text_from_html($row['wr_subject']) : '',
+            'body' => $contentText,
+            'helpfulCount' => isset($row['wr_good']) ? (int) $row['wr_good'] : 0,
+            'href' => '/community/review/' . (isset($row['wr_id']) ? (int) $row['wr_id'] : 0),
+        );
+    }
+
+    return $items;
+}
+
 $productId = isset($_GET['id']) ? trim((string) $_GET['id']) : '';
 $mode = isset($_GET['mode']) ? trim((string) $_GET['mode']) : 'reservation';
 
@@ -600,6 +669,11 @@ if ($mode === 'full') {
     $response['productDocumentImages'] = array(
         'course' => $tourCourseImages,
         'features' => array_merge($tourAdImages, $tourBannerImages),
+    );
+    $response['reviews'] = uno_api_fetch_product_reviews(
+        $legacyProductId,
+        $productId,
+        isset($product['wr_subject']) ? (string) $product['wr_subject'] : ''
     );
     $response['faqs'] = uno_api_fetch_product_faqs($legacyProductId);
 }

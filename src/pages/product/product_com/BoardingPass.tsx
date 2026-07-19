@@ -311,9 +311,7 @@ const FALLBACK_INBOUND: BoardingPassFlightSegment = {
 function FlightSegment({
   label,
   fromCode,
-  fromCity,
   toCode,
-  toCity,
   departTime,
   departDate,
   arriveTime,
@@ -326,14 +324,12 @@ function FlightSegment({
       <div className="uno-boarding-route">
         <div className="uno-boarding-airport">
           <strong>{fromCode}</strong>
-          <span>{fromCity}</span>
         </div>
 
         <i aria-hidden="true" />
 
         <div className="uno-boarding-airport is-arrival">
           <strong>{toCode}</strong>
-          <span>{toCity}</span>
         </div>
       </div>
 

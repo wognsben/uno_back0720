@@ -168,7 +168,7 @@ function uno_renewal_admin_require_access($currentPath)
             'Permission Required',
             '현재 로그인 계정에는 리뉴얼 관리자 화면을 볼 권한이 없습니다.',
             $currentPath,
-            false
+            true
         );
         exit;
     }

@@ -26,8 +26,10 @@ import type { MouseEvent } from "react";
 import {
   getProductAvailability,
   getProductDetail,
+  getProducts,
   type ProductAvailabilityResponse,
   type ProductDetailResponse,
+  type ProductSummary,
 } from "../../api/reservationApi";
 import { saveRecentlyViewedProduct } from "../../utils/recentlyViewed";
 import ReservationModule from "./product_com/ReservationModule";
@@ -216,6 +218,21 @@ type ProductListProduct = InfiniteOtherSourceProduct;
 type ProductDetailProps = {
   products?: ProductListProduct[];
 };
+
+const mapSummaryToRelatedSourceProduct = (
+  product: ProductSummary,
+): ProductListProduct => ({
+  id: product.id,
+  title: product.title,
+  eyebrow: product.productType === "daily" ? "DAILY TOUR" : "SEMI PACKAGE",
+  region: product.legacyCategory || product.category || "",
+  price: product.price?.deposit ?? 0,
+  href: product.href,
+  image: product.thumbnailUrl,
+  thumbnail: product.thumbnailUrl,
+  productType: product.productType,
+  category: product.productType,
+});
 
 const SEMI_DETAIL_DATA = {
   id: "italy-11",
@@ -2321,8 +2338,38 @@ export default function ProductDetail({
     useState<ProductDetailResponse | null>(null);
   const [remoteAvailability, setRemoteAvailability] =
     useState<ProductAvailabilityResponse | null>(null);
+  const [remoteRelatedProducts, setRemoteRelatedProducts] = useState<
+    ProductListProduct[]
+  >([]);
   const [isRemoteProductDetailLoading, setIsRemoteProductDetailLoading] =
     useState(false);
+
+  useEffect(() => {
+    if (products.length > 0) {
+      setRemoteRelatedProducts([]);
+      return;
+    }
+
+    let isCancelled = false;
+
+    getProducts()
+      .then((response) => {
+        if (!isCancelled) {
+          setRemoteRelatedProducts(
+            (response.items ?? []).map(mapSummaryToRelatedSourceProduct),
+          );
+        }
+      })
+      .catch(() => {
+        if (!isCancelled) {
+          setRemoteRelatedProducts([]);
+        }
+      });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [products.length]);
 
   useEffect(() => {
     if (!currentPathname.startsWith("/product/detail/")) {
@@ -2461,6 +2508,20 @@ export default function ProductDetail({
     const remoteGuides = (remoteProductDetail?.guides ?? []).filter(
       (guide) => guide.name || guide.bodyText,
     );
+    const remoteReviews = (remoteProductDetail?.reviews ?? []).map((review) => ({
+      id: review.id,
+      nickname: review.nickname || "UNO TRAVEL",
+      writtenAt: review.writtenAt || "",
+      productTitle: review.productTitle || remoteProductDetail?.title || "",
+      rating: review.rating || 5,
+      title: review.title || "여행후기",
+      body: review.body || "",
+    })) as ReviewItem[];
+    const hasRemoteReviewData = Boolean(remoteProductDetail);
+    const remoteReviewSummary =
+      remoteReviews.length > 0
+        ? `${remoteReviews.length.toLocaleString("ko-KR")}개의 실제 여행후기가 등록되어 있습니다.`
+        : "이 상품에 등록된 여행후기가 아직 없습니다.";
     const remoteGuideLabel = remoteGuides.map((guide) => guide.name).filter(Boolean).join(", ");
     const remoteGuideText =
       remoteGuides.length > 0
@@ -2517,6 +2578,8 @@ export default function ProductDetail({
         baseDetailData.guide,
       guides: remoteGuides,
       selectedGuide: remoteGuideLabel || "UNO GUIDE",
+      review: hasRemoteReviewData ? remoteReviewSummary : baseDetailData.review,
+      reviews: hasRemoteReviewData ? remoteReviews : baseDetailData.reviews,
       tourDay: remoteTourDay,
       tourTime: remoteTourTime,
       priceDescription: remotePriceDescription || remoteProductDetail?.priceDescription,
@@ -2544,6 +2607,45 @@ export default function ProductDetail({
       remoteProductDetail?.title ?? currentListProduct?.title ?? "";
     const resolvedProductType =
       remoteProductDetail?.productType ?? productListType ?? baseDetailData.productType;
+    const remotePackageScheduleDates: AvailableDate[] =
+      resolvedProductType === "semi"
+        ? (remoteProductDetail?.packageSchedules ?? [])
+            .map((schedule) => {
+              const dateId = normalizeDateKey(schedule.startDate);
+              if (!dateId) return null;
+
+              const parsedDate = parseDateId(dateId);
+              const capacity = schedule.seat && schedule.seat > 0 ? schedule.seat : 12;
+              const price = schedule.totalPrice ?? schedule.deposit ?? 0;
+
+              return {
+                id: dateId,
+                legacyFeeOptionId: remoteDefaultFee?.id,
+                legacyPackageScheduleId: schedule.id,
+                label: dateId.replaceAll("-", "."),
+                day: getWeekdayKo(parsedDate),
+                seats: capacity,
+                capacity,
+                price,
+                deposit: schedule.deposit,
+                intermediatePayment: schedule.intermediatePayment ?? schedule.middlePayment,
+                middlePayment: schedule.middlePayment ?? schedule.intermediatePayment,
+                balance: schedule.balance ?? schedule.finalPayment,
+                finalPayment: schedule.finalPayment ?? schedule.balance,
+                airfare: schedule.airfare,
+                totalPrice: schedule.totalPrice,
+                status: getAvailabilityDisplayLabel(schedule.status || "available"),
+                guide: remoteGuideLabel || "UNO GUIDE",
+              } as AvailableDate;
+            })
+            .filter((date): date is AvailableDate => Boolean(date))
+            .sort((a, b) => normalizeDateKey(a.id).localeCompare(normalizeDateKey(b.id)))
+        : [];
+    const remoteDefaultPackageScheduleId =
+      resolvedProductType === "semi"
+        ? remoteProductDetail?.packageSchedules?.find((item) => item.isDefault)?.id ??
+          remotePackageScheduleDates[0]?.legacyPackageScheduleId
+        : undefined;
     const remoteSemiSelectedSchedule = getFirstValidSemiBoardingPassSchedule(
       resolvedProductType,
       remoteProductDetail?.packageSchedules,
@@ -2566,9 +2668,10 @@ export default function ProductDetail({
         ...baseDetailData,
         id: productId || baseDetailData.id,
         legacyPackageScheduleId:
-          remoteProductDetail?.packageSchedules?.find((item) => item.isDefault)?.id ??
-          getLegacyPackageScheduleId(productId) ??
-          baseDetailData.legacyPackageScheduleId,
+          resolvedProductType === "semi"
+            ? remoteDefaultPackageScheduleId
+            : getLegacyPackageScheduleId(productId) ??
+              baseDetailData.legacyPackageScheduleId,
         href: pathname || baseDetailData.href,
         productType: resolvedProductType,
         title: remoteOrListTitle,
@@ -2603,9 +2706,11 @@ export default function ProductDetail({
               : [],
         detailImages: remoteBodyImages.length > 0 ? remoteBodyImages : [],
         availableDates:
-          remoteAvailabilityDates.length > 0
-            ? remoteAvailabilityDates
-            : baseDetailData.availableDates,
+          resolvedProductType === "semi"
+            ? remotePackageScheduleDates
+            : remoteAvailabilityDates.length > 0
+              ? remoteAvailabilityDates
+              : baseDetailData.availableDates,
         dailyAvailableDates:
           remoteAvailabilityDates.length > 0
             ? remoteAvailabilityDates
@@ -2642,10 +2747,11 @@ export default function ProductDetail({
         getLegacyFeeOptionId(sourceProduct.id) ??
         baseDetailData.legacyFeeOptionId,
       legacyPackageScheduleId:
-        remoteProductDetail?.packageSchedules?.find((item) => item.isDefault)?.id ??
-        sourceProduct.legacyPackageScheduleId ??
-        getLegacyPackageScheduleId(sourceProduct.id) ??
-        baseDetailData.legacyPackageScheduleId,
+        resolvedProductType === "semi"
+          ? remoteDefaultPackageScheduleId
+          : sourceProduct.legacyPackageScheduleId ??
+            getLegacyPackageScheduleId(sourceProduct.id) ??
+            baseDetailData.legacyPackageScheduleId,
       href: sourceProduct.href ?? pathname ?? baseDetailData.href,
       productType: resolvedProductType,
       eyebrow: sourceProduct.eyebrow ?? sourceRegion ?? baseDetailData.eyebrow,
@@ -2679,9 +2785,11 @@ export default function ProductDetail({
             : [],
       detailImages: remoteBodyImages.length > 0 ? remoteBodyImages : [],
       availableDates:
-        remoteAvailabilityDates.length > 0
-          ? remoteAvailabilityDates
-          : baseDetailData.availableDates,
+        resolvedProductType === "semi"
+          ? remotePackageScheduleDates
+          : remoteAvailabilityDates.length > 0
+            ? remoteAvailabilityDates
+            : baseDetailData.availableDates,
       dailyAvailableDates:
         remoteAvailabilityDates.length > 0
           ? remoteAvailabilityDates
@@ -2791,18 +2899,35 @@ export default function ProductDetail({
   }, [DETAIL_DATA, currentPathname]);
 
 
+  const relatedProductSource =
+    products.length > 0 ? products : remoteRelatedProducts;
+
   const productListRelatedProducts = useMemo(
     () =>
       normalizeProductListRelatedProducts(
-        products,
+        relatedProductSource,
         DETAIL_DATA.productType,
         DETAIL_DATA.id,
         imgDetailA,
       ),
-    [products, DETAIL_DATA.productType, DETAIL_DATA.id],
+    [relatedProductSource, DETAIL_DATA.productType, DETAIL_DATA.id],
   );
 
-  const relatedProducts = productListRelatedProducts;
+  const fallbackRelatedProducts = useMemo(
+    () =>
+      normalizeProductListRelatedProducts(
+        relatedProductSource,
+        DETAIL_DATA.productType === "daily" ? "semi" : "daily",
+        DETAIL_DATA.id,
+        imgDetailA,
+      ),
+    [relatedProductSource, DETAIL_DATA.productType, DETAIL_DATA.id],
+  );
+
+  const relatedProducts =
+    productListRelatedProducts.length > 0
+      ? productListRelatedProducts
+      : fallbackRelatedProducts;
   const relatedSectionLabel = isDailyTour
     ? "RELATED DAILY TOURS"
     : "RELATED SEMI PACKAGES";
@@ -2975,7 +3100,7 @@ export default function ProductDetail({
           </div>
         </section>
 
-        {true && (
+        {DETAIL_DATA.faqs && DETAIL_DATA.faqs.length > 0 ? (
           /*
             Product-detail bottom QNA/FAQ section.
             This is the content shown under the product detail body image.
@@ -2991,8 +3116,7 @@ export default function ProductDetail({
               </div>
 
               <div className="pd-detail-faq-list">
-                {DETAIL_DATA.faqs && DETAIL_DATA.faqs.length > 0 ? (
-                  DETAIL_DATA.faqs.map((faq) => (
+                {DETAIL_DATA.faqs.map((faq) => (
                   <article key={faq.id} className="pd-detail-faq-item">
                     <span className="pd-detail-faq-meta">
                       {faq.category || "FAQ"}
@@ -3010,22 +3134,11 @@ export default function ProductDetail({
                       </div>
                     </div>
                   </article>
-                  ))
-                ) : (
-                  <article className="pd-detail-faq-item">
-                    <span className="pd-detail-faq-meta">FAQ</span>
-                    <div>
-                      <h3 className="pd-detail-faq-question">{"\uB4F1\uB85D\uB41C FAQ\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4."}</h3>
-                      <div className="pd-detail-faq-answer">
-                        <p>{"\uAD00\uB9AC\uC790\uC5D0\uC11C \uC0C1\uD488 FAQ\uB97C \uC5F0\uACB0\uD558\uBA74 \uC774 \uC601\uC5ED\uC5D0 \uD45C\uC2DC\uB429\uB2C8\uB2E4."}</p>
-                      </div>
-                    </div>
-                  </article>
-                )}
+                ))}
               </div>
             </div>
           </section>
-        )}
+        ) : null}
 
         <InfiniteOther
           products={relatedProducts}
@@ -3065,44 +3178,41 @@ export default function ProductDetail({
               </button>
             </div>
 
-            {/*
-              Review Page Backend Fields
-              ------------------------------------------
-              차후 리뷰 ?�이지�?별도 컴포?�트�?분리??????Surface ?��????�결?�다.
-
-              - reviews       ??리뷰 목록
-              - reviewSummary ???�점 / ?�기 ??/ 만족???�약
-              - reviewImages  ??리뷰 ?��?지
-              - reviewer      ???�성??/ ?�성??/ ?�약 ?�품 ?�보
-
-              ?�재???�당 productId???�결???�제 리뷰 ?�태??Mock Data�??�용?�다.
-            */}
             <div className="pd-review-surface-summary">
               <p className="pd-review-summary-text">{DETAIL_DATA.review}</p>
             </div>
 
             <div className="pd-review-list">
-              {DETAIL_DATA.reviews.map((review) => (
-                <article key={review.id} className="pd-review-card">
-                  <div className="pd-review-card-head">
-                    <div className="pd-review-user">
-                      <span className="pd-review-avatar" aria-hidden="true">
-                        {review.nickname.slice(0, 1)}
-                      </span>
-                      <div>
-                        <span className="pd-review-nickname">
-                          {review.nickname}
+              {DETAIL_DATA.reviews.length > 0 ? (
+                DETAIL_DATA.reviews.map((review) => (
+                  <article key={review.id} className="pd-review-card">
+                    <div className="pd-review-card-head">
+                      <div className="pd-review-user">
+                        <span className="pd-review-avatar" aria-hidden="true">
+                          {review.nickname.slice(0, 1)}
                         </span>
-                        <span className="pd-review-meta">
-                          {review.writtenAt} · {review.productTitle}
-                        </span>
+                        <div>
+                          <span className="pd-review-nickname">
+                            {review.nickname}
+                          </span>
+                          <span className="pd-review-meta">
+                            {review.writtenAt} · {review.productTitle}
+                          </span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <h3 className="pd-review-card-title">{review.title}</h3>
-                  <p className="pd-review-card-body">{review.body}</p>
+                    <h3 className="pd-review-card-title">{review.title}</h3>
+                    <p className="pd-review-card-body">{review.body}</p>
+                  </article>
+                ))
+              ) : (
+                <article className="pd-review-card">
+                  <h3 className="pd-review-card-title">등록된 여행후기가 없습니다.</h3>
+                  <p className="pd-review-card-body">
+                    이 상품과 연결된 커뮤니티 여행후기가 등록되면 이 영역에 표시됩니다.
+                  </p>
                 </article>
-              ))}
+              )}
             </div>
           </aside>
         </div>

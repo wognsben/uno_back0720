@@ -442,6 +442,10 @@ function ReservationModule({
   const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
 
 const initialSelectedDateId = selectedDateId || getInitialDailyDateId(dates);
+const initialFeeOptionId =
+  product.productType === "semi"
+    ? product.feeOptions?.find((option) => option.id !== undefined && option.id !== null)?.id
+    : undefined;
 const {
   selectedDateId: sharedSelectedDateId,
   peopleCount,
@@ -449,7 +453,7 @@ const {
   setSelectedDateId,
   setPeopleCount,
   setFeeCounts,
-} = useReservationSelection(product.id, initialSelectedDateId);
+} = useReservationSelection(product.id, initialSelectedDateId, initialFeeOptionId);
 
 const activeDateId =
   sharedSelectedDateId || selectedDateId || (dates[0]?.id ?? "");
@@ -458,8 +462,13 @@ const activeDateId =
     [activeDateId, dates],
   );
 
-const status = getAvailabilityStatus(activeDate);
-const statusClassName = getAvailabilityClassName(activeDate);
+const isSemiPackage = product.productType === "semi";
+const status = getAvailabilityStatus(activeDate, {
+  useSeatAvailability: !isSemiPackage,
+});
+const statusClassName = getAvailabilityClassName(activeDate, {
+  useSeatAvailability: !isSemiPackage,
+});
 const isReservationDisabled = !activeDate || status === "soldout";
 
 /*
@@ -473,7 +482,6 @@ const availableSeats = activeDate?.seats ?? 8;
 const safeMaxPeople = maxPeople ?? Math.max(minPeople, availableSeats);
 const safePeople = Math.max(minPeople, Math.min(peopleCount || initialPeople, safeMaxPeople));
 
-const isSemiPackage = product.productType === "semi";
 const hasSemiSchedulePrice =
   !isSemiPackage || (activeDate?.deposit ?? 0) > 0 || (activeDate?.totalPrice ?? activeDate?.price ?? 0) > 0;
 const unitPrice = isSemiPackage ? activeDate?.deposit ?? activeDate?.price ?? 0 : activeDate?.price ?? product.basePrice ?? 0;
@@ -495,7 +503,7 @@ const totalPrice = hasSelectableFeeOptions
 const canDecrease = safePeople > minPeople;
 const canIncrease = safePeople < safeMaxPeople;
 const isFeeSelectionEmpty = hasSelectableFeeOptions && selectedFeePeople < 1;
-const isSemiPriceMissing = isSemiPackage && !hasSemiSchedulePrice;
+const isSemiPriceMissing = isSemiPackage && !hasSemiSchedulePrice && totalPrice <= 0;
 const statusLabel = status === "soldout" ? "예약 마감" : getAvailabilityDisplayLabel(status);
 
   useEffect(() => {
@@ -506,7 +514,7 @@ const statusLabel = status === "soldout" ? "예약 마감" : getAvailabilityDisp
     if (import.meta.env.DEV && isSemiPriceMissing) {
       console.warn("[reservation] Missing schedule price", activeDate);
     }
-  }, [activeDate, isSemiPriceMissing]);
+  }, [activeDate, isSemiPriceMissing, totalPrice]);
 
   useEffect(() => {
     if (typeof document === "undefined") return;

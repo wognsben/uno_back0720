@@ -12,13 +12,6 @@ import type {
 
 export const COMMUNITY_NAV_ITEMS: CommunityNavItem[] = [
     {
-        id: "review",
-        label: "여행후기",
-        labelEn: "Review",
-        href: "/community/review",
-        description: "여행자들의 생생한 후기",
-    },
-    {
         id: "notice",
         label: "공지사항",
         labelEn: "Notice",
@@ -33,18 +26,18 @@ export const COMMUNITY_NAV_ITEMS: CommunityNavItem[] = [
         description: "진행중인 이벤트",
     },
     {
-        id: "faq",
-        label: "FAQ",
-        labelEn: "FAQ",
-        href: "/community/faq",
-        description: "자주 묻는 질문",
-    },
-    {
         id: "inquiry",
         label: "문의하기",
         labelEn: "Inquiry",
         href: "/community/inquiry",
         description: "공개 문의 작성",
+    },
+    {
+        id: "review",
+        label: "여행후기",
+        labelEn: "Review",
+        href: "/community/review",
+        description: "여행자들의 생생한 후기",
     },
 ];
 

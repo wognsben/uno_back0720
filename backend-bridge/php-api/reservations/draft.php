@@ -144,7 +144,7 @@ function uno_api_draft_fetch_package_option($legacyProductId, $scheduleId)
     }
 
     $statusText = isset($row['status']) ? strtoupper((string) $row['status']) : '';
-    if (in_array($statusText, array('Y', 'E', 'CLOSED', 'SOLDOUT'), true) || strpos($statusText, '마감') !== false) {
+    if (in_array($statusText, array('CLOSED', 'SOLDOUT'), true) || strpos($statusText, '마감') !== false) {
         uno_api_error('SOLD_OUT', '마감된 출발 일정입니다.', 409);
     }
 

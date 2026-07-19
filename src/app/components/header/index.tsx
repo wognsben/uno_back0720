@@ -116,7 +116,15 @@ function getHeaderAuthState(
 function navigateTo(path: string) {
   if (typeof window === "undefined") return;
 
-  if (window.location.pathname === path) {
+  let targetPath = path;
+  try {
+    const url = new URL(path, window.location.origin);
+    targetPath = `${url.pathname}${url.search}${url.hash}`;
+  } catch {
+    targetPath = path;
+  }
+
+  if (window.location.pathname + window.location.search + window.location.hash === targetPath) {
     window.scrollTo({
       top: 0,
       left: 0,
@@ -136,13 +144,33 @@ function navigateTo(path: string) {
     따라서 URL 변경 직후, App route event를 보내기 전에
     스크롤을 즉시 최상단으로 초기화한다.
   */
-  window.history.pushState({}, "", path);
+  window.history.pushState({}, "", targetPath);
   window.scrollTo({
     top: 0,
     left: 0,
     behavior: "auto",
   });
   window.dispatchEvent(new Event("unotravel:navigate"));
+}
+
+function isExternalHref(href: string) {
+  if (!href || href.startsWith("#")) return false;
+  if (typeof window === "undefined") {
+    return /^https?:\/\//i.test(href);
+  }
+
+  try {
+    const url = new URL(href, window.location.origin);
+    return url.origin !== window.location.origin;
+  } catch {
+    return false;
+  }
+}
+
+function externalLinkProps(href: string) {
+  return isExternalHref(href)
+    ? { target: "_blank", rel: "noopener noreferrer" }
+    : {};
 }
 
 function formatRecentlyViewedCategory(product: RecentlyViewedProduct) {
@@ -187,11 +215,10 @@ type DotMenuItem = {
 
 const COMMUNITY_MENU_ITEMS: readonly DotMenuItem[] = [
   { label: "커뮤니티", labelEn: "COMMUNITY", href: "/community", variant: "hub" },
-  { label: "여행후기", labelEn: "REVIEW", href: "/community/review", variant: "link" },
   { label: "공지사항", labelEn: "NOTICE", href: "/community/notice", variant: "link" },
   { label: "이벤트", labelEn: "EVENT", href: "/community/event", variant: "link" },
-  { label: "FAQ", labelEn: "FAQ", href: "/community/faq", variant: "link" },
   { label: "문의하기", labelEn: "INQUIRY", href: "/community/inquiry", variant: "link" },
+  { label: "여행후기", labelEn: "REVIEW", href: "/community/review", variant: "link" },
 ] as const;
 
 const BRAND_MENU_ITEMS: readonly DotMenuItem[] = [
@@ -804,7 +831,7 @@ function ShortMenuPanel({
   ) => {
     onClose();
 
-    if (item.external) {
+    if (item.external || isExternalHref(item.href)) {
       return;
     }
 
@@ -867,6 +894,7 @@ function ShortMenuPanel({
               <a
                 key={item.href}
                 href={item.href}
+                {...externalLinkProps(item.href)}
                 onClick={(event) => handleMenuItemClick(event, item)}
                 style={{
                   display: "grid",
@@ -946,6 +974,7 @@ function ShortMenuPanel({
               <a
                 key={item.href}
                 href={item.href}
+                {...externalLinkProps(item.href)}
                 onClick={(event) => handleMenuItemClick(event, item)}
                 style={{
                   fontFamily: "var(--font-en)",
@@ -1289,7 +1318,7 @@ function ExpandedMenuCard({
   ) => {
     onClose();
 
-    if (item.external) {
+    if (item.external || isExternalHref(item.href)) {
       return;
     }
 
@@ -1390,6 +1419,7 @@ function ExpandedMenuCard({
               <a
                 key={item.href}
                 href={item.href}
+                {...externalLinkProps(item.href)}
                 onClick={(event) => handleMenuItemClick(event, item)}
                 style={{
                   display: isHub ? "block" : "grid",
@@ -1469,6 +1499,7 @@ function ExpandedMenuCard({
               <a
                 key={item.href}
                 href={item.href}
+                {...externalLinkProps(item.href)}
                 onClick={(event) => handleMenuItemClick(event, item)}
                 style={{
                   fontFamily: "var(--font-en)",
