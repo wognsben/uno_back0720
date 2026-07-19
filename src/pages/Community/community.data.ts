@@ -26,11 +26,12 @@ export const COMMUNITY_NAV_ITEMS: CommunityNavItem[] = [
         description: "진행중인 이벤트",
     },
     {
-        id: "inquiry",
-        label: "문의하기",
-        labelEn: "Inquiry",
-        href: "/community/inquiry",
-        description: "공개 문의 작성",
+        // Community FAQ is public help content. Do not confuse it with My Page 1:1 inquiry (cusTour).
+        id: "faq",
+        label: "FAQ",
+        labelEn: "FAQ",
+        href: "/community/faq",
+        description: "자주 묻는 질문",
     },
     {
         id: "review",

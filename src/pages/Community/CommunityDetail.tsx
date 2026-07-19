@@ -4,12 +4,18 @@ export default function CommunityDetail({
     item,
 }: CommunityDetailProps) {
     const isEvent = item.type === "event";
-    const listHref = `/community/${item.type}`;
+    const listHref = item.board === "qna" ? "/community/inquiry" : `/community/${item.type}`;
 
     const handleBackNavigate = (event: React.MouseEvent<HTMLAnchorElement>) => {
         event.preventDefault();
 
+        if (window.location.pathname === listHref) {
+            window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+            return;
+        }
+
         window.history.pushState({}, "", listHref);
+        window.scrollTo({ top: 0, left: 0, behavior: "auto" });
         window.dispatchEvent(new Event("unotravel:navigate"));
     };
 

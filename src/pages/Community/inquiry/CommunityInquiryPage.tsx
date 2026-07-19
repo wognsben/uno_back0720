@@ -3,6 +3,9 @@
 // 마이페이지 1:1 문의(cusTour)와 섞이지 않도록 공개 Q&A(qna) 작성 상태만 관리합니다.
 // 로그인 안내, 공개 문의 작성 폼, 개인 상담 이동 액션을 담당합니다.
 
+// Public community Q&A writer for the legacy qna board.
+// This is intentionally separate from My Page private 1:1 inquiry (cusTour).
+
 import { useState, type FormEvent } from "react";
 
 import { UnoApiRequestError } from "../../../api/apiClient";

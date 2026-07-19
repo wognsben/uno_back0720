@@ -18,10 +18,10 @@ const COMMUNITY_HUB_ITEMS = [
     href: "/community/event",
   },
   {
-    label: "문의하기",
-    labelEn: "INQUIRY",
-    description: "공개 문의를 작성하고 답변을 확인합니다.",
-    href: "/community/inquiry",
+    label: "FAQ",
+    labelEn: "FAQ",
+    description: "자주 묻는 질문과 기본 안내를 확인합니다.",
+    href: "/community/faq",
   },
   {
     label: "여행후기",

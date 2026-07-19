@@ -156,7 +156,7 @@ const STYLE = `
     width: 100%;
     min-width: 1024px;
     min-height: 100vh;
-    background: #ffffff;
+    background: #111111;
     color: #111111;
     overflow-x: hidden;
   }
@@ -165,7 +165,7 @@ const STYLE = `
     position: relative;
     width: 100%;
     min-height: 100vh;
-    background: #ffffff;
+    background: #111111;
     overflow: hidden;
   }
 

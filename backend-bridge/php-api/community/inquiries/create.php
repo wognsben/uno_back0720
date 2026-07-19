@@ -169,6 +169,7 @@ uno_api_public_inquiry_query(
     "insert into {$table}
         set wr_num = '{$wrNum}',
             wr_reply = '',
+            wr_comment_reply = '',
             wr_is_comment = '0',
             wr_comment = '0',
             ca_name = '',

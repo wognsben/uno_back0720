@@ -31,11 +31,35 @@ import { loginWithCredentials } from "../../api/reservationApi";
 
 type SocialProvider = "google" | "kakao" | "naver";
 
+const DEFAULT_SOCIAL_RETURN_URL = "/mypage";
+const ALLOWED_SOCIAL_PROVIDERS = new Set<SocialProvider>(["google", "kakao", "naver"]);
+
 function navigateTo(path: string) {
   if (typeof window === "undefined") return;
 
   window.history.pushState({}, "", path);
   window.dispatchEvent(new Event("unotravel:navigate"));
+}
+
+function isSafeInternalPath(value: string | null) {
+  if (!value) return false;
+
+  const trimmed = value.trim();
+  if (!trimmed.startsWith("/") || trimmed.startsWith("//")) return false;
+  if (/^[a-z][a-z0-9+.-]*:/i.test(trimmed)) return false;
+
+  return true;
+}
+
+function getSocialReturnUrl() {
+  if (typeof window === "undefined") return DEFAULT_SOCIAL_RETURN_URL;
+
+  const storedReturnUrl = window.sessionStorage.getItem("unotravel:redirect-after-login");
+  if (isSafeInternalPath(storedReturnUrl)) {
+    return storedReturnUrl as string;
+  }
+
+  return DEFAULT_SOCIAL_RETURN_URL;
 }
 
 const SOCIAL_PROVIDER_LABEL: Record<SocialProvider, string> = {
@@ -60,11 +84,20 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
-  const [socialNotice, setSocialNotice] = useState("");
   const [formError, setFormError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   function handleSocialLogin(provider: SocialProvider) {
+    if (!ALLOWED_SOCIAL_PROVIDERS.has(provider)) return;
+
+    const returnUrl = getSocialReturnUrl();
+    const socialLoginUrl =
+      `/bbs/bbs/login.php?provider=${encodeURIComponent(provider)}` +
+      `&url=${encodeURIComponent(returnUrl)}`;
+
+    window.location.assign(socialLoginUrl);
+    return;
+
     /*
       Social Login Backend Hook
       ------------------------------------------
@@ -77,7 +110,6 @@ export default function LoginPage() {
 
       현재는 프론트 UI/동선 확인용 placeholder다.
     */
-    setSocialNotice(`${SOCIAL_PROVIDER_LABEL[provider]} 로그인은 현재 준비 중입니다.`);
   }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -239,12 +271,6 @@ export default function LoginPage() {
                 </button>
               ))}
             </div>
-
-            {socialNotice && (
-              <p className="login-social-notice" role="status" aria-live="polite">
-                {socialNotice}
-              </p>
-            )}
 
             <nav className="login-link-row" aria-label="로그인 보조 링크">
               <button type="button" onClick={() => navigateTo("/find-password")}>
