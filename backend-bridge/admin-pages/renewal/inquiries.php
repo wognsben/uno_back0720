@@ -82,6 +82,19 @@ function uno_renewal_inquiry_table_name($key, $fallback)
     return isset($g5[$key]) && $g5[$key] !== '' ? $g5[$key] : $fallback;
 }
 
+function uno_renewal_inquiry_is_admin_member($memberId)
+{
+    $memberId = trim((string) $memberId);
+    if ($memberId === '') {
+        return false;
+    }
+
+    $safeMemberId = uno_renewal_inquiry_escape_db($memberId);
+    $memberTable = uno_renewal_inquiry_table_name('member_table', 'g5_member');
+    $member = uno_renewal_inquiry_fetch("select mb_level from {$memberTable} where mb_id = '{$safeMemberId}' limit 1");
+    return $member && isset($member['mb_level']) && (int) $member['mb_level'] > 2;
+}
+
 function uno_renewal_inquiry_date($value)
 {
     if ($value === null || $value === '') {
@@ -156,6 +169,173 @@ function uno_renewal_inquiry_find_comment($table, $commentId, $threadId)
     return uno_renewal_inquiry_fetch("select * from {$table} where wr_id = '{$commentId}' and wr_parent = '{$threadId}' and wr_is_comment = '1' limit 1");
 }
 
+function uno_renewal_inquiry_download_href($board, $wrId, $fileNo)
+{
+    return '/admin/renewal/inquiry-file.php'
+        . '?bo_table=' . rawurlencode($board)
+        . '&wr_id=' . (int) $wrId
+        . '&no=' . (int) $fileNo;
+}
+
+function uno_renewal_inquiry_fetch_files($board, $wrId)
+{
+    $wrId = (int) $wrId;
+    if ($wrId <= 0) {
+        return array();
+    }
+
+    $safeBoard = uno_renewal_inquiry_escape_db($board);
+    $boardFileTable = uno_renewal_inquiry_table_name('board_file_table', 'g5_board_file');
+    $result = uno_renewal_inquiry_query(
+        "select bf_no, bf_source, bf_file, bf_filesize, bf_download, bf_datetime
+           from {$boardFileTable}
+          where bo_table = '{$safeBoard}'
+            and wr_id = '{$wrId}'
+            and bf_file <> ''
+          order by bf_no asc"
+    );
+
+    $files = array();
+    while ($row = uno_renewal_inquiry_fetch_array($result)) {
+        $fileNo = isset($row['bf_no']) ? (int) $row['bf_no'] : 0;
+        $files[] = array(
+            'no' => $fileNo,
+            'source' => isset($row['bf_source']) && $row['bf_source'] !== '' ? (string) $row['bf_source'] : (string) ($row['bf_file'] ?? ''),
+            'size' => isset($row['bf_filesize']) ? (int) $row['bf_filesize'] : 0,
+            'downloadCount' => isset($row['bf_download']) ? (int) $row['bf_download'] : 0,
+            'href' => uno_renewal_inquiry_download_href($board, $wrId, $fileNo),
+        );
+    }
+
+    return $files;
+}
+
+function uno_renewal_inquiry_file_size($size)
+{
+    $size = (int) $size;
+    if ($size >= 1024 * 1024) {
+        return number_format($size / 1024 / 1024, 1) . 'MB';
+    }
+
+    if ($size >= 1024) {
+        return number_format($size / 1024, 1) . 'KB';
+    }
+
+    return number_format(max(0, $size)) . 'B';
+}
+
+function uno_renewal_inquiry_has_attachment()
+{
+    return isset($_FILES['attachment'])
+        && is_array($_FILES['attachment'])
+        && isset($_FILES['attachment']['error'])
+        && (int) $_FILES['attachment']['error'] !== UPLOAD_ERR_NO_FILE;
+}
+
+function uno_renewal_inquiry_validate_attachment()
+{
+    if (!uno_renewal_inquiry_has_attachment()) {
+        return null;
+    }
+
+    $file = $_FILES['attachment'];
+    if (!isset($file['error']) || (int) $file['error'] !== UPLOAD_ERR_OK) {
+        return array('error' => '첨부파일 업로드에 실패했습니다.');
+    }
+
+    if (!isset($file['tmp_name']) || !is_uploaded_file($file['tmp_name'])) {
+        return array('error' => '첨부파일을 확인할 수 없습니다.');
+    }
+
+    $size = isset($file['size']) ? (int) $file['size'] : 0;
+    if ($size <= 0 || $size > 10 * 1024 * 1024) {
+        return array('error' => '첨부파일은 10MB 이하만 업로드할 수 있습니다.');
+    }
+
+    $sourceName = isset($file['name']) ? basename((string) $file['name']) : 'attachment';
+    $extension = strtolower(pathinfo($sourceName, PATHINFO_EXTENSION));
+    $allowed = array('jpg', 'jpeg', 'png', 'pdf', 'doc', 'docx', 'xls', 'xlsx');
+    if (!in_array($extension, $allowed, true)) {
+        return array('error' => 'JPG, PNG, PDF, DOC, DOCX, XLS, XLSX 파일만 업로드할 수 있습니다.');
+    }
+
+    return array(
+        'tmpName' => $file['tmp_name'],
+        'sourceName' => $sourceName,
+        'extension' => $extension,
+        'size' => $size,
+    );
+}
+
+function uno_renewal_inquiry_upload_dir($board)
+{
+    if (defined('G5_DATA_PATH')) {
+        return G5_DATA_PATH . '/file/' . $board;
+    }
+
+    return dirname(__DIR__, 2) . '/bbs/data/file/' . $board;
+}
+
+function uno_renewal_inquiry_save_attachment($board, $table, $wrId, $attachment, $now)
+{
+    if (!$attachment) {
+        return '';
+    }
+
+    $wrId = (int) $wrId;
+    if ($wrId <= 0) {
+        return '첨부파일을 연결할 답변을 찾을 수 없습니다.';
+    }
+
+    $uploadDir = uno_renewal_inquiry_upload_dir($board);
+    if (!is_dir($uploadDir)) {
+        @mkdir($uploadDir, defined('G5_DIR_PERMISSION') ? G5_DIR_PERMISSION : 0755, true);
+    }
+
+    if (!is_dir($uploadDir) || !is_writable($uploadDir)) {
+        return '첨부파일 저장 폴더를 사용할 수 없습니다.';
+    }
+
+    $storedFile = date('YmdHis') . '_admin_inquiry_' . $wrId . '_' . bin2hex(random_bytes(4)) . '.' . $attachment['extension'];
+    $destination = $uploadDir . '/' . $storedFile;
+
+    if (!move_uploaded_file($attachment['tmpName'], $destination)) {
+        return '첨부파일을 저장하지 못했습니다.';
+    }
+
+    @chmod($destination, defined('G5_FILE_PERMISSION') ? G5_FILE_PERMISSION : 0644);
+
+    $imageInfo = @getimagesize($destination);
+    $width = $imageInfo && isset($imageInfo[0]) ? (int) $imageInfo[0] : 0;
+    $height = $imageInfo && isset($imageInfo[1]) ? (int) $imageInfo[1] : 0;
+    $type = $imageInfo ? 1 : 0;
+    $safeBoard = uno_renewal_inquiry_escape_db($board);
+    $source = uno_renewal_inquiry_escape_db($attachment['sourceName']);
+    $stored = uno_renewal_inquiry_escape_db($storedFile);
+    $fileSize = (int) @filesize($destination);
+    $safeNow = uno_renewal_inquiry_escape_db($now);
+    $boardFileTable = uno_renewal_inquiry_table_name('board_file_table', 'g5_board_file');
+
+    uno_renewal_inquiry_query(
+        "insert into {$boardFileTable}
+            set bo_table = '{$safeBoard}',
+                wr_id = '{$wrId}',
+                bf_no = '0',
+                bf_source = '{$source}',
+                bf_file = '{$stored}',
+                bf_download = '0',
+                bf_content = '',
+                bf_filesize = '{$fileSize}',
+                bf_width = '{$width}',
+                bf_height = '{$height}',
+                bf_type = '{$type}',
+                bf_datetime = '{$safeNow}'"
+    );
+
+    uno_renewal_inquiry_query("update {$table} set wr_file = '1' where wr_id = '{$wrId}'");
+    return '';
+}
+
 function uno_renewal_inquiry_redirect($board, $wrId, $message)
 {
     $url = '/admin/renewal/inquiries.php?board=' . rawurlencode($board);
@@ -185,7 +365,7 @@ function uno_renewal_inquiry_update_thread($table, $threadId, $subject, $content
     );
 }
 
-function uno_renewal_inquiry_insert_answer($board, $table, $thread, $content)
+function uno_renewal_inquiry_insert_answer($board, $table, $thread, $content, $attachment = null)
 {
     $admin = uno_renewal_inquiry_admin_member();
     $threadId = (int) $thread['wr_id'];
@@ -226,11 +406,21 @@ function uno_renewal_inquiry_insert_answer($board, $table, $thread, $content)
                 wr_comment_reply = '',
                 wr_subject = '',
                 wr_content = '{$safeContent}',
+                wr_link1 = '',
+                wr_link2 = '',
+                wr_link1_hit = '0',
+                wr_link2_hit = '0',
+                wr_hit = '0',
+                wr_good = '0',
+                wr_nogood = '0',
                 mb_id = '{$safeMemberId}',
                 wr_password = '{$safePassword}',
                 wr_name = '{$safeMemberName}',
                 wr_email = '{$safeEmail}',
                 wr_homepage = '',
+                wr_file = '0',
+                wr_facebook_user = '',
+                wr_twitter_user = '',
                 wr_datetime = '{$safeNow}',
                 wr_last = '',
                 wr_ip = '{$safeIp}',
@@ -247,6 +437,11 @@ function uno_renewal_inquiry_insert_answer($board, $table, $thread, $content)
     );
 
     $commentId = uno_renewal_inquiry_insert_id();
+    $attachmentError = '';
+    if ($commentId && $attachment) {
+        $attachmentError = uno_renewal_inquiry_save_attachment($board, $table, $commentId, $attachment, $now);
+    }
+
     uno_renewal_inquiry_query("update {$table} set wr_comment = wr_comment + 1, wr_last = '{$safeNow}' where wr_id = '{$threadId}'");
 
     $boardNewTable = uno_renewal_inquiry_table_name('board_new_table', 'g5_board_new');
@@ -260,6 +455,8 @@ function uno_renewal_inquiry_insert_answer($board, $table, $thread, $content)
         );
     }
     uno_renewal_inquiry_query("update {$boardTable} set bo_count_comment = bo_count_comment + 1 where bo_table = '{$safeBoard}'");
+
+    return $attachmentError;
 }
 
 function uno_renewal_inquiry_update_answer($table, $commentId, $threadId, $content)
@@ -346,8 +543,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $hasInquiryTable) {
 
     if ($action === 'create_answer') {
         $content = uno_renewal_inquiry_text(isset($_POST['answer']) ? $_POST['answer'] : '', 65536);
+        $attachment = uno_renewal_inquiry_validate_attachment();
+        if (isset($attachment['error'])) {
+            uno_renewal_inquiry_redirect($board, $threadId, $attachment['error']);
+        }
         if ($content !== '') {
-            uno_renewal_inquiry_insert_answer($board, $table, $thread, $content);
+            $attachmentError = uno_renewal_inquiry_insert_answer($board, $table, $thread, $content, $attachment);
+            if ($attachmentError !== '') {
+                uno_renewal_inquiry_redirect($board, $threadId, $attachmentError);
+            }
         }
         uno_renewal_inquiry_redirect($board, $threadId, '답변을 등록했습니다.');
     }
@@ -395,6 +599,7 @@ $listTotalRow = array('cnt' => 0);
 $listTotalCount = 0;
 $totalPages = 1;
 $selectedThread = array();
+$selectedFiles = array();
 $comments = array();
 
 if ($hasInquiryTable) {
@@ -425,6 +630,7 @@ if ($hasInquiryTable) {
     if ($selectedId > 0) {
         $selectedThread = uno_renewal_inquiry_find_thread($table, $selectedId);
         if ($selectedThread) {
+            $selectedFiles = uno_renewal_inquiry_fetch_files($board, $selectedId);
             $commentResult = uno_renewal_inquiry_query(
                 "select *
                    from {$table}
@@ -433,6 +639,7 @@ if ($hasInquiryTable) {
                   order by wr_comment asc, wr_comment_reply asc, wr_id asc"
             );
             while ($comment = uno_renewal_inquiry_fetch_array($commentResult)) {
+                $comment['files'] = uno_renewal_inquiry_fetch_files($board, (int) ($comment['wr_id'] ?? 0));
                 $comments[] = $comment;
             }
         }
@@ -472,13 +679,32 @@ uno_renewal_admin_render_pagehead('INQUIRY', $config['title'], $config['copy'], 
   .inquiry-detail-card h2, .inquiry-detail-card h3 { margin:0 0 12px; }
   .inquiry-meta { display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 16px; }
   .inquiry-content { white-space:pre-wrap;line-height:1.75;color:#242424; }
+  .inquiry-files { margin-top:16px;border-top:1px solid var(--uno-line);padding-top:14px; }
+  .inquiry-files h3 { margin:0 0 10px;font-size:14px; }
+  .inquiry-file-list { display:flex;flex-wrap:wrap;gap:8px; }
+  .inquiry-file-link { display:inline-flex;align-items:center;gap:8px;border:1px solid var(--uno-line);padding:9px 12px;background:#fff;font-size:12px;font-weight:900;text-decoration:none; }
+  .inquiry-file-link small { color:var(--uno-muted);font-weight:800; }
   .inquiry-form { display:grid;gap:10px; }
   .inquiry-form input, .inquiry-form textarea { width:100%;border:1px solid var(--uno-line);background:#fff;padding:12px; }
   .inquiry-form textarea { min-height:140px;resize:vertical;line-height:1.6; }
   .inquiry-actions { display:flex;flex-wrap:wrap;gap:8px;align-items:center; }
-  .inquiry-comment { border-top:1px solid var(--uno-line);padding-top:14px;margin-top:14px; }
-  .inquiry-comment:first-child { border-top:0;margin-top:0;padding-top:0; }
-  .inquiry-comment-head { display:flex;justify-content:space-between;gap:12px;color:var(--uno-muted);font-size:12px;font-weight:900;margin-bottom:8px; }
+  .inquiry-timeline { display:flex;flex-direction:column;gap:14px;margin-top:14px;padding:18px;background:#f6f6f4;border:1px solid var(--uno-line);max-height:620px;overflow:auto; }
+  .inquiry-message { width:min(72%, 760px);border:1px solid var(--uno-line);background:#fff;padding:14px 16px; }
+  .inquiry-message.customer { align-self:flex-start; }
+  .inquiry-message.admin { align-self:flex-end;background:#fff7cf;border-color:#f0d35c; }
+  .inquiry-message.other { align-self:center;background:#fafafa; }
+  .inquiry-message-head { display:flex;justify-content:space-between;gap:12px;color:var(--uno-muted);font-size:12px;font-weight:900;margin-bottom:10px; }
+  .inquiry-message-author { display:flex;flex-wrap:wrap;gap:8px;align-items:center; }
+  .inquiry-message-body { white-space:pre-wrap;line-height:1.75;color:#242424; }
+  .inquiry-message-actions { display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;opacity:.12;transition:opacity .15s ease; }
+  .inquiry-message:hover .inquiry-message-actions, .inquiry-message:focus-within .inquiry-message-actions { opacity:1; }
+  .inquiry-reply-context { display:none;border:1px solid var(--uno-line);background:#fafafa;padding:10px 12px;color:var(--uno-muted);font-size:12px;font-weight:800;line-height:1.5; }
+  .inquiry-reply-context.is-active { display:block; }
+  .inquiry-attachment-field { display:grid;gap:8px;border:1px solid var(--uno-line);background:#fafafa;padding:12px; }
+  .inquiry-attachment-field input[type="file"] { position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);border:0;padding:0; }
+  .inquiry-attachment-controls { display:flex;flex-wrap:wrap;gap:8px;align-items:center; }
+  .inquiry-attachment-name { color:var(--uno-muted);font-size:12px;font-weight:800; }
+  .inquiry-attachment-help { margin:0;color:var(--uno-muted);font-size:12px;line-height:1.5; }
   .inquiry-edit-panel { margin:0; }
   .inquiry-edit-panel summary { width:max-content;list-style:none; }
   .inquiry-edit-panel summary::-webkit-details-marker { display:none; }
@@ -511,7 +737,6 @@ uno_renewal_admin_render_pagehead('INQUIRY', $config['title'], $config['copy'], 
         <span class="uno-admin-chip"><?php echo uno_renewal_admin_escape($selectedThread['mb_id'] ?? ''); ?></span>
         <span class="uno-admin-chip"><?php echo uno_renewal_admin_escape(uno_renewal_inquiry_date($selectedThread['wr_datetime'] ?? '')); ?></span>
       </div>
-      <div class="inquiry-content"><?php echo uno_renewal_admin_escape($selectedThread['wr_content'] ?? ''); ?></div>
       <div class="inquiry-actions" style="margin-top:16px;">
         <a class="uno-admin-button secondary" href="/admin/renewal/inquiries.php?board=<?php echo rawurlencode($board); ?>">목록</a>
         <details class="inquiry-edit-panel">
@@ -539,40 +764,162 @@ uno_renewal_admin_render_pagehead('INQUIRY', $config['title'], $config['copy'], 
 
   <section class="inquiry-detail-grid">
     <article class="inquiry-detail-card">
-      <h2>답변 내역</h2>
-      <?php if (!$comments) { ?>
-        <form class="inquiry-form" method="post">
-          <input type="hidden" name="action" value="create_answer">
-          <input type="hidden" name="unotravel_csrf_token" value="<?php echo uno_renewal_admin_escape($csrfToken); ?>">
-          <input type="hidden" name="board" value="<?php echo uno_renewal_admin_escape($board); ?>">
-          <input type="hidden" name="wr_id" value="<?php echo (int) $selectedThread['wr_id']; ?>">
-          <textarea name="answer" placeholder="고객에게 전달할 답변을 입력하세요." required></textarea>
-          <button class="uno-admin-button" type="submit">답변</button>
-        </form>
-      <?php } ?>
-      <?php foreach ($comments as $comment) { ?>
-        <div class="inquiry-comment">
-          <div class="inquiry-comment-head">
-            <span><?php echo uno_renewal_admin_escape(($comment['wr_name'] ?? '') . ' / ' . ($comment['mb_id'] ?? '')); ?></span>
-            <span><?php echo uno_renewal_admin_escape(uno_renewal_inquiry_date($comment['wr_datetime'] ?? '')); ?></span>
+      <h2>문의 대화 내역</h2>
+      <div class="inquiry-timeline">
+        <div class="inquiry-message customer" data-message-author="<?php echo uno_renewal_admin_escape($selectedThread['wr_name'] ?? '고객'); ?>" data-message-text="<?php echo uno_renewal_admin_escape(uno_renewal_inquiry_text($selectedThread['wr_content'] ?? '', 90)); ?>">
+          <div class="inquiry-message-head">
+            <span class="inquiry-message-author">
+              <span class="uno-admin-chip">고객 원글</span>
+              <span><?php echo uno_renewal_admin_escape(($selectedThread['wr_name'] ?? '') . ' / ' . ($selectedThread['mb_id'] ?? '')); ?></span>
+            </span>
+            <span><?php echo uno_renewal_admin_escape(uno_renewal_inquiry_date($selectedThread['wr_datetime'] ?? '')); ?></span>
           </div>
-          <form class="inquiry-form" method="post">
-            <input type="hidden" name="action" value="update_answer">
-            <input type="hidden" name="unotravel_csrf_token" value="<?php echo uno_renewal_admin_escape($csrfToken); ?>">
-            <input type="hidden" name="board" value="<?php echo uno_renewal_admin_escape($board); ?>">
-            <input type="hidden" name="wr_id" value="<?php echo (int) $selectedThread['wr_id']; ?>">
-            <input type="hidden" name="comment_id" value="<?php echo (int) $comment['wr_id']; ?>">
-            <textarea name="answer" required><?php echo uno_renewal_inquiry_textarea($comment['wr_content'] ?? ''); ?></textarea>
-            <div class="inquiry-actions">
-              <button class="uno-admin-button" type="submit">답변 수정</button>
-              <button class="uno-admin-button secondary" type="submit" name="action" value="delete_answer" onclick="return confirm('이 답변을 삭제할까요?');">답변 삭제</button>
+          <div class="inquiry-message-body"><?php echo uno_renewal_admin_escape($selectedThread['wr_content'] ?? ''); ?></div>
+          <?php if ($selectedFiles) { ?>
+            <div class="inquiry-files">
+              <h3>첨부파일</h3>
+              <div class="inquiry-file-list">
+                <?php foreach ($selectedFiles as $file) { ?>
+                  <a class="inquiry-file-link" href="<?php echo uno_renewal_admin_escape($file['href']); ?>" target="_blank" rel="noopener">
+                    <?php echo uno_renewal_admin_escape($file['source']); ?>
+                    <small><?php echo uno_renewal_admin_escape(uno_renewal_inquiry_file_size($file['size'])); ?></small>
+                  </a>
+                <?php } ?>
+              </div>
             </div>
-          </form>
+          <?php } ?>
+          <div class="inquiry-message-actions">
+            <button class="uno-admin-button secondary" type="button" data-reply-target>답장</button>
+          </div>
         </div>
-      <?php } ?>
+
+        <?php foreach ($comments as $comment) { ?>
+          <?php
+            $commentMemberId = isset($comment['mb_id']) ? (string) $comment['mb_id'] : '';
+            $threadMemberId = isset($selectedThread['mb_id']) ? (string) $selectedThread['mb_id'] : '';
+            if ($commentMemberId !== '' && $commentMemberId === $threadMemberId) {
+                $commentLabel = '고객 추가 문의';
+                $commentType = 'customer';
+            } elseif (uno_renewal_inquiry_is_admin_member($commentMemberId)) {
+                $commentLabel = '관리자 답변';
+                $commentType = 'admin';
+            } else {
+                $commentLabel = '기타 작성자';
+                $commentType = 'other';
+            }
+            $commentFiles = isset($comment['files']) && is_array($comment['files']) ? $comment['files'] : array();
+          ?>
+          <div class="inquiry-message <?php echo uno_renewal_admin_escape($commentType); ?>" data-message-author="<?php echo uno_renewal_admin_escape($comment['wr_name'] ?? '작성자'); ?>" data-message-text="<?php echo uno_renewal_admin_escape(uno_renewal_inquiry_text($comment['wr_content'] ?? '', 90)); ?>">
+            <div class="inquiry-message-head">
+              <span class="inquiry-message-author">
+                <span class="uno-admin-chip"><?php echo uno_renewal_admin_escape($commentLabel); ?></span>
+                <span><?php echo uno_renewal_admin_escape(($comment['wr_name'] ?? '') . ' / ' . ($comment['mb_id'] ?? '')); ?></span>
+              </span>
+              <span><?php echo uno_renewal_admin_escape(uno_renewal_inquiry_date($comment['wr_datetime'] ?? '')); ?></span>
+            </div>
+            <div class="inquiry-message-body"><?php echo uno_renewal_admin_escape($comment['wr_content'] ?? ''); ?></div>
+            <?php if ($commentFiles) { ?>
+              <div class="inquiry-files">
+                <h3>첨부파일</h3>
+                <div class="inquiry-file-list">
+                  <?php foreach ($commentFiles as $file) { ?>
+                    <a class="inquiry-file-link" href="<?php echo uno_renewal_admin_escape($file['href']); ?>" target="_blank" rel="noopener">
+                      <?php echo uno_renewal_admin_escape($file['source']); ?>
+                      <small><?php echo uno_renewal_admin_escape(uno_renewal_inquiry_file_size($file['size'])); ?></small>
+                    </a>
+                  <?php } ?>
+                </div>
+              </div>
+            <?php } ?>
+            <div class="inquiry-message-actions">
+              <?php if ($commentType === 'customer') { ?>
+                <button class="uno-admin-button secondary" type="button" data-reply-target>답장</button>
+              <?php } ?>
+              <?php if ($commentType === 'admin') { ?>
+                <details class="inquiry-edit-panel">
+                  <summary class="uno-admin-button secondary">수정</summary>
+                  <form class="inquiry-form" method="post">
+                    <input type="hidden" name="action" value="update_answer">
+                    <input type="hidden" name="unotravel_csrf_token" value="<?php echo uno_renewal_admin_escape($csrfToken); ?>">
+                    <input type="hidden" name="board" value="<?php echo uno_renewal_admin_escape($board); ?>">
+                    <input type="hidden" name="wr_id" value="<?php echo (int) $selectedThread['wr_id']; ?>">
+                    <input type="hidden" name="comment_id" value="<?php echo (int) $comment['wr_id']; ?>">
+                    <textarea name="answer" required><?php echo uno_renewal_inquiry_textarea($comment['wr_content'] ?? ''); ?></textarea>
+                    <button class="uno-admin-button" type="submit">답변 수정</button>
+                  </form>
+                </details>
+                <form method="post" onsubmit="return confirm('이 답변을 삭제할까요?');">
+                  <input type="hidden" name="action" value="delete_answer">
+                  <input type="hidden" name="unotravel_csrf_token" value="<?php echo uno_renewal_admin_escape($csrfToken); ?>">
+                  <input type="hidden" name="board" value="<?php echo uno_renewal_admin_escape($board); ?>">
+                  <input type="hidden" name="wr_id" value="<?php echo (int) $selectedThread['wr_id']; ?>">
+                  <input type="hidden" name="comment_id" value="<?php echo (int) $comment['wr_id']; ?>">
+                  <button class="uno-admin-button secondary" type="submit">삭제</button>
+                </form>
+              <?php } ?>
+            </div>
+          </div>
+        <?php } ?>
+      </div>
+
+      <form id="inquiry-answer-form" class="inquiry-form" method="post" enctype="multipart/form-data" style="margin-top:16px;">
+        <input type="hidden" name="action" value="create_answer">
+        <input type="hidden" name="unotravel_csrf_token" value="<?php echo uno_renewal_admin_escape($csrfToken); ?>">
+        <input type="hidden" name="board" value="<?php echo uno_renewal_admin_escape($board); ?>">
+        <input type="hidden" name="wr_id" value="<?php echo (int) $selectedThread['wr_id']; ?>">
+        <div id="inquiry-reply-context" class="inquiry-reply-context"></div>
+        <textarea id="inquiry-answer-textarea" name="answer" placeholder="고객에게 전달할 답변을 입력하세요." required></textarea>
+        <div class="inquiry-attachment-field">
+          <div class="inquiry-attachment-controls">
+            <label class="uno-admin-button secondary" for="inquiry-answer-attachment">첨부파일 선택</label>
+            <button class="uno-admin-button secondary" type="button" id="inquiry-answer-attachment-clear">삭제</button>
+            <span class="inquiry-attachment-name" id="inquiry-answer-attachment-name">선택된 파일 없음</span>
+          </div>
+          <input id="inquiry-answer-attachment" name="attachment" type="file" accept=".jpg,.jpeg,.png,.pdf,.doc,.docx,.xls,.xlsx">
+          <p class="inquiry-attachment-help">JPG, PNG, PDF, DOC, DOCX, XLS, XLSX / 최대 10MB / 1개</p>
+        </div>
+        <button class="uno-admin-button" type="submit">답변 등록</button>
+      </form>
     </article>
   </section>
 <?php } ?>
+
+<script>
+  document.addEventListener("click", function (event) {
+    var trigger = event.target.closest("[data-reply-target]");
+    if (!trigger) return;
+
+    var message = trigger.closest(".inquiry-message");
+    var form = document.getElementById("inquiry-answer-form");
+    var textarea = document.getElementById("inquiry-answer-textarea");
+    var context = document.getElementById("inquiry-reply-context");
+    if (!message || !form || !textarea || !context) return;
+
+    var author = message.getAttribute("data-message-author") || "고객";
+    var text = message.getAttribute("data-message-text") || "";
+    context.textContent = author + "님의 메시지에 답장 중" + (text ? " · " + text : "");
+    context.classList.add("is-active");
+    form.scrollIntoView({ behavior: "smooth", block: "center" });
+    window.setTimeout(function () {
+      textarea.focus();
+    }, 220);
+  });
+
+  var attachmentInput = document.getElementById("inquiry-answer-attachment");
+  var attachmentName = document.getElementById("inquiry-answer-attachment-name");
+  var attachmentClear = document.getElementById("inquiry-answer-attachment-clear");
+  if (attachmentInput && attachmentName && attachmentClear) {
+    attachmentInput.addEventListener("change", function () {
+      attachmentName.textContent = attachmentInput.files && attachmentInput.files.length
+        ? attachmentInput.files[0].name
+        : "선택된 파일 없음";
+    });
+    attachmentClear.addEventListener("click", function () {
+      attachmentInput.value = "";
+      attachmentName.textContent = "선택된 파일 없음";
+    });
+  }
+</script>
 
 <section class="uno-admin-panel" style="margin-top:16px;">
   <form class="inquiry-filter" method="get">

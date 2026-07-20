@@ -1,5 +1,5 @@
 // community.data.ts
-// 커뮤니티 화면의 임시 네비게이션, 게시글, FAQ 데이터를 모아두는 파일입니다.
+// 커뮤니티 화면의 임시 네비게이션, 게시글, 문의 데이터를 모아두는 파일입니다.
 // 실제 Gnuboard 연동 전까지 화면 구성과 이동 목적지를 안정적으로 유지합니다.
 // 문의하기는 공개 문의 화면이며, 마이페이지 1:1 문의와 역할이 겹치지 않도록 분리합니다.
 
@@ -26,12 +26,12 @@ export const COMMUNITY_NAV_ITEMS: CommunityNavItem[] = [
         description: "진행중인 이벤트",
     },
     {
-        // Community FAQ is public help content. Do not confuse it with My Page 1:1 inquiry (cusTour).
-        id: "faq",
-        label: "FAQ",
-        labelEn: "FAQ",
-        href: "/community/faq",
-        description: "자주 묻는 질문",
+        // Public community inquiry menu. Do not confuse it with product-detail FAQ or My Page 1:1 inquiry (cusTour).
+        id: "inquiry",
+        label: "문의하기",
+        labelEn: "Inquiry",
+        href: "/community/inquiry",
+        description: "공개 커뮤니티 문의",
     },
     {
         id: "review",

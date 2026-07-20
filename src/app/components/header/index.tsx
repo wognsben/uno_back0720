@@ -217,7 +217,7 @@ const COMMUNITY_MENU_ITEMS: readonly DotMenuItem[] = [
   { label: "커뮤니티", labelEn: "COMMUNITY", href: "/community", variant: "hub" },
   { label: "공지사항", labelEn: "NOTICE", href: "/community/notice", variant: "link" },
   { label: "이벤트", labelEn: "EVENT", href: "/community/event", variant: "link" },
-  { label: "FAQ", labelEn: "FAQ", href: "/community/faq", variant: "link" },
+  { label: "문의하기", labelEn: "INQUIRY", href: "/community/inquiry", variant: "link" },
   { label: "여행후기", labelEn: "REVIEW", href: "/community/review", variant: "link" },
 ] as const;
 

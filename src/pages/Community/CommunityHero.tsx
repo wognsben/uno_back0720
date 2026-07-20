@@ -44,7 +44,7 @@ const HERO_CONTENT: Record<
     inquiry: {
         eyebrow: "COMMUNITY",
         title: "문의하기",
-        description: "예약 변경, 취소, 상품 상담을 1:1 문의로 남겨 주세요.",
+        description: "공개 커뮤니티 문의를 남기고 답변을 확인할 수 있습니다.",
     },
 };
 

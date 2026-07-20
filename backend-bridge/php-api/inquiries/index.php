@@ -34,6 +34,12 @@ function uno_api_inquiry_index_table()
     return $prefix . 'cusTour';
 }
 
+function uno_api_inquiry_index_table_name($key, $fallback)
+{
+    global $g5;
+    return isset($g5[$key]) && $g5[$key] !== '' ? $g5[$key] : $fallback;
+}
+
 function uno_api_inquiry_index_text($value)
 {
     return trim(html_entity_decode(strip_tags((string) $value), ENT_QUOTES, 'UTF-8'));
@@ -55,14 +61,53 @@ function uno_api_inquiry_index_is_admin_message($row)
     return $member && isset($member['mb_level']) && (int) $member['mb_level'] > 2;
 }
 
+function uno_api_inquiry_index_file_url($wrId, $fileNo)
+{
+    return '/api/inquiries/file.php?wr_id=' . (int) $wrId . '&no=' . (int) $fileNo;
+}
+
+function uno_api_inquiry_index_fetch_files($wrId)
+{
+    $wrId = (int) $wrId;
+    if ($wrId <= 0) {
+        return array();
+    }
+
+    $boardFileTable = uno_api_inquiry_index_table_name('board_file_table', 'g5_board_file');
+    $result = sql_query(
+        "select bf_no, bf_source, bf_filesize
+           from {$boardFileTable}
+          where bo_table = 'cusTour'
+            and wr_id = '{$wrId}'
+            and bf_file <> ''
+          order by bf_no asc"
+    );
+
+    $files = array();
+    while ($row = sql_fetch_array($result)) {
+        $fileNo = isset($row['bf_no']) ? (int) $row['bf_no'] : 0;
+        $files[] = array(
+            'no' => $fileNo,
+            'source' => isset($row['bf_source']) ? (string) $row['bf_source'] : '',
+            'size' => isset($row['bf_filesize']) ? (int) $row['bf_filesize'] : 0,
+            'url' => uno_api_inquiry_index_file_url($wrId, $fileNo),
+        );
+    }
+
+    return $files;
+}
+
 function uno_api_inquiry_index_message($row, $role)
 {
+    $wrId = isset($row['wr_id']) ? (int) $row['wr_id'] : 0;
+
     return array(
-        'id' => isset($row['wr_id']) ? (int) $row['wr_id'] : 0,
+        'id' => $wrId,
         'role' => $role,
         'author' => isset($row['wr_name']) ? (string) $row['wr_name'] : '',
         'content' => uno_api_inquiry_index_text(isset($row['wr_content']) ? $row['wr_content'] : ''),
         'createdAt' => isset($row['wr_datetime']) ? (string) $row['wr_datetime'] : '',
+        'attachments' => uno_api_inquiry_index_fetch_files($wrId),
     );
 }
 

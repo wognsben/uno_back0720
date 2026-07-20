@@ -3,7 +3,7 @@
 // 기존 Gnuboard cusTour 게시판의 원글과 댓글 구조를 대화형 UI로 보여줍니다.
 // 커뮤니티 공개 문의(qna)와 분리된 개인 상담 채널 역할만 담당합니다.
 
-import { useEffect, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 
 import { UnoApiRequestError } from "../../api/apiClient";
 import {
@@ -18,6 +18,17 @@ const FONT_KO = "var(--font-ko)";
 const BLACK = "#151515";
 const BORDER = "#E8E9E9";
 const YELLOW = "#FCC800";
+const MAX_ATTACHMENT_SIZE = 10 * 1024 * 1024;
+const ALLOWED_ATTACHMENT_EXTENSIONS = [
+  "jpg",
+  "jpeg",
+  "png",
+  "pdf",
+  "doc",
+  "docx",
+  "xls",
+  "xlsx",
+];
 
 function navigateTo(path: string) {
   if (typeof window === "undefined") return;
@@ -449,6 +460,108 @@ const STYLE = `
     resize: vertical;
   }
 
+  .file-input-native {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  .file-picker-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .file-picker-button,
+  .file-remove-button {
+    border: 1px solid ${BORDER};
+    background: #fff;
+    color: ${BLACK};
+    cursor: pointer;
+    font-family: ${FONT_KO};
+    font-size: 13px;
+    font-weight: 850;
+    letter-spacing: -0.02em;
+  }
+
+  .message-attachments {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .message-attachment-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    min-height: 32px;
+    max-width: 100%;
+    border: 1px solid rgba(21,21,21,.16);
+    border-radius: 999px;
+    background: rgba(255,255,255,.7);
+    color: ${BLACK};
+    padding: 0 11px;
+    box-sizing: border-box;
+    font-family: ${FONT_KO};
+    font-size: 12px;
+    font-weight: 800;
+    text-decoration: none;
+  }
+
+  .message-attachment-link span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .message-attachment-link small {
+    flex: 0 0 auto;
+    color: rgba(21,21,21,.54);
+    font-family: ${FONT_EN};
+    font-size: 11px;
+    font-weight: 800;
+  }
+
+  .file-picker-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 42px;
+    border-radius: 999px;
+    padding: 0 18px;
+  }
+
+  .file-name {
+    max-width: 420px;
+    color: ${BLACK};
+    font-family: ${FONT_KO};
+    font-size: 13px;
+    font-weight: 750;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .file-remove-button {
+    min-height: 34px;
+    border-radius: 999px;
+    padding: 0 12px;
+  }
+
+  .field-help {
+    font-family: ${FONT_KO};
+    font-size: 12px;
+    font-weight: 650;
+    line-height: 1.5;
+    color: rgba(21,21,21,.52);
+  }
+
   .field.full { grid-column: 1 / -1; }
 
   .actions {
@@ -508,6 +621,40 @@ function formatInquiryDate(value?: string) {
   }).format(date);
 }
 
+function validateAttachment(file: File) {
+  const extension = file.name.split(".").pop()?.toLowerCase() ?? "";
+
+  if (!ALLOWED_ATTACHMENT_EXTENSIONS.includes(extension)) {
+    return "첨부파일은 jpg, png, pdf, doc, docx, xls, xlsx 형식만 가능합니다.";
+  }
+
+  if (file.size <= 0 || file.size > MAX_ATTACHMENT_SIZE) {
+    return "첨부파일은 10MB 이하만 가능합니다.";
+  }
+
+  return "";
+}
+
+function formatAttachmentSize(size: number) {
+  if (size >= 1024 * 1024) {
+    return `${(size / 1024 / 1024).toFixed(1)}MB`;
+  }
+
+  if (size >= 1024) {
+    return `${(size / 1024).toFixed(1)}KB`;
+  }
+
+  return `${Math.max(0, size)}B`;
+}
+
+function getAttachmentExtension(fileName: string) {
+  return fileName.split(".").pop()?.toLowerCase() ?? "";
+}
+
+function isViewableAttachment(fileName: string) {
+  return ["jpg", "jpeg", "png", "pdf"].includes(getAttachmentExtension(fileName));
+}
+
 function InquiryThreadView({
   thread,
   messages,
@@ -547,6 +694,24 @@ function InquiryThreadView({
                 <span>{formatInquiryDate(message.createdAt)}</span>
               </div>
               <p>{message.content}</p>
+              {message.attachments && message.attachments.length > 0 && (
+                <div className="message-attachments">
+                  {message.attachments.map((file) => (
+                    <a
+                      key={`${message.id}-${file.no}`}
+                      className="message-attachment-link"
+                      href={file.url}
+                      target="_blank"
+                      rel="noopener"
+                    >
+                      <span>{file.source || "첨부파일"}</span>
+                      <small>
+                        {formatAttachmentSize(file.size)} · {isViewableAttachment(file.source) ? "보기" : "다운로드"}
+                      </small>
+                    </a>
+                  ))}
+                </div>
+              )}
             </article>
           ))
         )}
@@ -556,14 +721,15 @@ function InquiryThreadView({
 }
 
 export default function MyInquiry() {
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [content, setContent] = useState("");
+  const [attachment, setAttachment] = useState<File | null>(null);
   const [thread, setThread] = useState<InquiryThread | null>(null);
   const [messages, setMessages] = useState<InquiryMessage[]>([]);
   const [status, setStatus] = useState<{
     type: "success" | "error";
     message: string;
   } | null>(null);
-  const [showLegacyFallback, setShowLegacyFallback] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -603,11 +769,17 @@ export default function MyInquiry() {
 
     setIsSubmitting(true);
     setStatus(null);
-    setShowLegacyFallback(false);
 
     try {
-      const response = await createInquiry({ content: trimmedContent });
+      const response = await createInquiry({
+        content: trimmedContent,
+        attachment,
+      });
       setContent("");
+      setAttachment(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
       await loadInquiryThread();
       setStatus({
         type: "success",
@@ -622,7 +794,6 @@ export default function MyInquiry() {
           : "문의 접수 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.";
 
       setStatus({ type: "error", message });
-      setShowLegacyFallback(true);
     } finally {
       setIsSubmitting(false);
     }
@@ -663,14 +834,66 @@ export default function MyInquiry() {
               }}
             />
           </label>
+          <label className="field full">
+            <span>첨부파일</span>
+            <input
+              ref={fileInputRef}
+              id="my-inquiry-attachment"
+              className="file-input-native"
+              type="file"
+              accept=".jpg,.jpeg,.png,.pdf,.doc,.docx,.xls,.xlsx"
+              onChange={(event) => {
+                const file = event.target.files?.[0] ?? null;
+                if (!file) {
+                  setAttachment(null);
+                  return;
+                }
+
+                const validationMessage = validateAttachment(file);
+                if (validationMessage) {
+                  setAttachment(null);
+                  event.currentTarget.value = "";
+                  setStatus({ type: "error", message: validationMessage });
+                  return;
+                }
+
+                setAttachment(file);
+                if (status) setStatus(null);
+              }}
+            />
+            <div className="file-picker-row">
+              <label className="file-picker-button" htmlFor="my-inquiry-attachment">
+                첨부파일 선택
+              </label>
+              {attachment && (
+                <>
+                  <span className="file-name">
+                    {attachment.name} ({formatAttachmentSize(attachment.size)})
+                  </span>
+                  <button
+                    className="file-remove-button"
+                    type="button"
+                    onClick={() => {
+                      setAttachment(null);
+                      if (fileInputRef.current) {
+                        fileInputRef.current.value = "";
+                      }
+                    }}
+                  >
+                    삭제
+                  </button>
+                </>
+              )}
+            </div>
+            <span className="field-help">
+              JPG, PNG, PDF, DOC, DOCX, XLS, XLSX / 최대 10MB / 1개
+            </span>
+          </label>
         </div>
 
         <div className="actions">
           <button className="primary-action" type="submit" disabled={isSubmitting}>
             {isSubmitting ? "접수 중" : thread ? "추가 문의 보내기" : "문의 보내기"}
-          </button>
-          <button className="ghost-action" type="button" disabled>
-            파일 첨부 준비중
           </button>
         </div>
       </form>
@@ -679,24 +902,6 @@ export default function MyInquiry() {
         <p className={`inquiry-status is-${status.type}`} role="status">
           {status.message}
         </p>
-      )}
-
-      {showLegacyFallback && (
-        <div className="notice-box">
-          <p>
-            현재 리뉴얼 1:1 문의 저장 연결을 확인 중입니다. 급한 문의는 기존 우노트래블
-            1:1 문의 페이지에서 작성해 주세요.
-          </p>
-          <button
-            className="primary-action"
-            type="button"
-            onClick={() => {
-              window.location.href = "/contents/my_qna.php";
-            }}
-          >
-            기존 1:1 문의로 이동
-          </button>
-        </div>
       )}
 
       <div className="notice-box">

@@ -410,6 +410,7 @@ export type MyReservationsResponse = {
 export type InquiryCreateRequest = {
   subject?: string;
   content: string;
+  attachment?: File | null;
 };
 
 export type InquiryCreateResponse = {
@@ -476,6 +477,14 @@ export type InquiryMessage = {
   author?: string;
   content: string;
   createdAt: string;
+  attachments?: InquiryAttachment[];
+};
+
+export type InquiryAttachment = {
+  no: number;
+  source: string;
+  size: number;
+  url: string;
 };
 
 export type InquiryThread = {
@@ -631,11 +640,26 @@ export const getReservationComplete = (rid: number | string) =>
 export const getMyReservations = () =>
   unoApiData<MyReservationsResponse>("/my/reservations.php");
 
-export const createInquiry = (body: InquiryCreateRequest) =>
-  unoApiData<InquiryCreateResponse>("/inquiries/create.php", {
+export const createInquiry = (body: InquiryCreateRequest) => {
+  const attachment = body.attachment ?? null;
+  const requestBody =
+    typeof File !== "undefined" && attachment instanceof File
+      ? (() => {
+          const formData = new FormData();
+          if (body.subject) {
+            formData.append("subject", body.subject);
+          }
+          formData.append("content", body.content);
+          formData.append("attachment", attachment);
+          return formData;
+        })()
+      : body;
+
+  return unoApiData<InquiryCreateResponse>("/inquiries/create.php", {
     method: "POST",
-    body,
+    body: requestBody,
   });
+};
 
 export const getMyInquiryThread = () =>
   unoApiData<InquiryThreadResponse>("/inquiries/index.php");

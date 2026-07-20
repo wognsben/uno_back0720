@@ -114,6 +114,7 @@ export async function unoApiRequest<T>(
 ): Promise<UnoApiResponse<T>> {
   const { body, query, headers, ...requestInit } = options;
   const hasBody = body !== undefined;
+  const isFormDataBody = typeof FormData !== "undefined" && body instanceof FormData;
   const method = requestInit.method;
 
   try {
@@ -122,11 +123,11 @@ export async function unoApiRequest<T>(
       ...requestInit,
       headers: {
         Accept: "application/json",
-        ...(hasBody ? { "Content-Type": "application/json" } : {}),
+        ...(hasBody && !isFormDataBody ? { "Content-Type": "application/json" } : {}),
         ...createApiSecurityHeaders(method),
         ...headers,
       },
-      body: hasBody ? JSON.stringify(body) : undefined,
+      body: hasBody ? (isFormDataBody ? (body as FormData) : JSON.stringify(body)) : undefined,
     });
 
     const responseText = await response.text();

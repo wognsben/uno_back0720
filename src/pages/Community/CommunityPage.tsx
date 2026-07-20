@@ -18,10 +18,10 @@ const COMMUNITY_HUB_ITEMS = [
     href: "/community/event",
   },
   {
-    label: "FAQ",
-    labelEn: "FAQ",
-    description: "자주 묻는 질문과 기본 안내를 확인합니다.",
-    href: "/community/faq",
+    label: "문의하기",
+    labelEn: "INQUIRY",
+    description: "공개 커뮤니티 문의를 남기고 답변을 확인합니다.",
+    href: "/community/inquiry",
   },
   {
     label: "여행후기",
@@ -126,7 +126,7 @@ export default function CommunityPage() {
               color: "rgba(21, 21, 21, 0.56)",
             }}
           >
-            여행후기, 공지사항, 이벤트, FAQ를 한 곳에서 확인하는
+            여행후기, 공지사항, 이벤트, 문의하기를 한 곳에서 확인하는
             UNO TRAVEL 커뮤니티 허브입니다.
           </p>
         </div>
