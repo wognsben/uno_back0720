@@ -1,5 +1,9 @@
-import { useEffect, useState } from "react";
-import { getMyReservations } from "../../api/reservationApi";
+import { useEffect, useRef, useState } from "react";
+import {
+  getMyReservations,
+  startGeneralReservationPayment,
+  type PaymentStartResponse,
+} from "../../api/reservationApi";
 
 const FONT_EN = "var(--font-en)";
 const FONT_KO = "var(--font-ko)";
@@ -197,7 +201,7 @@ const STYLE = `
 
   .list-row {
     display: grid;
-    grid-template-columns: 150px 1fr 140px;
+    grid-template-columns: 150px 1fr 190px 150px 140px;
     gap: 24px;
     align-items: center;
     padding: 22px 0;
@@ -236,6 +240,41 @@ const STYLE = `
     color: #1b5e20;
   }
 
+  .payment-cell {
+    min-width: 0;
+  }
+
+  .payment-cell strong {
+    margin-bottom: 4px;
+    font-size: 15px;
+  }
+
+  .payment-cell p {
+    font-size: 12px;
+    line-height: 1.45;
+  }
+
+  .pay-button {
+    justify-self: end;
+    min-width: 118px;
+    height: 38px;
+    border: none;
+    border-radius: 999px;
+    background: #151515;
+    color: #fff;
+    cursor: pointer;
+    font-family: ${FONT_KO};
+    font-size: 13px;
+    font-weight: 850;
+    letter-spacing: -0.04em;
+  }
+
+  .pay-button:disabled {
+    cursor: not-allowed;
+    background: rgba(21,21,21,.18);
+    color: rgba(21,21,21,.46);
+  }
+
   .notice-box {
     margin-top: 24px;
     padding: 20px 22px;
@@ -259,10 +298,17 @@ const STYLE = `
 
 type DisplayReservation = {
   id: string;
+  rid: number | string;
   reservedAt: string;
   product: string;
   tourDay: string;
   status: string;
+  paymentAmount: number;
+  paymentStatus: string;
+  paymentStatusLabel: string;
+  paymentCancelDate?: string | null;
+  canPay: boolean;
+  blockedReason?: string | null;
 };
 
 function MyPageLayout({ children }: { children: React.ReactNode }) {
@@ -315,10 +361,45 @@ const getStatusClassName = (status: string) => {
   return "tag";
 };
 
+const formatWon = (value: number) =>
+  new Intl.NumberFormat("ko-KR").format(Number.isFinite(value) ? value : 0) + String.fromCharCode(50896);
+
+function submitLegacyPaymentForm(payment: PaymentStartResponse["payment"], popup: Window) {
+  const form = document.createElement("form");
+  form.method = payment.method;
+  form.action = payment.action;
+  form.target = payment.target;
+  form.style.display = "none";
+
+  Object.entries(payment.fields).forEach(([name, value]) => {
+    const input = document.createElement("input");
+    input.type = "hidden";
+    input.name = name;
+    input.value = value;
+    form.appendChild(input);
+  });
+
+  document.body.appendChild(form);
+  popup.name = payment.target;
+  form.submit();
+  form.remove();
+}
+
 export default function MyReservation() {
   const [reservations, setReservations] = useState<DisplayReservation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
+  const [payingRid, setPayingRid] = useState<string | null>(null);
+  const paymentPollTimerRef = useRef<number | null>(null);
+
+  const clearPaymentPollTimer = () => {
+    if (paymentPollTimerRef.current !== null) {
+      window.clearInterval(paymentPollTimerRef.current);
+      paymentPollTimerRef.current = null;
+    }
+  };
+
+  useEffect(() => clearPaymentPollTimer, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -329,10 +410,17 @@ export default function MyReservation() {
         setReservations(
           response.items.map((item) => ({
             id: String(item.reservationNo || item.rid),
+            rid: item.rid,
             reservedAt: item.createdAt || "-",
             product: item.product.title || "상품명 없음",
             tourDay: item.tourDate || "-",
             status: item.statusLabel || item.status,
+            paymentAmount: item.payment?.amount ?? item.payment?.deposit ?? 0,
+            paymentStatus: item.payment?.status ?? "blocked",
+            paymentStatusLabel: item.payment?.statusLabel ?? "결제 확인 필요",
+            paymentCancelDate: item.payment?.cancelDate ?? null,
+            canPay: Boolean(item.payment?.canPay ?? item.payment?.canPayByCard),
+            blockedReason: item.payment?.blockedReason ?? null,
           })),
         );
         setErrorMessage("");
@@ -350,6 +438,69 @@ export default function MyReservation() {
       isMounted = false;
     };
   }, []);
+
+  const mapReservation = (item: Awaited<ReturnType<typeof getMyReservations>>["items"][number]): DisplayReservation => ({
+    id: String(item.reservationNo || item.rid),
+    rid: item.rid,
+    reservedAt: item.createdAt || "-",
+    product: item.product.title || "상품명 없음",
+    tourDay: item.tourDate || "-",
+    status: item.statusLabel || item.status,
+    paymentAmount: item.payment?.amount ?? item.payment?.deposit ?? 0,
+    paymentStatus: item.payment?.status ?? "blocked",
+    paymentStatusLabel: item.payment?.statusLabel ?? "결제 확인 필요",
+    paymentCancelDate: item.payment?.cancelDate ?? null,
+    canPay: Boolean(item.payment?.canPay ?? item.payment?.canPayByCard),
+    blockedReason: item.payment?.blockedReason ?? null,
+  });
+
+  const refreshReservations = () => {
+    setIsLoading(true);
+    return getMyReservations()
+      .then((response) => {
+        setReservations(response.items.map(mapReservation));
+        setErrorMessage("");
+      })
+      .catch((error: Error) => {
+      setErrorMessage(error.message || "예약목록을 다시 불러오지 못했습니다.");
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
+  };
+
+  const handlePay = async (item: DisplayReservation) => {
+    if (!item.canPay || payingRid) return;
+    clearPaymentPollTimer();
+
+    const popup = window.open("", "uno_ksnet_pay", "width=578,height=630,menubar=no,status=no,scrollbars=auto,toolbar=no");
+    if (!popup) {
+      setErrorMessage("결제창을 열 수 없습니다. 브라우저 팝업 차단 설정을 확인하세요.");
+      return;
+    }
+
+    setPayingRid(String(item.rid));
+    popup.document.write("<!doctype html><title>UNO Travel Payment</title><p>Preparing payment window.</p>");
+
+    try {
+      const response = await startGeneralReservationPayment(item.rid);
+      submitLegacyPaymentForm(response.payment, popup);
+
+      paymentPollTimerRef.current = window.setInterval(() => {
+        if (popup.closed) {
+          clearPaymentPollTimer();
+          setPayingRid(null);
+          void refreshReservations();
+        }
+      }, 800);
+    } catch (error) {
+      clearPaymentPollTimer();
+      popup.close();
+      setPayingRid(null);
+      setErrorMessage(error instanceof Error ? error.message : "결제 시작 검증에 실패했습니다.");
+      void refreshReservations();
+    }
+  };
 
   return (
     <MyPageLayout>
@@ -376,6 +527,31 @@ export default function MyReservation() {
                 <strong>{item.product}</strong>
                 <p>투어일 {item.tourDay}</p>
               </div>
+              <div className="payment-cell">
+                <strong>{formatWon(item.paymentAmount)}</strong>
+                <p>
+                  {item.paymentStatusLabel}
+                  {item.paymentCancelDate ? ` / ${item.paymentCancelDate}` : ""}
+                  {!item.canPay && item.blockedReason ? (
+                    <>
+                      <br />
+                      {item.blockedReason}
+                    </>
+                  ) : null}
+                </p>
+              </div>
+              {item.canPay ? (
+                <button
+                  type="button"
+                  className="pay-button"
+                  disabled={payingRid === String(item.rid)}
+                  onClick={() => void handlePay(item)}
+                >
+                  {payingRid === String(item.rid) ? "진행 중" : "카드결제"}
+                </button>
+              ) : (
+                <span className={getStatusClassName(item.paymentStatusLabel)}>{item.paymentStatusLabel}</span>
+              )}
               <span className={getStatusClassName(item.status)}>{item.status}</span>
             </div>
           ))}

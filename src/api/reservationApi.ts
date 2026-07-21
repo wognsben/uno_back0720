@@ -399,13 +399,37 @@ export type MyReservationItem = {
   payment?: {
     deposit?: number;
     localPayment?: number;
+    amount?: number;
     cardPayRef?: string | null;
+    transactionId?: string | null;
+    hasLedger?: boolean;
+    status?: "unpaid" | "paid" | "cancelled" | "blocked";
+    statusLabel?: string;
+    cancelDate?: string | null;
+    canPay?: boolean;
     canPayByCard?: boolean;
+    blockedReason?: string | null;
+    type?: "general" | "package";
+    isEventChild?: boolean;
   };
 };
 
 export type MyReservationsResponse = {
   items: MyReservationItem[];
+};
+
+export type PaymentStartResponse = {
+  reservation: {
+    rid: number | string;
+    productName: string;
+    amount: number;
+  };
+  payment: {
+    method: "POST";
+    action: string;
+    target: string;
+    fields: Record<string, string>;
+  };
 };
 
 export type InquiryCreateRequest = {
@@ -673,6 +697,12 @@ export const getReservationComplete = (rid: number | string) =>
 
 export const getMyReservations = () =>
   unoApiData<MyReservationsResponse>("/my/reservations.php");
+
+export const startGeneralReservationPayment = (rid: number | string) =>
+  unoApiData<PaymentStartResponse>("/payments/start.php", {
+    method: "POST",
+    body: { rid },
+  });
 
 export const createInquiry = (body: InquiryCreateRequest) => {
   const attachment = body.attachment ?? null;

@@ -81,6 +81,75 @@ function uno_api_draft_member_defaults()
     );
 }
 
+function uno_api_draft_is_b2b_member()
+{
+    $member = uno_api_member();
+    $level = isset($member['mb_level']) ? (int) $member['mb_level'] : 0;
+
+    return $level >= 5 && $level < 10;
+}
+
+function uno_api_draft_product_table()
+{
+    global $g5;
+
+    return isset($g5['write_prefix']) ? $g5['write_prefix'] . 'product' : 'g5_write_product';
+}
+
+function uno_api_draft_fetch_product_statuses($legacyProductId)
+{
+    if (!function_exists('sql_fetch')) {
+        return array();
+    }
+
+    $legacyProductId = (int) $legacyProductId;
+    if ($legacyProductId < 1) {
+        return array();
+    }
+
+    $productTable = uno_api_draft_product_table();
+    $row = sql_fetch(
+        "select wr_reg_result, wr_b2b_result
+           from {$productTable}
+          where wr_id = '{$legacyProductId}'
+          limit 1"
+    );
+
+    return is_array($row) ? $row : array();
+}
+
+function uno_api_draft_valid_initial_status($value)
+{
+    $status = trim((string) $value);
+
+    return in_array($status, array('1', '2'), true) ? $status : '';
+}
+
+function uno_api_draft_initial_status($payload, $legacyProductId)
+{
+    $statuses = uno_api_draft_fetch_product_statuses($legacyProductId);
+    $isB2B = uno_api_draft_is_b2b_member();
+
+    if ($isB2B) {
+        $b2bStatus = uno_api_draft_valid_initial_status(isset($statuses['wr_b2b_result']) ? $statuses['wr_b2b_result'] : '');
+        if ($b2bStatus !== '') {
+            return $b2bStatus;
+        }
+    } else {
+        $memberStatus = uno_api_draft_valid_initial_status(isset($statuses['wr_reg_result']) ? $statuses['wr_reg_result'] : '');
+        if ($memberStatus !== '') {
+            return $memberStatus;
+        }
+    }
+
+    $requestStatus = uno_api_draft_valid_initial_status(isset($payload['status']) ? $payload['status'] : '');
+    if ($requestStatus !== '') {
+        return $requestStatus;
+    }
+
+    return '1';
+}
+
 function uno_api_draft_client_ip()
 {
     return isset($_SERVER['REMOTE_ADDR']) ? (string) $_SERVER['REMOTE_ADDR'] : '';
@@ -212,7 +281,7 @@ function uno_api_draft_sum($lines, $key)
     return $sum;
 }
 
-function uno_api_draft_insert_row($payload, $mapping, $productType, $lines)
+function uno_api_draft_insert_row($payload, $mapping, $productType, $lines, $initialStatus)
 {
     $member = uno_api_draft_member_defaults();
     $applicant = isset($payload['applicant']) && is_array($payload['applicant'])
@@ -262,7 +331,7 @@ function uno_api_draft_insert_row($payload, $mapping, $productType, $lines)
         'adminMemo' => $adminMemo,
         'adminMemoCancel' => '',
         'roominfo' => $roomInfo,
-        'status' => '1',
+        'status' => $initialStatus,
         'mb_ip' => uno_api_draft_client_ip(),
         'nation' => $productType,
         'isMobile' => 'N',
@@ -305,10 +374,11 @@ $productType = isset($mapping['legacyCategory']) && $mapping['legacyCategory'] =
     ? 'semi'
     : 'daily';
 $lines = uno_api_draft_build_lines($payload, $mapping, $productType);
-$rid = uno_api_draft_insert_row($payload, $mapping, $productType, $lines);
+$initialStatus = uno_api_draft_initial_status($payload, (int) $mapping['legacyProductId']);
+$rid = uno_api_draft_insert_row($payload, $mapping, $productType, $lines, $initialStatus);
 
 uno_api_success(array(
     'rid' => $rid,
-    'status' => '1',
+    'status' => $initialStatus,
     'nextUrl' => '/reservation?rid=' . rawurlencode((string) $rid),
 ), 201);

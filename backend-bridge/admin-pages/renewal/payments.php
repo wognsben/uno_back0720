@@ -52,6 +52,40 @@ function uno_renewal_payment_date_param($key, $fallback)
     return preg_match('/^\d{4}-\d{2}-\d{2}$/', $value) ? $value : $fallback;
 }
 
+function uno_renewal_payment_week_range($date)
+{
+    $time = strtotime($date);
+    if (!$time) {
+        $time = time();
+    }
+
+    $weekDay = (int) date('N', $time);
+    $monday = strtotime('-' . ($weekDay - 1) . ' days', $time);
+    $sunday = strtotime('+' . (7 - $weekDay) . ' days', $time);
+
+    return array(
+        'dateFrom' => date('Y-m-d', $monday),
+        'dateTo' => date('Y-m-d', $sunday),
+    );
+}
+
+function uno_renewal_payment_latest_app_date()
+{
+    $row = uno_renewal_payment_fetch(
+        "select AppDate
+           from kspay_result
+          where AppDate regexp '^[0-9]{8} [0-9]{6}$'
+          order by AppDate desc, id desc
+          limit 1"
+    );
+    $appDate = isset($row['AppDate']) ? trim((string) $row['AppDate']) : '';
+    if (!preg_match('/^\d{8} \d{6}$/', $appDate)) {
+        return '';
+    }
+
+    return substr($appDate, 0, 4) . '-' . substr($appDate, 4, 2) . '-' . substr($appDate, 6, 2);
+}
+
 function uno_renewal_payment_money($value)
 {
     return number_format((int) preg_replace('/[^0-9-]/', '', (string) $value));
@@ -127,13 +161,34 @@ function uno_renewal_payment_fetch_reservation($rid)
 }
 
 $hasPaymentTable = uno_renewal_payment_table_exists('kspay_result');
-$dateTo = uno_renewal_payment_date_param('dateTo', date('Y-m-d'));
-$dateFrom = uno_renewal_payment_date_param('dateFrom', date('Y-m-d', strtotime('-30 days')));
+$hasManualDate = isset($_GET['dateFrom']) || isset($_GET['dateTo']);
+if ($hasManualDate) {
+    $dateTo = uno_renewal_payment_date_param('dateTo', date('Y-m-d'));
+    $dateFrom = uno_renewal_payment_date_param('dateFrom', date('Y-m-d', strtotime('-30 days')));
+} elseif ($hasPaymentTable) {
+    $latestAppDate = uno_renewal_payment_latest_app_date();
+    if ($latestAppDate !== '') {
+        $defaultWeek = uno_renewal_payment_week_range($latestAppDate);
+        $dateFrom = $defaultWeek['dateFrom'];
+        $dateTo = $defaultWeek['dateTo'];
+    } else {
+        $dateTo = date('Y-m-d');
+        $dateFrom = date('Y-m-d', strtotime('-30 days'));
+    }
+} else {
+    $dateTo = date('Y-m-d');
+    $dateFrom = date('Y-m-d', strtotime('-30 days'));
+}
 $keyword = isset($_GET['keyword']) ? trim((string) $_GET['keyword']) : '';
 $status = isset($_GET['status']) ? trim((string) $_GET['status']) : 'all';
 $page = isset($_GET['page']) ? max(1, (int) $_GET['page']) : 1;
 $perPage = 50;
 $offset = ($page - 1) * $perPage;
+$currentWeek = uno_renewal_payment_week_range(date('Y-m-d'));
+$selectedWeek = uno_renewal_payment_week_range($dateFrom !== '' ? $dateFrom : ($dateTo !== '' ? $dateTo : date('Y-m-d')));
+$previousWeek = uno_renewal_payment_week_range(date('Y-m-d', strtotime($selectedWeek['dateFrom'] . ' -7 days')));
+$nextWeek = uno_renewal_payment_week_range(date('Y-m-d', strtotime($selectedWeek['dateFrom'] . ' +7 days')));
+$canMoveNextWeek = strtotime($nextWeek['dateFrom']) <= strtotime($currentWeek['dateFrom']);
 
 $where = array('1=1');
 if ($dateFrom !== '') {
@@ -213,6 +268,19 @@ $queryBase = array(
     'keyword' => $keyword,
     'status' => $status,
 );
+$weekQueryBase = array(
+    'keyword' => $keyword,
+    'status' => $status,
+    'page' => 1,
+);
+$previousWeekQuery = array_merge($weekQueryBase, array(
+    'dateFrom' => $previousWeek['dateFrom'],
+    'dateTo' => $previousWeek['dateTo'],
+));
+$nextWeekQuery = array_merge($weekQueryBase, array(
+    'dateFrom' => $nextWeek['dateFrom'],
+    'dateTo' => $nextWeek['dateTo'],
+));
 
 uno_renewal_admin_render_head('UNO Renewal KSNET Payments');
 uno_renewal_admin_render_header();
@@ -232,6 +300,8 @@ uno_renewal_admin_render_pagehead(
   .payment-filter label { display:grid; gap:6px; color:var(--uno-muted); font-size:11px; font-weight:900; letter-spacing:1.8px; text-transform:uppercase; }
   .payment-filter input, .payment-filter select { min-height:42px; border:1px solid var(--uno-line); background:#fff; padding:0 12px; }
   .payment-summary { display:grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap:10px; margin-top:16px; }
+  .payment-week-nav { display:flex; flex-wrap:wrap; justify-content:space-between; gap:10px; align-items:center; margin-top:14px; }
+  .payment-week-nav span { color:var(--uno-muted); font-size:12px; font-weight:900; }
   .payment-table-wrap { margin-top:16px; border:1px solid var(--uno-line); background:#fff; overflow:auto; }
   .payment-table { width:100%; min-width:1060px; border-collapse:collapse; }
   .payment-table th, .payment-table td { padding:13px 12px; border-bottom:1px solid var(--uno-line); text-align:left; vertical-align:top; }
@@ -266,6 +336,16 @@ uno_renewal_admin_render_pagehead(
     </label>
     <button class="uno-admin-button" type="submit">조회</button>
   </form>
+
+  <div class="payment-week-nav">
+    <a class="uno-admin-button secondary" href="<?php echo uno_renewal_admin_escape('/admin/renewal/payments.php?' . http_build_query($previousWeekQuery)); ?>">&larr; &#51060;&#51204; &#51452;</a>
+    <span><?php echo uno_renewal_admin_escape($dateFrom); ?> ~ <?php echo uno_renewal_admin_escape($dateTo); ?></span>
+    <?php if ($canMoveNextWeek) { ?>
+      <a class="uno-admin-button secondary" href="<?php echo uno_renewal_admin_escape('/admin/renewal/payments.php?' . http_build_query($nextWeekQuery)); ?>">&#45796;&#51020; &#51452; &rarr;</a>
+    <?php } else { ?>
+      <span>&#45796;&#51020; &#51452; &rarr;</span>
+    <?php } ?>
+  </div>
 
   <div class="payment-summary">
     <article class="uno-admin-card"><span>조회 건수</span><h3><?php echo number_format($totalCount); ?>건</h3></article>

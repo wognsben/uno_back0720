@@ -51,6 +51,146 @@ function uno_api_my_reservations_fetch_rows($memberId)
     return $rows;
 }
 
+function uno_api_my_reservations_money($value)
+{
+    return (int) preg_replace('/[^0-9-]/', '', (string) $value);
+}
+
+function uno_api_my_reservations_is_event_child($row)
+{
+    $parentId = isset($row['parent_id']) ? (int) $row['parent_id'] : 0;
+    $isEvent = isset($row['isEvent']) ? strtoupper(trim((string) $row['isEvent'])) : '';
+
+    return $parentId > 0 || $isEvent === 'Y';
+}
+
+function uno_api_my_reservations_is_general_payment($row)
+{
+    $nation = isset($row['nation']) ? (string) $row['nation'] : '';
+    $category = isset($row['ca_name']) ? (string) $row['ca_name'] : '';
+    $nationType = strtolower(trim($nation));
+    $categoryType = strtolower(trim($category));
+
+    if ($nationType === 'semi' || $nationType === 'package' || $categoryType === 'semi' || $categoryType === 'package') {
+        return false;
+    }
+
+    if (strpos($nationType, 'semi') !== false || strpos($nationType, 'package') !== false || strpos($categoryType, 'semi') !== false || strpos($categoryType, 'package') !== false) {
+        return false;
+    }
+
+    if ($nation === '패키지' || $category === '패키지') {
+        return false;
+    }
+
+    if (stripos($nation, '세미패키지') !== false || stripos($category, '세미패키지') !== false) {
+        return false;
+    }
+
+    return true;
+}
+
+function uno_api_my_reservations_latest_payment($cardPay)
+{
+    $cardPay = trim((string) $cardPay);
+    if ($cardPay === '') {
+        return null;
+    }
+
+    $cardPay = uno_api_reservation_escape($cardPay);
+    $row = sql_fetch(
+        "select id, Result, ResultCode, OrderNumber, TotPrice, AppDate, ApplNum, CancelDate
+           from kspay_result
+          where ApplNum = '{$cardPay}'
+          order by id desc
+          limit 1"
+    );
+
+    if (!$row || empty($row['id'])) {
+        return null;
+    }
+
+    return $row;
+}
+
+function uno_api_my_reservations_is_success_payment($payment)
+{
+    if (!$payment) {
+        return false;
+    }
+
+    $result = isset($payment['Result']) ? trim((string) $payment['Result']) : '';
+    $resultCode = isset($payment['ResultCode']) ? trim((string) $payment['ResultCode']) : '';
+    $cancelDate = isset($payment['CancelDate']) ? trim((string) $payment['CancelDate']) : '';
+
+    return $result === 'O' && $resultCode === '0000' && $cancelDate === '';
+}
+
+function uno_api_my_reservations_payment($row)
+{
+    $totalFee1 = uno_api_my_reservations_money(isset($row['total_fee1']) ? $row['total_fee1'] : 0);
+    $totalFee4 = uno_api_my_reservations_money(isset($row['total_fee4']) ? $row['total_fee4'] : 0);
+    $amount = $totalFee1 + $totalFee4;
+    $cardPay = isset($row['card_pay']) ? trim((string) $row['card_pay']) : '';
+    $latestPayment = uno_api_my_reservations_latest_payment($cardPay);
+    $isGeneral = uno_api_my_reservations_is_general_payment($row);
+    $isEventChild = uno_api_my_reservations_is_event_child($row);
+    $status = isset($row['status']) ? (string) $row['status'] : '';
+
+    $paymentStatus = 'unpaid';
+    $paymentStatusLabel = '결제 전';
+    $cancelDate = null;
+    $transactionId = null;
+
+    if ($latestPayment) {
+        $transactionId = isset($latestPayment['ApplNum']) ? (string) $latestPayment['ApplNum'] : $cardPay;
+        $cancelDateValue = isset($latestPayment['CancelDate']) ? trim((string) $latestPayment['CancelDate']) : '';
+
+        if ($cancelDateValue !== '') {
+            $paymentStatus = 'cancelled';
+            $paymentStatusLabel = '카드 취소';
+            $cancelDate = $cancelDateValue;
+        } elseif (uno_api_my_reservations_is_success_payment($latestPayment)) {
+            $paymentStatus = 'paid';
+            $paymentStatusLabel = '결제 완료';
+        }
+    }
+
+    $blockedReason = null;
+    if (!$isGeneral) {
+        $blockedReason = '패키지/세미패키지 결제는 이번 연결 범위에서 제외됩니다.';
+    } elseif ($isEventChild) {
+        $blockedReason = '이벤트 연결 예약은 직접 결제할 수 없습니다.';
+    } elseif ($status !== '2') {
+        $blockedReason = '예약확인 상태에서만 카드결제가 가능합니다.';
+    } elseif ($totalFee1 <= 0) {
+        $blockedReason = '결제할 예약금이 없습니다.';
+    } elseif ($amount <= 0) {
+        $blockedReason = '결제 금액이 올바르지 않습니다.';
+    } elseif ($paymentStatus === 'paid') {
+        $blockedReason = '이미 결제 완료된 예약입니다.';
+    }
+
+    $canPay = $blockedReason === null;
+
+    return array(
+        'deposit' => $totalFee1,
+        'localPayment' => isset($row['total_fee2']) ? uno_api_my_reservations_money($row['total_fee2']) : 0,
+        'amount' => $amount,
+        'cardPayRef' => $cardPay !== '' ? $cardPay : null,
+        'transactionId' => $transactionId,
+        'hasLedger' => $latestPayment !== null,
+        'status' => $paymentStatus,
+        'statusLabel' => $paymentStatusLabel,
+        'cancelDate' => $cancelDate,
+        'canPay' => $canPay,
+        'canPayByCard' => $canPay,
+        'blockedReason' => $blockedReason,
+        'type' => $isGeneral ? 'general' : 'package',
+        'isEventChild' => $isEventChild,
+    );
+}
+
 function uno_api_my_reservations_item($row)
 {
     $detail = uno_api_reservation_response_from_row($row);
@@ -77,12 +217,7 @@ function uno_api_my_reservations_item($row)
             'href' => $detail['product']['href'],
         ),
         'options' => $options,
-        'payment' => array(
-            'deposit' => $detail['totalDeposit'],
-            'localPayment' => $detail['totalLocalPayment'],
-            'cardPayRef' => isset($row['card_pay']) && $row['card_pay'] !== '' ? (string) $row['card_pay'] : null,
-            'canPayByCard' => in_array((string) $detail['status'], array('1', '2', '11'), true),
-        ),
+        'payment' => uno_api_my_reservations_payment($row),
     );
 }
 
